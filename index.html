@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- GSC 帳號共用驗證碼（勿改） -->
+<meta name="google-site-verification" content="d5WDZwqeL4aAN0vGxMvg4mAi1OtpBhcr_xLJJ-3sXBI">
+<meta name="tool-name" content="宇宙探索">
+<title>FFXIV 宇宙探索</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌙</text></svg>">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+<meta name="description" content="FFXIV 繁中服宇宙探索（月球）規劃工具：渴望灣天氣時間軸、544 個任務的開放條件與獎勵、宇宙工具升級鏈。天氣全伺服器同步、可離線推算。">
+
+<link rel="canonical" href="https://ffxiv-tw-cosmic.pages.dev/">
+<meta property="og:url" content="https://ffxiv-tw-cosmic.pages.dev/">
+<meta property="og:site_name" content="FFXIV 繁中服工具箱">
+<meta property="og:title" content="宇宙探索">
+<meta property="og:description" content="FFXIV 繁中服宇宙探索（月球）規劃工具：渴望灣天氣時間軸、544 個任務的開放條件與獎勵、宇宙工具升級鏈。天氣全伺服器同步、可離線推算。">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://ffxiv-tw-tools-portal.pages.dev/og-image.png">
+<meta property="og:locale" content="zh_TW">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preconnect" href="https://ffxiv-tw-tools-portal.pages.dev" crossorigin>
+<script>(function(){
+  var dev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  var base = dev ? 'http://localhost:8774/ffxiv-tw-tools-portal/' : 'https://ffxiv-tw-tools-portal.pages.dev/';
+  document.write(
+    '<link rel="stylesheet" href="' + base + 'tokens.css">' +
+    '<link rel="stylesheet" href="' + base + 'header.css">' +
+    '<script defer src="' + base + 'header.js"><\/script>' +
+    '<script defer src="' + base + 'settings-client.js"><\/script>' +
+    // 鬧鐘類工具會長時間開著分頁 → 掛新版偵測 toast（設計系統 head snippet 鐵則）
+    '<script defer src="' + base + 'version-check.js"><\/script>'
+  );
+})();</script>
+
+<link rel="stylesheet" href="css/style.css">
+<script type="module" src="modules/app.js"></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "宇宙探索",
+  "url": "https://ffxiv-tw-cosmic.pages.dev/",
+  "description": "FFXIV 繁中服宇宙探索（月球）規劃工具：渴望灣天氣時間軸、544 個任務的開放條件與獎勵、宇宙工具升級鏈。天氣全伺服器同步、可離線推算。",
+  "applicationCategory": "GameApplication",
+  "operatingSystem": "Web",
+  "browserRequirements": "Requires JavaScript",
+  "inLanguage": "zh-TW",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "TWD" },
+  "isPartOf": { "@type": "WebSite", "@id": "https://ffxiv-tw-tools-portal.pages.dev/#website" },
+  "publisher": { "@type": "Organization", "name": "FFXIV TW Tools", "url": "https://ffxiv-tw-tools-portal.pages.dev/" }
+}
+</script>
+</head>
+<body>
+  <header class="page-header">
+    <h1 class="codex-h1"><span class="ph-icon" aria-hidden="true">🌙</span>宇宙探索</h1>
+    <div class="cos-header-tools">
+      <span class="codex-label" id="fc-zone">渴望灣</span>
+      <span id="rank-picker"></span>
+      <span id="job-picker"></span>
+    </div>
+  </header>
+
+  <main class="codex-container cos-main">
+    <div class="codex-empty cos-hideable" id="app-status" hidden>
+      <div class="codex-empty__icon" aria-hidden="true">🛰</div>
+      <div>載入中…</div>
+    </div>
+
+    <div class="codex-tabs" id="cos-tabs" role="tablist" aria-label="宇宙探索分頁">
+      <button class="codex-tab" role="tab" data-tab="forecast" id="tab-forecast"
+              aria-controls="panel-forecast" aria-selected="true">天氣時間軸</button>
+      <button class="codex-tab" role="tab" data-tab="missions" id="tab-missions"
+              aria-controls="panel-missions" aria-selected="false" tabindex="-1">任務清單</button>
+      <button class="codex-tab" role="tab" data-tab="tools" id="tab-tools"
+              aria-controls="panel-tools" aria-selected="false" tabindex="-1">宇宙工具</button>
+      <button class="codex-tab" role="tab" data-tab="dev" id="tab-dev"
+              aria-controls="panel-dev" aria-selected="false" tabindex="-1">基地進度</button>
+    </div>
+
+    <!-- ══ 分頁一：天氣時間軸 ══ -->
+    <section id="panel-forecast" role="tabpanel" aria-labelledby="tab-forecast" tabindex="0">
+      <div class="cos-stats" id="fc-now"></div>
+
+      <section class="cos-panel" id="jb-panel">
+        <h2 class="codex-h2 cos-panel__title">
+          現在有什麼可能出現
+          <span class="codex-help-trigger" data-help="遊戲把任務分成基礎／臨時／緊急三類（這是 client 自己的分類欄，不是我們用階級推的）。｜看板只放臨時與緊急 —— 基礎任務 231 個隨時都在，放進來會把重點淹掉，入口在下方。｜主數字＝「池子裡現在有幾個」，不是「任務板上有幾個」：遊戲會從你符合的池裡抽幾個給你。｜倒數＝下一個條件視窗開啟後池子會多幾個。">
+            這些數字是什麼 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
+          </span>
+        </h2>
+        <p class="codex-body cos-jb-lead">
+          <strong>本站給的是「池」，不是任務板的實際內容。</strong>
+          遊戲會從你符合條件的池裡<strong>抽</strong>幾個放上任務板，所以數字一定比你實際看到的多。
+          要看板上實際有什麼，只能在遊戲內（或用 ICE 這類遊戲內插件）。
+        </p>
+        <ul class="codex-body cos-jb-gates">
+          <li><strong>任務分三類</strong>：基礎 231（D/C/B，全部無條件）· 臨時 280（A1/A2/A3）· 緊急 33。
+            看板只放<strong>臨時與緊急</strong>。</li>
+          <li><strong>臨時任務有 184 個是無條件的</strong> —— 隨時在池子裡，不用等視窗。
+            只有 96 個綁時段條件。</li>
+          <li><strong>階級門（離線不可知）</strong> —— 任務板只給你已解鎖階級的任務。
+            右上角「我的階級」填了之後，超過的就不會算進來。</li>
+          <li><strong>緊急還多一層</strong> —— 標 <span class="cos-jb-lead__crit">⚡</span> 的除了條件，
+            還要等伺服器推播緊急事件，那層離線完全算不出來。</li>
+        </ul>
+        <div class="cos-alarm">
+          <label class="codex-switch">
+            <input type="checkbox" class="codex-switch__input" id="al-enabled">
+            <span class="codex-switch__track" aria-hidden="true"></span>
+            <span>條件開啟前通知我</span>
+          </label>
+          <div class="codex-field cos-alarm__lead">
+            <label class="codex-field__label" for="al-lead">提前</label>
+            <select class="codex-select" id="al-lead">
+              <option value="0">開啟當下</option>
+              <option value="1">1 分鐘</option>
+              <option value="3">3 分鐘</option>
+              <option value="5">5 分鐘</option>
+              <option value="10">10 分鐘</option>
+            </select>
+          </div>
+          <p class="codex-small cos-alarm__status" id="al-status">關閉中</p>
+        </div>
+        <div class="cos-jobboard" id="jb-board"></div>
+        <p class="cos-jb-foot" id="jb-foot"></p>
+      </section>
+
+      <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
+        <span class="codex-hud" aria-hidden="true"></span>
+        <h2 class="codex-h2 cos-panel__title">
+          特殊天氣預報
+          <span class="codex-help-trigger" data-help="只列月塵與靈風。晴朗佔 70%、而且沒有任何任務綁它，整片列出來只會稀釋重點。｜天氣＝unix 時間的純函數，全繁中服 7 個伺服器同一秒看到的天氣完全相同，可推算到任意未來。｜每段固定 23 分 20 秒（＝8 艾歐澤亞小時）。｜這一欄是**必然**的：時間到了天氣就是那樣。任務會不會出現是另一回事。">
+            怎麼算的 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
+          </span>
+        </h2>
+        <div class="codex-table-wrap cos-tablewrap">
+          <table class="codex-table codex-table--fixed codex-table--zebra codex-table--sticky" id="fc-timeline">
+            <thead>
+              <tr>
+                <th style="width:9%">日期</th>
+                <th class="codex-table__num" style="width:13%">本地時間</th>
+                <th class="codex-table__num" style="width:11%">ET</th>
+                <th style="width:26%">天氣</th>
+                <th class="codex-table__num" style="width:20%">天候任務</th>
+                <th class="codex-table__num" style="width:21%">距離現在</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
+        <span class="codex-hud" aria-hidden="true"></span>
+        <h2 class="codex-h2 cos-panel__title">哪些全服一樣、哪些每台不一樣</h2>
+        <p class="codex-body">
+          <strong>全服完全一樣（可證明）</strong>：天氣。演算法的輸入<strong>只有 unix 時間</strong>，
+          沒有任何伺服器參數 —— 伊弗利特與利維坦在同一秒看到的天氣必然相同。
+          本站的天氣時間軸與條件倒數因此不需要選伺服器。
+        </p>
+        <p class="codex-body">
+          <strong>每台伺服器各自不同</strong>：
+        </p>
+        <ul class="codex-body cos-serverdiff">
+          <li><strong>月門基地開發階段</strong> —— client 內有 134 個建設階段
+            （一級→二級→三級基地、宇宙快線內環／西北／東南／西南線、隧道、機庫、宇宙港、發電站、升降梯…），
+            每個伺服器<strong>各自累積進度</strong>。這是你在不同伺服器看到「狀態不一樣」最主要的來源。</li>
+          <li><strong>緊急事件</strong>（磁暴／流星雨／孢子霧）—— 伺服器推播，每個實例各自計時。</li>
+          <li><strong>任務板實際內容</strong> —— 條件表原名帶 <em>Lottery</em>（抽選），條件成立只是取得資格。</li>
+        </ul>
+        <p class="codex-body">
+          緊急事件那三種天氣<strong>不在渴望灣的天氣機率表裡</strong>——掃過 client 全部 172 張天氣表，
+          這四個天氣 id 一個都沒出現，代表時間演算法<strong>永遠不會</strong>擲出它們。
+          所以本站只做算得準的部分，並標出必要條件視窗（靈風時段）。
+        </p>
+        <p class="codex-body cos-caveat">
+          ⚠️ <strong>尚未確認</strong>：開發階段會不會影響「哪些任務出得來」。
+          掃過任務表所有未定性欄位，唯一像分組鍵的那欄是<strong>按職業三人組分群</strong>
+          （鍛造／甲冑／金工一組、木工／皮革／裁縫一組），不是開發階段。
+          沒有證據，也沒有反證 —— 待遊戲內核對。
+        </p>
+      </section>
+    </section>
+
+    <!-- ══ 分頁二：任務清單 ══ -->
+    <section id="panel-missions" role="tabpanel" aria-labelledby="tab-missions" tabindex="0" hidden>
+      <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
+        <span class="codex-hud" aria-hidden="true"></span>
+        <div class="cos-filters">
+          <div class="codex-field cos-filter">
+            <label class="codex-field__label" for="mv-search">搜尋任務或素材</label>
+            <input class="codex-input" id="mv-search" type="search" autocomplete="off">
+          </div>
+          <div class="cos-filter">
+            <span class="codex-field__label">任務類型</span>
+            <div class="cos-chips" id="mv-classes"></div>
+          </div>
+          <div class="cos-filter">
+            <span class="codex-field__label">職業</span>
+            <div class="cos-chips" id="mv-jobs"></div>
+          </div>
+          <div class="cos-filter">
+            <span class="codex-field__label">難度</span>
+            <div class="cos-chips" id="mv-ranks"></div>
+          </div>
+          <div class="cos-filter">
+            <span class="codex-field__label">開放條件</span>
+            <div class="cos-chips" id="mv-conds"></div>
+          </div>
+          <div class="cos-filter cos-filter--switches">
+            <label class="codex-switch">
+              <input type="checkbox" class="codex-switch__input" id="mv-available">
+              <span class="codex-switch__track" aria-hidden="true"></span>
+              <span>只看條件成立的</span>
+            </label>
+          </div>
+        </div>
+        <p class="codex-small cos-count">符合筆數：<span id="mv-count">—</span></p>
+      </section>
+
+      <div class="codex-empty cos-hideable" id="mv-empty" hidden>
+        <div class="codex-empty__icon" aria-hidden="true">🔍</div>
+        <div>沒有符合的任務 — 取消幾個篩選條件再試</div>
+      </div>
+
+      <div class="codex-table-wrap cos-tablewrap">
+        <table class="codex-table codex-table--fixed codex-table--zebra codex-table--sticky" id="mv-table">
+          <thead>
+            <tr>
+              <th style="width:20%">任務</th>
+              <th style="width:6%">類型</th>
+              <th style="width:9%">職業</th>
+              <th class="codex-table__num" style="width:6%">難度</th>
+              <th class="codex-table__num" style="width:7%">時限</th>
+              <th style="width:16%">開放條件</th>
+              <th style="width:18%">需求物</th>
+              <th class="codex-table__num" style="width:10%">
+                宇宙 / 月球
+              </th>
+              <th style="width:8%">條件</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══ 分頁三：宇宙工具 ══ -->
+    <section id="panel-tools" role="tabpanel" aria-labelledby="tab-tools" tabindex="0" hidden>
+      <p class="codex-body cos-panel__lead" id="tv-summary"></p>
+      <div class="cos-chains" id="tv-list"></div>
+    </section>
+
+    <!-- ══ 分頁四：月門基地開發進度 ══ -->
+    <section id="panel-dev" role="tabpanel" aria-labelledby="tab-dev" tabindex="0" hidden>
+      <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
+        <span class="codex-hud" aria-hidden="true"></span>
+        <h2 class="codex-h2 cos-panel__title">
+          月門基地開發進度
+          <span class="codex-help-trigger" data-help="16 期開拓紀錄與 63 個施工階段是從 client 解出來的，全服共用同一套流程。｜但「你的伺服器現在在第幾期」是伺服器狀態，離線算不出來 —— 必須你自己填（遊戲內開拓紀錄看得到）。｜每個伺服器各自累積進度，所以分開記。">
+            資料哪來的 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
+          </span>
+        </h2>
+        <p class="codex-body cos-ds-lead">
+          <strong>查得到的</strong>：16 期開拓紀錄、63 個施工階段、每期之間要經過哪些工程 — 全服共用同一套流程。
+          <br>
+          <strong>查不到的</strong>：你的伺服器現在在第幾期 —— 那是伺服器狀態，離線算不出來，請自己填一次。
+        </p>
+        <div class="cos-ds-picker">
+          <div class="codex-field">
+            <label class="codex-field__label" for="ds-world">伺服器</label>
+            <select class="codex-select" id="ds-world"></select>
+          </div>
+          <div class="codex-field">
+            <label class="codex-field__label" for="ds-phase">目前期數（遊戲內開拓紀錄）</label>
+            <select class="codex-select" id="ds-phase"></select>
+          </div>
+        </div>
+      </section>
+
+      <div class="cos-stats" id="ds-summary"></div>
+      <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel" id="ds-list"></section>
+    </section>
+
+    <footer class="cos-footer">
+      <p class="codex-small">
+        資料來源：FFXIV 台服 client <span id="meta-client">—</span>（產生於 <span id="meta-generated">—</span>）。
+        天氣為時間函數、全伺服器同步；緊急任務為伺服器端狀態，本站不提供。
+      </p>
+    </footer>
+  </main>
+</body>
+</html>

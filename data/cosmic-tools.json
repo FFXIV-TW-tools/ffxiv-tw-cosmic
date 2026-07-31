@@ -1,0 +1,483 @@
+{
+  "meta": {
+    "clientVersion": "2026.07.22.0000.0000",
+    "generatedAt": "2026-07-31T06:43:15Z",
+    "generator": "tools/cosmic-dump"
+  },
+  "_note": "宇宙工具升級鏈：原型 v0.1→v0.8→成品共 9 階。unreleasedStages ＝台服尚未實裝的後續階數（名稱在 client 內為空）。",
+  "chains": [
+    {
+      "jobId": 8,
+      "job": "木工師",
+      "stages": [
+        {
+          "itemId": 45591,
+          "name": "原型宇宙手鋸v0.1"
+        },
+        {
+          "itemId": 45602,
+          "name": "原型宇宙手鋸v0.2"
+        },
+        {
+          "itemId": 45613,
+          "name": "原型宇宙手鋸v0.3"
+        },
+        {
+          "itemId": 45624,
+          "name": "原型宇宙手鋸v0.4"
+        },
+        {
+          "itemId": 45635,
+          "name": "原型宇宙手鋸v0.5"
+        },
+        {
+          "itemId": 45646,
+          "name": "原型宇宙手鋸v0.6"
+        },
+        {
+          "itemId": 45657,
+          "name": "原型宇宙手鋸v0.7"
+        },
+        {
+          "itemId": 45668,
+          "name": "原型宇宙手鋸v0.8"
+        },
+        {
+          "itemId": 45679,
+          "name": "宇宙手鋸"
+        }
+      ],
+      "unreleasedStages": 5
+    },
+    {
+      "jobId": 9,
+      "job": "鍛造師",
+      "stages": [
+        {
+          "itemId": 45592,
+          "name": "原型宇宙橫頭錘v0.1"
+        },
+        {
+          "itemId": 45603,
+          "name": "原型宇宙橫頭錘v0.2"
+        },
+        {
+          "itemId": 45614,
+          "name": "原型宇宙橫頭錘v0.3"
+        },
+        {
+          "itemId": 45625,
+          "name": "原型宇宙橫頭錘v0.4"
+        },
+        {
+          "itemId": 45636,
+          "name": "原型宇宙橫頭錘v0.5"
+        },
+        {
+          "itemId": 45647,
+          "name": "原型宇宙橫頭錘v0.6"
+        },
+        {
+          "itemId": 45658,
+          "name": "原型宇宙橫頭錘v0.7"
+        },
+        {
+          "itemId": 45669,
+          "name": "原型宇宙橫頭錘v0.8"
+        },
+        {
+          "itemId": 45680,
+          "name": "宇宙橫頭錘"
+        }
+      ],
+      "unreleasedStages": 5
+    },
+    {
+      "jobId": 10,
+      "job": "甲冑師",
+      "stages": [
+        {
+          "itemId": 45593,
+          "name": "原型宇宙圓頭錘v0.1"
+        },
+        {
+          "itemId": 45604,
+          "name": "原型宇宙圓頭錘v0.2"
+        },
+        {
+          "itemId": 45615,
+          "name": "原型宇宙圓頭錘v0.3"
+        },
+        {
+          "itemId": 45626,
+          "name": "原型宇宙圓頭錘v0.4"
+        },
+        {
+          "itemId": 45637,
+          "name": "原型宇宙圓頭錘v0.5"
+        },
+        {
+          "itemId": 45648,
+          "name": "原型宇宙圓頭錘v0.6"
+        },
+        {
+          "itemId": 45659,
+          "name": "原型宇宙圓頭錘v0.7"
+        },
+        {
+          "itemId": 45670,
+          "name": "原型宇宙圓頭錘v0.8"
+        },
+        {
+          "itemId": 45681,
+          "name": "宇宙圓頭錘"
+        }
+      ],
+      "unreleasedStages": 5
+    },
+    {
+      "jobId": 11,
+      "job": "金工師",
+      "stages": [
+        {
+          "itemId": 45594,
+          "name": "原型宇宙工藝錘v0.1"
+        },
+        {
+          "itemId": 45605,
+          "name": "原型宇宙工藝錘v0.2"
+        },
+        {
+          "itemId": 45616,
+          "name": "原型宇宙工藝錘v0.3"
+        },
+        {
+          "itemId": 45627,
+          "name": "原型宇宙工藝錘v0.4"
+        },
+        {
+          "itemId": 45638,
+          "name": "原型宇宙工藝錘v0.5"
+        },
+        {
+          "itemId": 45649,
+          "name": "原型宇宙工藝錘v0.6"
+        },
+        {
+          "itemId": 45660,
+          "name": "原型宇宙工藝錘v0.7"
+        },
+        {
+          "itemId": 45671,
+          "name": "原型宇宙工藝錘v0.8"
+        },
+        {
+          "itemId": 45682,
+          "name": "宇宙工藝錘"
+        }
+      ],
+      "unreleasedStages": 5
+    },
+    {
+      "jobId": 12,
+      "job": "皮革師",
+      "stages": [
+        {
+          "itemId": 45595,
+          "name": "原型宇宙圓革刀v0.1"
+        },
+        {
+          "itemId": 45606,
+          "name": "原型宇宙圓革刀v0.2"
+        },
+        {
+          "itemId": 45617,
+          "name": "原型宇宙圓革刀v0.3"
+        },
+        {
+          "itemId": 45628,
+          "name": "原型宇宙圓革刀v0.4"
+        },
+        {
+          "itemId": 45639,
+          "name": "原型宇宙圓革刀v0.5"
+        },
+        {
+          "itemId": 45650,
+          "name": "原型宇宙圓革刀v0.6"
+        },
+        {
+          "itemId": 45661,
+          "name": "原型宇宙圓革刀v0.7"
+        },
+        {
+          "itemId": 45672,
+          "name": "原型宇宙圓革刀v0.8"
+        },
+        {
+          "itemId": 45683,
+          "name": "宇宙圓革刀"
+        }
+      ],
+      "unreleasedStages": 5
+    },
+    {
+      "jobId": 13,
+      "job": "裁縫師",
+      "stages": [
+        {
+          "itemId": 45596,
+          "name": "原型宇宙縫針v0.1"
+        },
+        {
+          "itemId": 45607,
+          "name": "原型宇宙縫針v0.2"
+        },
+        {
+          "itemId": 45618,
+          "name": "原型宇宙縫針v0.3"
+        },
+        {
+          "itemId": 45629,
+          "name": "原型宇宙縫針v0.4"
+        },
+        {
+          "itemId": 45640,
+          "name": "原型宇宙縫針v0.5"
+        },
+        {
+          "itemId": 45651,
+          "name": "原型宇宙縫針v0.6"
+        },
+        {
+          "itemId": 45662,
+          "name": "原型宇宙縫針v0.7"
+        },
+        {
+          "itemId": 45673,
+          "name": "原型宇宙縫針v0.8"
+        },
+        {
+          "itemId": 45684,
+          "name": "宇宙縫針"
+        }
+      ],
+      "unreleasedStages": 5
+    },
+    {
+      "jobId": 14,
+      "job": "鍊金術師",
+      "stages": [
+        {
+          "itemId": 45597,
+          "name": "原型宇宙蒸餾器v0.1"
+        },
+        {
+          "itemId": 45608,
+          "name": "原型宇宙蒸餾器v0.2"
+        },
+        {
+          "itemId": 45619,
+          "name": "原型宇宙蒸餾器v0.3"
+        },
+        {
+          "itemId": 45630,
+          "name": "原型宇宙蒸餾器v0.4"
+        },
+        {
+          "itemId": 45641,
+          "name": "原型宇宙蒸餾器v0.5"
+        },
+        {
+          "itemId": 45652,
+          "name": "原型宇宙蒸餾器v0.6"
+        },
+        {
+          "itemId": 45663,
+          "name": "原型宇宙蒸餾器v0.7"
+        },
+        {
+          "itemId": 45674,
+          "name": "原型宇宙蒸餾器v0.8"
+        },
+        {
+          "itemId": 45685,
+          "name": "宇宙蒸餾器"
+        }
+      ],
+      "unreleasedStages": 5
+    },
+    {
+      "jobId": 15,
+      "job": "烹調師",
+      "stages": [
+        {
+          "itemId": 45598,
+          "name": "原型宇宙煎鍋v0.1"
+        },
+        {
+          "itemId": 45609,
+          "name": "原型宇宙煎鍋v0.2"
+        },
+        {
+          "itemId": 45620,
+          "name": "原型宇宙煎鍋v0.3"
+        },
+        {
+          "itemId": 45631,
+          "name": "原型宇宙煎鍋v0.4"
+        },
+        {
+          "itemId": 45642,
+          "name": "原型宇宙煎鍋v0.5"
+        },
+        {
+          "itemId": 45653,
+          "name": "原型宇宙煎鍋v0.6"
+        },
+        {
+          "itemId": 45664,
+          "name": "原型宇宙煎鍋v0.7"
+        },
+        {
+          "itemId": 45675,
+          "name": "原型宇宙煎鍋v0.8"
+        },
+        {
+          "itemId": 45686,
+          "name": "宇宙煎鍋"
+        }
+      ],
+      "unreleasedStages": 5
+    },
+    {
+      "jobId": 16,
+      "job": "採掘師",
+      "stages": [
+        {
+          "itemId": 45599,
+          "name": "原型宇宙十字鎬v0.1"
+        },
+        {
+          "itemId": 45610,
+          "name": "原型宇宙十字鎬v0.2"
+        },
+        {
+          "itemId": 45621,
+          "name": "原型宇宙十字鎬v0.3"
+        },
+        {
+          "itemId": 45632,
+          "name": "原型宇宙十字鎬v0.4"
+        },
+        {
+          "itemId": 45643,
+          "name": "原型宇宙十字鎬v0.5"
+        },
+        {
+          "itemId": 45654,
+          "name": "原型宇宙十字鎬v0.6"
+        },
+        {
+          "itemId": 45665,
+          "name": "原型宇宙十字鎬v0.7"
+        },
+        {
+          "itemId": 45676,
+          "name": "原型宇宙十字鎬v0.8"
+        },
+        {
+          "itemId": 45687,
+          "name": "宇宙十字鎬"
+        }
+      ],
+      "unreleasedStages": 5
+    },
+    {
+      "jobId": 17,
+      "job": "園藝師",
+      "stages": [
+        {
+          "itemId": 45600,
+          "name": "原型宇宙手斧v0.1"
+        },
+        {
+          "itemId": 45611,
+          "name": "原型宇宙手斧v0.2"
+        },
+        {
+          "itemId": 45622,
+          "name": "原型宇宙手斧v0.3"
+        },
+        {
+          "itemId": 45633,
+          "name": "原型宇宙手斧v0.4"
+        },
+        {
+          "itemId": 45644,
+          "name": "原型宇宙手斧v0.5"
+        },
+        {
+          "itemId": 45655,
+          "name": "原型宇宙手斧v0.6"
+        },
+        {
+          "itemId": 45666,
+          "name": "原型宇宙手斧v0.7"
+        },
+        {
+          "itemId": 45677,
+          "name": "原型宇宙手斧v0.8"
+        },
+        {
+          "itemId": 45688,
+          "name": "宇宙手斧"
+        }
+      ],
+      "unreleasedStages": 5
+    },
+    {
+      "jobId": 18,
+      "job": "漁師",
+      "stages": [
+        {
+          "itemId": 45601,
+          "name": "原型宇宙釣竿v0.1"
+        },
+        {
+          "itemId": 45612,
+          "name": "原型宇宙釣竿v0.2"
+        },
+        {
+          "itemId": 45623,
+          "name": "原型宇宙釣竿v0.3"
+        },
+        {
+          "itemId": 45634,
+          "name": "原型宇宙釣竿v0.4"
+        },
+        {
+          "itemId": 45645,
+          "name": "原型宇宙釣竿v0.5"
+        },
+        {
+          "itemId": 45656,
+          "name": "原型宇宙釣竿v0.6"
+        },
+        {
+          "itemId": 45667,
+          "name": "原型宇宙釣竿v0.7"
+        },
+        {
+          "itemId": 45678,
+          "name": "原型宇宙釣竿v0.8"
+        },
+        {
+          "itemId": 45689,
+          "name": "宇宙釣竿"
+        }
+      ],
+      "unreleasedStages": 5
+    }
+  ]
+}

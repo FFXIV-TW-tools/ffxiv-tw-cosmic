@@ -1,0 +1,454 @@
+/* 宇宙探索 — 工具本地樣式。
+ *
+ * 只處理**版面**（grid / flex / 間距）。顏色、字級、元件外觀一律交給 portal 的
+ * tokens.css + header.css（`.codex-*`）——本檔不定義也不覆寫任何 .codex-* 根 selector。
+ * 私有 class 一律 `cos-` 前綴（ds-manifest 的 canonical slug）。
+ */
+
+* { box-sizing: border-box; }
+
+:root {
+  --accent:      var(--color-accent-cyan, #4ec9d0);
+  --accent-soft: var(--color-accent-cyan-soft, rgba(78, 201, 208, 0.18));
+}
+
+html, body { margin: 0; }
+
+body {
+  font-family: var(--font-sans, "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif);
+  background:
+    var(--pattern-overlay),
+    var(--pattern-scanline),
+    var(--gradient-body, linear-gradient(180deg, #03060c 0%, #070b12 50%, #03060c 100%));
+  color: var(--color-text, #f5f5f5);
+  min-height: 100vh;
+  /* CLS 鐵則：同源先預留 portal fixed navbar，消跨域 header.css 晚到的下推位移。
+     body 不放水平 padding —— .page-header 是 body 直接子層，會被內縮。 */
+  padding-top: 64px;
+}
+
+/* 版心用共用的 .codex-container（max-width + 置中已在那裡），本地只補左右留白與底部間距。
+   ⚠ body 不放水平 padding —— .page-header 是 body 直接子層，會被一起內縮。 */
+.cos-main {
+  padding-inline: var(--space-4, 16px);
+  padding-bottom: var(--space-8, 48px);
+}
+
+/* portal 的 `.codex-empty` 設了 `display:flex`，會蓋過 UA 的 `[hidden]{display:none}`
+ * ——header.css 的集中 [hidden] 守衛只涵蓋 btn / chip / icon-btn / modal-overlay / help-pop，
+ * 不含 empty。用工具自有 class 補（特異度 0,2,0 > .codex-empty 的 0,1,0，不必 !important，
+ * 也不觸碰 .codex-* 根 selector）。已記 docs/BACKLOG.md B-002 提報 portal 收進集中守衛。 */
+.cos-hideable[hidden] { display: none; }
+
+.cos-header-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+}
+
+/* 分頁面板：tabs 與內容之間留一段，避免面板邊框貼著分頁列 */
+[role="tabpanel"] { padding-top: var(--space-4, 16px); }
+[role="tabpanel"]:focus-visible { outline-offset: var(--space-1, 4px); }
+
+.cos-panel { margin-top: var(--space-4, 16px); }
+.cos-panel__title { margin: 0 0 var(--space-3, 12px); }
+.cos-panel__lead { margin: 0 0 var(--space-4, 16px); }
+.cos-panel p { margin: 0 0 var(--space-2, 8px); }
+.cos-panel p:last-child { margin-bottom: 0; }
+
+/* ── 天氣現況三格 ─────────────────────────────────────────── */
+.cos-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-3, 12px);
+  /* JS 填入前先撐住高度，避免空→滿把下方金色高亮往下推（CLS 鐵則） */
+  min-height: 104px;
+}
+
+.cos-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+  border: 1px solid var(--color-border, #2b3f56);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface, #101824);
+}
+
+.cos-stat__value { margin: 0; }
+.cos-stat__note { color: var(--color-text-muted, #c0c9da); }
+
+/* ── 靈風視窗高亮（全頁唯一金色，見設計系統用量上限）──────── */
+.cos-highlight {
+  margin-top: var(--space-3, 12px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+  /* 兩種狀態（進行中／倒數）文案長度不同，預留高度免得每 23 分跳一次版 */
+  min-height: 72px;
+  justify-content: center;
+}
+
+.cos-highlight__title { margin: 0; }
+
+/* ── 時間軸表 ─────────────────────────────────────────────── */
+#fc-timeline .is-current {
+  background: var(--accent-soft);
+}
+
+#fc-timeline .cos-col-date {
+  color: var(--color-text-muted, #c0c9da);
+}
+
+/* 不覆寫 .codex-table-wrap 本身（design-lint R5 禁動 .codex-* 根 selector）——
+   間距掛在同一個節點上的自有 class */
+.cos-tablewrap { margin-top: var(--space-3, 12px); }
+
+/* ── 任務篩選 ─────────────────────────────────────────────── */
+.cos-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-4, 16px);
+  align-items: start;
+}
+
+.cos-filter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 8px);
+  min-width: 0;
+}
+
+.cos-filter--switches {
+  gap: var(--space-3, 12px);
+  justify-content: flex-end;
+}
+
+.cos-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1, 4px);
+}
+
+.cos-count {
+  margin: var(--space-4, 16px) 0 0;
+  color: var(--color-text-muted, #c0c9da);
+}
+
+.cos-more {
+  text-align: center;
+  color: var(--color-text-muted, #c0c9da);
+  padding: var(--space-3, 12px);
+}
+
+/* ── 宇宙工具鏈 ───────────────────────────────────────────── */
+.cos-chains {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4, 16px);
+}
+
+.cos-chain { margin: 0; }
+.cos-chain__title { margin: 0 0 var(--space-3, 12px); }
+.cos-chain__goal { display: block; }
+
+.cos-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+}
+
+.cos-step {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2, 8px);
+}
+
+/* 圖示＋文字並排鐵則：階級標固定寬不壓縮，名稱可縮並截斷 */
+.cos-step__n {
+  flex: 0 0 auto;
+  width: 3.2em;
+}
+
+.cos-step__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cos-step--locked .cos-step__name { color: var(--color-text-muted, #c0c9da); }
+
+/* ── footer ───────────────────────────────────────────────── */
+.cos-footer {
+  margin-top: var(--space-6, 32px);
+  padding-top: var(--space-4, 16px);
+  border-top: 1px solid var(--color-border, #2b3f56);
+}
+
+.cos-footer p {
+  margin: 0;
+  color: var(--color-text-muted, #c0c9da);
+}
+
+/* ── 窄螢幕 ───────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  body { padding-top: 64px; }   /* 重置也要補回，否則被 fixed navbar 蓋住 */
+  .cos-filters { grid-template-columns: 1fr; }
+}
+
+/* ── 職業偏好選擇器（page-header 內）───────────────────────── */
+/* `.page-header` 同時是工具列，但控制項高度必須 ≤ 38px —— 超過就撐高整條標題列，
+ * 等於白搬（設計系統 §.page-header 是工具列）。`.codex-accordion > summary` 預設
+ * padding 12/16 會做出 45px，故在**本實例上**壓回 38px（scoped 覆寫，不動共用根 selector）。 */
+.cos-jobpick { border: none; background: none; }
+
+.cos-jobpick > summary.cos-jobpick__summary {
+  min-height: 38px;
+  padding-block: 0;
+  padding-inline: var(--space-3, 12px);
+  align-items: center;
+  cursor: pointer;
+  white-space: nowrap;
+  max-width: 22em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cos-jobpick__body {
+  position: absolute;
+  right: var(--space-4, 16px);
+  z-index: var(--z-dropdown, 100);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1, 4px);
+  max-width: 22em;
+  padding: var(--space-3, 12px);
+  border: 1px solid var(--color-border, #2b3f56);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-bg-deep, #03060c);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+}
+
+/* ── 時間軸的職業 chip 欄 ─────────────────────────────────── */
+.cos-col-jobs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1, 4px);
+  align-items: center;
+}
+
+/* ── 職業倒數看板（主畫面）───────────────────────────────── */
+.cos-jobboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-2, 8px);
+  /* 11 張卡在 1920 下是 2 列；先撐住高度免得 JS 填入時把下方時間軸往下推（CLS 鐵則） */
+  min-height: 230px;
+}
+
+/* 整張卡可點：用 button 保鍵盤可達，外觀壓回卡片（非按鈕感） */
+.cos-jc {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-1, 4px);
+  padding: var(--space-3, 12px);
+  border: 1px solid var(--color-border, #2b3f56);
+  border-left: 3px solid var(--color-border, #2b3f56);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface, #101824);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--transition-fast, 0.15s), border-color var(--transition-fast, 0.15s);
+}
+
+.cos-jc:hover {
+  background: var(--color-surface-hover, #18222f);
+  border-color: var(--accent);
+}
+
+/* 現在可做＝左緣綠條，語意用顏色**加**文字雙載（不讓顏色當唯一資訊載體） */
+.cos-jc.is-open { border-left-color: var(--color-success, #7dd87d); }
+
+.cos-jc__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  min-width: 0;
+}
+
+.cos-jc__icon {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-xs, 4px);
+}
+
+.cos-jc__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--fw-semibold, 600);
+}
+
+.cos-jc__eta {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.cos-jc.is-open .cos-jc__eta { color: var(--color-success, #7dd87d); }
+.cos-jc__eta.is-none { color: var(--color-text-muted, #c0c9da); }
+
+.cos-jc__kind { font-weight: var(--fw-semibold, 600); }
+.cos-jc__cond { color: var(--color-text-muted, #c0c9da); }
+
+.cos-jb-foot { margin: var(--space-3, 12px) 0 0; }
+
+/* 緊急任務的額外不確定性提示：條件之外還要伺服器事件，不與其他類型同色同權重 */
+.cos-jc__crit {
+  color: var(--color-warn, #e8a45a);
+  border-top: 1px dashed var(--color-border, #2b3f56);
+  padding-top: var(--space-1, 4px);
+  margin-top: var(--space-1, 4px);
+}
+
+/* 看板前的定調文字：把「必然／不必然」講在最前面，不讓使用者從卡片自己推 */
+.cos-jb-lead {
+  margin: 0 0 var(--space-3, 12px);
+  padding: var(--space-3, 12px);
+  border-left: 3px solid var(--color-border, #2b3f56);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--color-surface, #101824);
+}
+
+.cos-jb-lead__crit { color: var(--color-warn, #e8a45a); }
+
+/* 全服一樣 vs 每台不同 的說明清單 */
+.cos-serverdiff {
+  margin: 0 0 var(--space-2, 8px);
+  padding-left: var(--space-5, 24px);
+}
+
+.cos-serverdiff li { margin-bottom: var(--space-1, 4px); }
+
+/* 未確認事項：與已證實的敘述視覺分離，不讓人當成結論 */
+.cos-caveat {
+  margin-top: var(--space-3, 12px);
+  padding: var(--space-3, 12px);
+  border-left: 3px solid var(--color-warn, #e8a45a);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--color-surface, #101824);
+}
+
+/* ── 基地進度 ─────────────────────────────────────────────── */
+.cos-ds-lead {
+  margin: 0 0 var(--space-3, 12px);
+  padding: var(--space-3, 12px);
+  border-left: 3px solid var(--color-border, #2b3f56);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--color-bg-deep, #03060c);
+}
+
+.cos-ds-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-3, 12px);
+}
+
+.cos-ds-title { margin: 0 0 var(--space-3, 12px); }
+
+.cos-ds-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+  counter-reset: cos-ds;
+}
+
+.cos-ds-step {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2, 8px);
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  border-left: 3px solid var(--color-border, #2b3f56);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--color-surface, #101824);
+}
+
+/* 竣工節點＝該期的里程碑，用左緣色條標出來（顏色之外仍有「竣工」字樣，不靠顏色單載） */
+.cos-ds-step.is-milestone { border-left-color: var(--accent); }
+
+.cos-ds-step__title {
+  flex: 1;
+  min-width: 0;
+}
+
+.cos-ds-step__grade {
+  flex: 0 0 auto;
+  color: var(--color-text-muted, #c0c9da);
+}
+
+/* ── 條件開啟鬧鐘 ─────────────────────────────────────────── */
+.cos-alarm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  margin-bottom: var(--space-3, 12px);
+  padding: var(--space-3, 12px);
+  border: 1px solid var(--color-border, #2b3f56);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface, #101824);
+}
+
+.cos-alarm__lead {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2, 8px);
+}
+
+/* 狀態行吃整列剩餘寬：它要講「分頁需保持開啟」這種必讀資訊，不能被擠掉 */
+.cos-alarm__status {
+  flex: 1 1 100%;
+  margin: 0;
+  color: var(--color-text-muted, #c0c9da);
+}
+
+/* 四道門的說明：條件倒數只是其中一道，版面上要跟倒數本身分開 */
+.cos-jb-gates {
+  margin: 0 0 var(--space-3, 12px);
+  padding: var(--space-3, 12px) var(--space-3, 12px) var(--space-3, 12px) var(--space-6, 32px);
+  border-left: 3px solid var(--color-warn, #e8a45a);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--color-surface, #101824);
+}
+
+.cos-jb-gates li { margin-bottom: var(--space-1, 4px); }
+.cos-jb-gates li:last-child { margin-bottom: 0; }
+
+/* 標題列的階級選擇器：控制項高度必須 ≤ 38px，否則撐高整條標題列 */
+.cos-rankpick {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+}
+
+.cos-rankpick .codex-select { width: auto; }
+
+/* 未驗證的時段解讀：與已證實的天氣視窗視覺分離，不能長得一樣可信 */
+.cos-jc__unverified {
+  color: var(--color-warn, #e8a45a);
+  border-top: 1px dashed var(--color-border, #2b3f56);
+  padding-top: var(--space-1, 4px);
+  margin-top: var(--space-1, 4px);
+}

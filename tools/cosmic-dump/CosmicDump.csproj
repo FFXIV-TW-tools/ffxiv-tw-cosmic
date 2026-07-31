@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>cosmic-dump</AssemblyName>
+    <RootNamespace>CosmicDump</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!-- 版本配對同 monorepo tools/tc-datamine-dump：Lumina.Excel 7.5.0 要求 Lumina >= 7.6.0，
+       而 Lumina 7.6.x 只支援 net10.0。不可改用 Dalamud Injector 目錄的 Lumina.dll
+       （standalone 執行時 assembly binding 找不到 Lumina 6.0.0.0）。 -->
+  <ItemGroup>
+    <PackageReference Include="Lumina" Version="7.6.1" />
+    <PackageReference Include="Lumina.Excel" Version="7.5.0" />
+  </ItemGroup>
+
+  <!-- 🔒 DRY：台服欄位索引表**不在本 repo 複製一份**，直接編譯 ICE fork 內那份唯一定義。
+       那份的反解依據寫在 XIVpluginsDev/docs/plans/2026-07-30-P005-ice-cosmic-tc-fork-plan.md §1，
+       且有 tools/tc-sheet-verify 一鍵重驗；抄第二份＝台服改版後兩邊各自漂移。
+
+       本產生器是**本機 dev 工具**（本來就需要遊戲 client，無法在 CI 跑），
+       故依賴本機路徑可接受；產出的 data/*.json 已 commit，網站本身零依賴。
+       換機或路徑不同：-p:IceSheetsDir=<ICE-Dev/ICE/Utilities/TcSheets 的絕對路徑> -->
+  <PropertyGroup>
+    <IceSheetsDir Condition="'$(IceSheetsDir)' == ''">C:\FFXIVProject\XIVpluginsDev\ICE-Dev\ICE\Utilities\TcSheets</IceSheetsDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(IceSheetsDir)\TcMissionUnit.cs" />
+    <Compile Include="$(IceSheetsDir)\TcMissionToDo.cs" />
+    <Compile Include="$(IceSheetsDir)\TcMissionReward.cs" />
+  </ItemGroup>
+
+  <Target Name="CheckIceSheets" BeforeTargets="BeforeBuild">
+    <Error Condition="!Exists('$(IceSheetsDir)\TcMissionUnit.cs')"
+           Text="找不到 ICE 欄位定義：$(IceSheetsDir)。用 -p:IceSheetsDir=&lt;路徑&gt; 指定（見本 csproj 註解）。" />
+  </Target>
+
+</Project>

@@ -1,0 +1,542 @@
+{
+  "meta": {
+    "clientVersion": "2026.07.22.0000.0000",
+    "generatedAt": "2026-07-31T06:43:15Z",
+    "generator": "tools/cosmic-dump"
+  },
+  "_note": "月門基地開發階段。client 只有「有哪些階段」；「你的伺服器在第幾期」是伺服器狀態、離線不可知，需使用者自行輸入。",
+  "worlds": [
+    "伊弗利特",
+    "迦樓羅",
+    "利維坦",
+    "巴哈姆特",
+    "奧汀",
+    "泰坦",
+    "鳳凰"
+  ],
+  "phases": [
+    {
+      "phase": 1,
+      "title": "宇宙探索計畫的開始",
+      "fromStage": 0
+    },
+    {
+      "phase": 2,
+      "title": "擴建月門基地",
+      "fromStage": 4
+    },
+    {
+      "phase": 3,
+      "title": "初次開通宇宙快線",
+      "fromStage": 8
+    },
+    {
+      "phase": 4,
+      "title": "居住艙和宇宙港竣工",
+      "fromStage": 14
+    },
+    {
+      "phase": 5,
+      "title": "改良機庫",
+      "fromStage": 18
+    },
+    {
+      "phase": 6,
+      "title": "宇宙快線向西北區域延伸",
+      "fromStage": 21
+    },
+    {
+      "phase": 7,
+      "title": "宇宙快線向東南區域延伸",
+      "fromStage": 24
+    },
+    {
+      "phase": 8,
+      "title": "穿行威隧道開通",
+      "fromStage": 30
+    },
+    {
+      "phase": 9,
+      "title": "宇宙快線向隧道內部區域延伸",
+      "fromStage": 33
+    },
+    {
+      "phase": 10,
+      "title": "進一步擴建月門基地",
+      "fromStage": 37
+    },
+    {
+      "phase": 11,
+      "title": "能源與水利設施竣工",
+      "fromStage": 43
+    },
+    {
+      "phase": 12,
+      "title": "機庫和宇宙港完工",
+      "fromStage": 49
+    },
+    {
+      "phase": 13,
+      "title": "開通月底升降梯",
+      "fromStage": 55
+    },
+    {
+      "phase": 14,
+      "title": "宇宙快線向月底延伸",
+      "fromStage": 58
+    },
+    {
+      "phase": 15,
+      "title": "月上跳跳城竣工",
+      "fromStage": 62
+    },
+    {
+      "phase": 16,
+      "title": "對未知群星的憧憬從月球啟航",
+      "fromStage": 62
+    }
+  ],
+  "stages": [
+    {
+      "id": 1,
+      "grade": 0,
+      "seq": 1,
+      "title": "第一次基地擴建工程\u3000物資準備中",
+      "milestone": false
+    },
+    {
+      "id": 2,
+      "grade": 0,
+      "seq": 2,
+      "title": "第一次基地擴建工程\u3000聯合工程準備中",
+      "milestone": false
+    },
+    {
+      "id": 3,
+      "grade": 0,
+      "seq": 3,
+      "title": "第一次基地擴建工程\u3000聯合工程進行中",
+      "milestone": false
+    },
+    {
+      "id": 4,
+      "grade": 1,
+      "seq": 4,
+      "title": "月門基地：二級基地\u3000竣工",
+      "milestone": true
+    },
+    {
+      "id": 5,
+      "grade": 1,
+      "seq": 5,
+      "title": "第一次宇宙快線鋪設工程支援行動\u3000物資收集中",
+      "milestone": false
+    },
+    {
+      "id": 6,
+      "grade": 1,
+      "seq": 6,
+      "title": "第一次宇宙快線鋪設工程支援行動\u3000聯合工程準備中",
+      "milestone": false
+    },
+    {
+      "id": 7,
+      "grade": 1,
+      "seq": 7,
+      "title": "第一次宇宙快線鋪設工程支援行動\u3000聯合工程進行中",
+      "milestone": false
+    },
+    {
+      "id": 8,
+      "grade": 2,
+      "seq": 8,
+      "title": "宇宙快線內環線\u3000竣工",
+      "milestone": true
+    },
+    {
+      "id": 9,
+      "grade": 2,
+      "seq": 9,
+      "title": "居住艙&宇宙港\u3000建設物資準備中",
+      "milestone": false
+    },
+    {
+      "id": 10,
+      "grade": 2,
+      "seq": 10,
+      "title": "居住艙安裝工程支援行動\u3000聯合工程準備中",
+      "milestone": false
+    },
+    {
+      "id": 11,
+      "grade": 2,
+      "seq": 11,
+      "title": "居住艙安裝工程支援行動\u3000聯合工程進行中",
+      "milestone": false
+    },
+    {
+      "id": 12,
+      "grade": 3,
+      "seq": 12,
+      "title": "第一次宇宙港建設工程支援行動\u3000物資準備中",
+      "milestone": false
+    },
+    {
+      "id": 13,
+      "grade": 3,
+      "seq": 12,
+      "title": "第一次宇宙港建設工程支援行動\u3000聯合工程進行中",
+      "milestone": false
+    },
+    {
+      "id": 14,
+      "grade": 4,
+      "seq": 13,
+      "title": "居住艙&宇宙港\u3000竣工",
+      "milestone": true
+    },
+    {
+      "id": 15,
+      "grade": 4,
+      "seq": 14,
+      "title": "第一次機庫擴建工程\u3000物資準備中",
+      "milestone": false
+    },
+    {
+      "id": 16,
+      "grade": 4,
+      "seq": 15,
+      "title": "第一次機庫擴建工程\u3000聯合工程準備中",
+      "milestone": false
+    },
+    {
+      "id": 17,
+      "grade": 4,
+      "seq": 16,
+      "title": "第一次機庫擴建工程\u3000聯合工程進行中",
+      "milestone": false
+    },
+    {
+      "id": 18,
+      "grade": 5,
+      "seq": 17,
+      "title": "二級機庫\u3000竣工",
+      "milestone": true
+    },
+    {
+      "id": 19,
+      "grade": 5,
+      "seq": 18,
+      "title": "第二次宇宙快線鋪設工程\u3000物資準備中",
+      "milestone": false
+    },
+    {
+      "id": 20,
+      "grade": 5,
+      "seq": 18,
+      "title": "第二次宇宙快線鋪設工程\u3000施工中",
+      "milestone": false
+    },
+    {
+      "id": 21,
+      "grade": 6,
+      "seq": 19,
+      "title": "宇宙快線西北線\u3000竣工",
+      "milestone": true
+    },
+    {
+      "id": 22,
+      "grade": 6,
+      "seq": 20,
+      "title": "第三次宇宙快線鋪設工程\u3000物資準備中",
+      "milestone": false
+    },
+    {
+      "id": 23,
+      "grade": 6,
+      "seq": 20,
+      "title": "第三次宇宙快線鋪設工程\u3000施工中",
+      "milestone": false
+    },
+    {
+      "id": 24,
+      "grade": 7,
+      "seq": 21,
+      "title": "宇宙快線東南線\u3000竣工",
+      "milestone": true
+    },
+    {
+      "id": 25,
+      "grade": 7,
+      "seq": 22,
+      "title": "隧道貫通工程施工\u3000物資準備中",
+      "milestone": false
+    },
+    {
+      "id": 26,
+      "grade": 7,
+      "seq": 23,
+      "title": "第一次隧道貫通工程施工\u3000聯合工程準備中",
+      "milestone": false
+    },
+    {
+      "id": 27,
+      "grade": 7,
+      "seq": 24,
+      "title": "第一次隧道貫通工程施工\u3000聯合工程進行中",
+      "milestone": false
+    },
+    {
+      "id": 28,
+      "grade": 8,
+      "seq": 25,
+      "title": "第二次隧道貫通工程施工\u3000聯合工程準備中",
+      "milestone": false
+    },
+    {
+      "id": 29,
+      "grade": 8,
+      "seq": 25,
+      "title": "第二次隧道貫通工程施工\u3000聯合工程進行中",
+      "milestone": false
+    },
+    {
+      "id": 30,
+      "grade": 9,
+      "seq": 26,
+      "title": "穿行威隧道\u3000竣工",
+      "milestone": true
+    },
+    {
+      "id": 31,
+      "grade": 9,
+      "seq": 27,
+      "title": "第四次宇宙快線鋪設工程\u3000物資準備中",
+      "milestone": false
+    },
+    {
+      "id": 32,
+      "grade": 9,
+      "seq": 27,
+      "title": "第四次宇宙快線鋪設工程\u3000施工中",
+      "milestone": false
+    },
+    {
+      "id": 33,
+      "grade": 10,
+      "seq": 28,
+      "title": "宇宙快線西南線\u3000竣工",
+      "milestone": true
+    },
+    {
+      "id": 34,
+      "grade": 10,
+      "seq": 29,
+      "title": "第二次基地擴建工程\u3000物資準備中",
+      "milestone": false
+    },
+    {
+      "id": 35,
+      "grade": 10,
+      "seq": 30,
+      "title": "第二次基地擴建工程\u3000聯合工程準備中",
+      "milestone": false
+    },
+    {
+      "id": 36,
+      "grade": 10,
+      "seq": 31,
+      "title": "第二次基地擴建工程\u3000聯合工程進行中",
+      "milestone": false
+    },
+    {
+      "id": 37,
+      "grade": 11,
+      "seq": 32,
+      "title": "月門基地：三級基地\u3000竣工",
+      "milestone": true
+    },
+    {
+      "id": 38,
+      "grade": 11,
+      "seq": 33,
+      "title": "發電站&供水站\u3000建設物資準備中",
+      "milestone": false
+    },
+    {
+      "id": 39,
+      "grade": 11,
+      "seq": 34,
+      "title": "能源設施擴建工程支援行動\u3000聯合工程準備中",
+      "milestone": false
+    },
+    {
+      "id": 40,
+      "grade": 11,
+      "seq": 35,
+      "title": "能源設施擴建工程支援行動\u3000聯合工程進行中",
+      "milestone": false
+    },
+    {
+      "id": 41,
+      "grade": 12,
+      "seq": 36,
+      "title": "供水設施擴建工程支援行動\u3000聯合工程準備中",
+      "milestone": false
+    },
+    {
+      "id": 42,
+      "grade": 12,
+      "seq": 36,
+      "title": "供水設施擴建工程支援行動\u3000聯合工程進行中",
+      "milestone": false
+    },
+    {
+      "id": 43,
+      "grade": 13,
+      "seq": 37,
+      "title": "發電站&供水站\u3000竣工",
+      "milestone": true
+    },
+    {
+      "id": 44,
+      "grade": 13,
+      "seq": 38,
+      "title": "二級機庫&宇宙港\u3000改建物資準備中",
+      "milestone": false
+    },
+    {
+      "id": 45,
+      "grade": 13,
+      "seq": 39,
+      "title": "第二次機庫擴建工程\u3000聯合工程準備中",
+      "milestone": false
+    },
+    {
+      "id": 46,
+      "grade": 13,
+      "seq": 40,
+      "title": "第二次機庫擴建工程\u3000聯合工程進行中",
+      "milestone": false
+    },
+    {
+      "id": 47,
+      "grade": 14,
+      "seq": 41,
+      "title": "第二次宇宙港建設工程支援行動\u3000聯合工程準備中",
+      "milestone": false
+    },
+    {
+      "id": 48,
+      "grade": 14,
+      "seq": 41,
+      "title": "第二次宇宙港建設工程支援行動\u3000聯合工程進行中",
+      "milestone": false
+    },
+    {
+      "id": 49,
+      "grade": 15,
+      "seq": 42,
+      "title": "三級機庫&二級宇宙港\u3000竣工",
+      "milestone": true
+    },
+    {
+      "id": 50,
+      "grade": 15,
+      "seq": 43,
+      "title": "升降梯建設用地整備工程\u3000物資準備中",
+      "milestone": false
+    },
+    {
+      "id": 51,
+      "grade": 15,
+      "seq": 44,
+      "title": "第一次升降梯建設用地整備工程\u3000聯合工程準備中",
+      "milestone": false
+    },
+    {
+      "id": 52,
+      "grade": 15,
+      "seq": 45,
+      "title": "第一次升降梯建設用地整備工程\u3000聯合工程進行中",
+      "milestone": false
+    },
+    {
+      "id": 53,
+      "grade": 16,
+      "seq": 46,
+      "title": "第二次升降梯建設用地整備工程\u3000聯合工程準備中",
+      "milestone": false
+    },
+    {
+      "id": 54,
+      "grade": 16,
+      "seq": 46,
+      "title": "第二次升降梯建設用地整備工程\u3000聯合工程進行中",
+      "milestone": false
+    },
+    {
+      "id": 55,
+      "grade": 17,
+      "seq": 47,
+      "title": "月底升降梯\u3000竣工",
+      "milestone": true
+    },
+    {
+      "id": 56,
+      "grade": 17,
+      "seq": 48,
+      "title": "第五次宇宙快線鋪設工程\u3000物資準備中",
+      "milestone": false
+    },
+    {
+      "id": 57,
+      "grade": 17,
+      "seq": 48,
+      "title": "第五次宇宙快線鋪設工程\u3000施工中",
+      "milestone": false
+    },
+    {
+      "id": 58,
+      "grade": 18,
+      "seq": 49,
+      "title": "宇宙快線地底線\u3000竣工",
+      "milestone": true
+    },
+    {
+      "id": 59,
+      "grade": 18,
+      "seq": 50,
+      "title": "基地綜合設施擴建工程\u3000物資準備中",
+      "milestone": false
+    },
+    {
+      "id": 60,
+      "grade": 18,
+      "seq": 51,
+      "title": "基地綜合設施擴建工程\u3000聯合工程準備中",
+      "milestone": false
+    },
+    {
+      "id": 61,
+      "grade": 18,
+      "seq": 52,
+      "title": "基地綜合設施擴建工程\u3000聯合工程進行中",
+      "milestone": false
+    },
+    {
+      "id": 62,
+      "grade": 19,
+      "seq": 53,
+      "title": "月門基地：月上跳跳城\u3000竣工",
+      "milestone": true
+    },
+    {
+      "id": 63,
+      "grade": 19,
+      "seq": 54,
+      "title": "月面基地整備計畫\u3000圓滿完成",
+      "milestone": true
+    }
+  ]
+}
