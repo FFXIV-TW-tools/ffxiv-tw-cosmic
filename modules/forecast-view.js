@@ -21,6 +21,34 @@ const PLAIN_WEATHER = '晴朗';
 const SPECIAL_ROWS = 20;
 const SCAN_PERIODS = 200;
 
+/**
+ * 機甲行動的班表：**現實時間**每小時的 :16 / :36 / :56，20 分鐘一班（Owner 2026-08-01）。
+ *
+ * 跟這頁其他東西**不同源**：天氣與 ET 都是 unix 時間的函數、走艾歐澤亞刻度；
+ * 這個直接按現實時鐘的分鐘走 ⇒ 用 `Date` 取**本地**分秒，不要自己拿 unix 秒取模。
+ * 台灣是整點時區，取模剛好也會對；但只要有人在半小時時區（印度／尼泊爾）開這頁就整整差半小時，
+ * 而那種錯沒有任何訊號——畫面照樣在倒數，只是倒到錯的時間。
+ *
+ * **只算下一班、不標「進行中」**：一班持續多久還沒問到，沒有那個數字就寫不出誠實的進行中狀態。
+ */
+const MECH_MINUTES = [16, 36, 56];
+
+/**
+ * 下一班開始的 unix 秒。剛好卡在開始那一秒時回報再下一班（不假裝算得出當班還剩多久）。
+ *
+ * **export 是為了能單獨驗**（本站無 JS 測試 harness，這是唯一的檢查縫）：
+ * `TZ=Asia/Taipei node --input-type=module -e "import {nextMechAt} from './modules/forecast-view.js'; …"`
+ * 驗收線＝跨 :16/:36/:56 與整點翻頁的間隔一律 1200 秒。
+ */
+export function nextMechAt(now) {
+  const d = new Date(now * 1000);
+  const intoHour = d.getMinutes() * 60 + d.getSeconds();
+  for (const m of MECH_MINUTES) {
+    if (m * 60 > intoHour) return now + (m * 60 - intoHour);
+  }
+  return now + (3600 - intoHour) + MECH_MINUTES[0] * 60;   // 本小時三班都過了 → 下一小時的 :16
+}
+
 export function createForecastView({ forecaster, weatherData, missions, conditions }) {
   /*
    * 這個 view 現在橫跨兩個分頁：天氣三格在「臨時任務」頁（它是任務的前提），
@@ -74,6 +102,7 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
       block('目前天氣', `${WEATHER_ICON[current.name] ?? ''} ${current.name}`, note),
       block('艾歐澤亞時間', `${String(et.hour).padStart(2, '0')}:${String(et.minute).padStart(2, '0')}`, '天氣全伺服器同步，不分伺服器'),
       windyBlock(now),
+      mechBlock(now),
     );
   }
 
@@ -94,6 +123,19 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
     );
     d.classList.add('codex-tint-panel', 'codex-tint-panel--highlight', 'codex-tint-panel--bar');
     return d;
+  }
+
+  /**
+   * 機甲行動倒數。**刻意不用金色高亮**——設計系統規定一頁最多一處，那一處已經給了靈風視窗
+   * （它是 11 個緊急任務的必要條件）。這張是固定班表，錯過就等 20 分鐘，不是限時機會。
+   */
+  function mechBlock(now) {
+    const next = nextMechAt(now);
+    return block(
+      '機甲行動',
+      `${formatDuration(next - now)}後`,
+      `下次 ${clockText(next)}　·　每小時 :16 / :36 / :56（現實時間）`,
+    );
   }
 
   function block(label, value, note) {
