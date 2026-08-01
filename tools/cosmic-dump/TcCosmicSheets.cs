@@ -74,14 +74,20 @@ internal static class TcCosmicSheets
     /// <summary><c>WKSItemInfo</c> c0＝<c>Item</c> row id（ICE 已驗：103→月水盾草、366→月面隕石、372→月鉻鐵礦）。</summary>
     public static uint ItemInfoItemId(RawRow info) => info.ReadUInt32Column(0);
 
-    /// <summary>
-    /// <c>WKSMissionToDoEvalutionRefin</c>（544 列 × 3 欄）＝三段評價門檻，值如 20/40/70、50/60/85。
-    /// <para>⚠ <b>語意未定性</b>：與 <c>WKSMissionUnit</c> 的銀星／金星（絕對分數，值域百～萬）不同量綱，
-    /// 推測是百分比制的銅／銀／金三階，但<b>未經遊戲內核對</b>。故只落進 JSON 供日後查核、
-    /// <b>不進網站 UI</b>（避免把未驗證的數字當事實展示）。</para>
-    /// </summary>
-    public static int[] EvalThresholds(RawRow refin)
-        => [refin.ReadUInt16Column(0), refin.ReadUInt16Column(1), refin.ReadUInt16Column(2)];
+    /*
+     * 三段品質門檻**刻意不在這裡產**（2026-08-01 移除 EvalThresholds）。
+     *
+     * 原本 Exporters 以 `refinSheet.TryGetRow(unit.RowId)` 取 `WKSMissionToDoEvalutionRefin`
+     * ——**那是錯的 join**。該表有 798 列、不是按任務 id 編的；真正的鍵是**配方**的
+     * `Recipe.CollectableMetadata`（且需 `CollectableMetadataKey == 7` 才指向這張表）。
+     * 兩邊值域剛好重疊（都落在 1–791），所以每筆都查得到、看起來完全正常；又因為 798 列裡
+     * 只有 12 種相異組合、最常見的 50/60/85 佔三分之一，錯的 join 還有可觀比例會意外對上。
+     * 零錯誤訊號 + 正確率高到不會被質疑 —— 與 col[14]/col[15] 同一種失敗形狀。
+     *
+     * 且這件事本來就不歸本站管：品質門檻是**配方**的屬性（一般收藏品也有同型欄位），
+     * 權威＝monorepo `game_ref.sqlite` 的 `recipe_quality_stages`，消費端是 crafter。
+     * 本站只負責回答「這個任務要哪些配方」（`recipes` 欄），換算與呈現交給 crafter。
+     */
 
     /// <summary>
     /// 遊戲自己的三個分頁。原文出自 <c>Addon</c>#16748「基礎任務」／#16749「臨時任務」／#16750「緊急任務」。

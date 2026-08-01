@@ -418,6 +418,11 @@ body {
 /* 任務清單「類型」欄的子標籤（連續／時間限定／天氣限定）— 與分頁 badge 並列 */
 .cos-tag { margin-left: var(--space-1, 4px); }
 
+/* 需求物 → 製作求解器的深連結。虛線底線而非實線：整欄可能有好幾個，實線會讓表格看起來像連結牆。
+   顏色走 accent（本站與全生態一律 cyan），不自造色。 */
+.cos-craftlink { color: var(--accent); text-decoration: underline dotted; text-underline-offset: 2px; }
+.cos-craftlink:hover, .cos-craftlink:focus-visible { text-decoration-style: solid; }
+
 /* 子標籤篩選縮排在「任務類型」之下——它們只掛在臨時任務上，不是平行的第四種篩選 */
 .cos-sublabel {
   margin-top: var(--space-2, 8px);

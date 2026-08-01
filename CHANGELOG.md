@@ -2,6 +2,43 @@
 
 > 日期段落制（cycle 收官為段）；條目含人話「為什麼」，不從 git log 自動生成。格式見 DEVLOOP §4.3。
 
+## 2026-08-01 — 需求物接上製作求解器＋移除錯的三段門檻 join（cycle 2026-08-01-recipe-quality-stages）
+
+### Removed
+
+- **`_unverified.evalThresholds` 整個拿掉——那是錯的 join**。原本用
+  `refinSheet.TryGetRow(unit.RowId)`，**拿任務 id 當列號**去查 `WKSMissionToDoEvalutionRefin`。
+  真鍵是**配方**的 `Recipe.CollectableMetadata`（且要 `CollectableMetadataKey == 7` 才指這張表）。
+  該表 798 列、不是按任務 id 編的。
+  - 為什麼一直沒被發現：兩邊值域剛好重疊（都落在 1–791）⇒ 543/544 筆都查得到、看起來完全正常；
+    798 列裡只有 12 種相異組合、最常見的 50/60/85 佔三分之一 ⇒ 錯的 join 還有可觀比例會意外對上
+    （實測任務 #27 用錯的第 27 列與對的第 16 列**剛好同值**）。**零錯誤訊號 + 正確率高到不會被質疑**
+    ——與 `col[14]/col[15]` 完全同型。
+  - 而且這件事本來就不歸本站管：品質門檻是**配方**的屬性（一般收藏品也有同型欄位）。權威已移到
+    monorepo `game_ref.sqlite` 的 `recipe_quality_stages`，消費端是 crafter。
+
+### Changed
+
+- **`recipeIds` 從 `_unverified` 扶正為正式欄位 `recipes`**（`Recipe` row id 陣列，最多 5 個）。
+  內容與舊值逐筆一致，400 個製作任務有值。`_unverified` 這個容器現在整個空了 ⇒ 一併移除。
+
+### Added
+
+- **需求物直接連到製作求解器**（`modules/crafter-link.js`）。任務清單的「需求物」欄，製作類任務
+  每個需求物都是連結 → `ffxiv-crafter/?item=<itemId>`；採集／釣魚類沒有配方，維持純文字。
+  - 用 `?item=` 而非 `?recipe=`：本站的權威是「要交什麼物品」，配方 id 讓 crafter 自己解。
+    實測不變量：400 個製作任務的需求物**全部**在 crafter 配方表查得到。
+  - **刻意不帶目標品質**：換算實作只有 crafter 一份，本站塞絕對數字進去等於開第二條換算路徑。
+  - 主面板那一列整個是 `<button>`（點了跳任務清單），不能巢狀 `<a>` ⇒ 連結只放任務清單。
+- **`validate.mjs` 補 4 條不變量**：有配方的任務 400 筆／全落在製作職／配方陣列不含 0／
+  `_unverified` 不得復活。
+
+### 已知缺口（非本輪造成，寫成有數字的不變量追蹤）
+
+- **117 個任務抓不到需求物**，其中 40 個有配方、含全部 16 個雙職業任務。`WKSMissionUnit` 有多個
+  ToDo 槽（上游 BestCraft 的 entity 是 `ToDo0/1/2Id`），本站只讀了 `col[11]` 一個。
+  數字寫死在 `validate.mjs` ⇒ 修好會讓它紅、逼人回來把數字改小；變多同樣紅。
+
 ## 2026-07-31 — 任務分類改用遊戲原文（cycle 2026-07-31-cosmic-taxonomy）
 
 ### Changed

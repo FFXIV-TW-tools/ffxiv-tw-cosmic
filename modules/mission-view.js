@@ -9,6 +9,7 @@
 import { inEorzeaWindow } from './eorzea-time.js';
 import { conditionsMet } from './weather-forecast.js';
 import { jobIcon, jobIcons } from './job-icon.js';
+import { requiredItems } from './crafter-link.js';
 
 /** 階級標籤用**遊戲自己的說法**。A1/A2/A3 是上游 ICE 的內部命名，遊戲 UI 沒有這個詞：
  *  rank1–4＝無前綴的 D/C/B/A（基礎分頁）、rank5＝【高難】、rank6＝【高難+】（臨時分頁），
@@ -257,9 +258,8 @@ export function createMissionView(root, { missions, conditions, jobs, forecaster
     }
 
     const itemCell = document.createElement('td');
-    itemCell.textContent = m.items.length
-      ? m.items.map((it) => `${it.name} ×${it.qty}`).join('、')
-      : '—';
+    // 製作類任務的需求物直接連到求解器（採集/釣魚類沒有配方 → 純文字）
+    itemCell.append(requiredItems(m));
 
     const availCell = document.createElement('td');
     // 直接用共用 badge 的語意變體，不自造顏色（設計系統：禁覆寫 .codex-* 根 selector）

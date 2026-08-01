@@ -35,7 +35,9 @@
 
 - [ ] **B-002** (P3, chore)【建議 低｜延遲風險 低｜執行風險 低｜副作用 動 portal 共用 CSS】提報 portal 把 `.codex-empty[hidden]` 收進集中 `[hidden]` 守衛。`.codex-empty` 設了 `display:flex`，會蓋過 UA 的 `[hidden]{display:none}` ⇒ 帶 `hidden` 屬性的空狀態照樣顯示（本站踩到，已用工具自有 class `.cos-hideable[hidden]` 本地繞過）。header.css 現有守衛涵蓋 btn／chip／icon-btn／modal-overlay／help-pop，**就是漏了 empty**。需 Owner Gate1。來源: 2026-07-31-cosmic-site 實作
 
-- [ ] **B-005** (P3, chore)【建議 低｜延遲風險 低｜執行風險 低｜副作用 無】定性 `WKSMissionToDoEvalutionRefin` 三欄（值如 20/40/70、50/60/85）。與 `WKSMissionUnit` 的銀星／金星（絕對分數）不同量綱，疑為銅/銀/金百分比門檻。目前落在 `_unverified.evalThresholds`、不進 UI。**同一張表也是 ICE fork `TcCapability` 仍停用的「銅星門檻」的候選**——那邊掃了三張表沒找到，因為它在第四張。定性後兩邊一起解。來源: 2026-07-31-cosmic-site
+- [x] ~~**B-005** (P3, chore)【建議 低｜延遲風險 低｜執行風險 低｜副作用 無】定性 `WKSMissionToDoEvalutionRefin` 三欄（值如 20/40/70、50/60/85）。與 `WKSMissionUnit` 的銀星／金星（絕對分數）不同量綱，疑為銅/銀/金百分比門檻。目前落在 `_unverified.evalThresholds`、不進 UI。~~ — ✓ **定性完成於 cycle 2026-08-01-recipe-quality-stages**：官方欄名就是 `LowPercent`/`MidPercent`/`HighPercent`（global datamine `en_WKSMissionToDoEvalutionRefin.csv`）＝**滿品質百分比**，百分比推測正確。但同時發現本站的 join 是錯的（拿任務 id 當列號，真鍵是配方的 `Recipe.CollectableMetadata`）。整件事已移出本站 → monorepo `game_ref.sqlite` 的 `recipe_quality_stages`，消費端 crafter。**ICE fork 的「銅星門檻」線索仍有效**：`TcCapability` 要找的若是 per-recipe 門檻，就在這張表，鍵同樣是 `CollectableMetadata` 而非任務 id。來源: 2026-07-31-cosmic-site
+
+- [ ] **B-017** (P2, data)【建議 中｜延遲風險 低｜執行風險 中｜副作用 改 dump 欄位對照】補齊需求物：`WKSMissionUnit` 的多個 ToDo 槽。現況 **117 個任務抓不到需求物**（其中 40 個有配方、含全部 16 個雙職業任務 #496–511），因為 `TcMissionUnit.MissionToDo` 只讀 col[11] 一個槽。上游 BestCraft 的 entity 是 `ToDo0Id`/`ToDo1Id`/`ToDo2Id` 三個 ⇒ 台服對應欄位待反解。**影響**：那 40 個任務的「需求物」欄空白、連不到求解器。數字已寫死進 `validate.mjs`（修好會讓該條紅，記得把數字改小）。⚠ 反解時**先找已知能動的參考實作再動手**（AGENTS §10 精神）——這正是 `col[14]/col[15]` 與本輪 refin join 兩次踩過的同一種坑。來源: 2026-08-01-recipe-quality-stages
 
 - [ ] **B-006** (P3, feature)【建議 低｜延遲風險 低｜執行風險 高｜副作用 需要後端 + 插件回報】緊急任務即時偵測。**離線做不到**（Weather#194–197 不在任何 WeatherRate ⇒ 只能伺服器推播），唯一路徑＝Dalamud 插件偵測後 push 到後端，網站顯示。天花板＝覆蓋率等於回報者數量，沒人在線的伺服器/實例就是黑的。架構上是後掛的一層，不影響現有靜態站。**Owner 已表示暫不做**（2026-07-31：「不要有人主動偵測」）。來源: 2026-07-31-cosmic-site
 

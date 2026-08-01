@@ -1,0 +1,55 @@
+/**
+ * 到「製作求解器」的深連結——把任務的需求物直接接上求解。
+ *
+ * ## 為什麼用 `?item=` 而不是 `?recipe=`
+ * 本站的權威是「這個任務要交什麼物品」，配方 id 讓 crafter 自己解。實測不變量：
+ * 400 個製作任務的需求物**全部**在 crafter 的配方表查得到（`recipes.json` 的 `item_id`），
+ * 所以這條連結不會落空。反過來用 recipe id 會多一層本站要跟著維護的對照。
+ *
+ * ## 為什麼不帶目標品質
+ * 三段品質門檻是**配方**的屬性（一般收藏品也有同型欄位），權威在 monorepo `game_ref.sqlite`
+ * 的 `recipe_quality_stages`，換算實作只有 crafter 一份。本站塞絕對品質數字進去等於開第二條
+ * 換算路徑，對面資料一更新就會靜默給出達不到門檻的手法。要預選階段就傳 `?stage=1|2|3`（序號），
+ * 讓 crafter 自己換算。
+ *
+ * ## 中間素材
+ * 128 個任務的 `recipes` 比需求物多——那些是中間素材（先做 A 再用 A 做 B）。本站只連到
+ * **要交的成品**；中間素材在 crafter 的原料清單裡看得到，不在這裡重複列一次。
+ */
+
+const DEV = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+// dev 路徑沿用 index.html 的 portal bootstrap 慣例（:8774 服務整個 external/ 目錄）
+const BASE = DEV ? 'http://localhost:8774/ffxiv-crafter/' : 'https://ffxiv-crafter.pages.dev/';
+
+/** 跨工具共用同一個具名分頁（生態內互跳慣例，同 crafter → marketboard 的做法）。 */
+const TARGET = 'ffxiv-crafter';
+
+export function crafterUrl(itemId) {
+  return `${BASE}?item=${encodeURIComponent(itemId)}`;
+}
+
+/**
+ * 需求物欄的內容。製作類任務（`recipes` 非空）每個需求物都是連結，採集/釣魚類是純文字。
+ * 回傳 DocumentFragment，呼叫端自己決定塞進哪個容器。
+ */
+export function requiredItems(mission) {
+  const frag = document.createDocumentFragment();
+  if (!mission.items?.length) {
+    frag.append('—');
+    return frag;
+  }
+  const craftable = (mission.recipes?.length ?? 0) > 0;
+  mission.items.forEach((it, i) => {
+    if (i > 0) frag.append('、');
+    const text = `${it.name} ×${it.qty}`;
+    if (!craftable) { frag.append(text); return; }
+    const a = document.createElement('a');
+    a.href = crafterUrl(it.itemId);
+    a.target = TARGET;
+    a.className = 'cos-craftlink';
+    a.textContent = text;
+    a.title = `到製作求解器算「${it.name}」的手法與巨集`;
+    frag.append(a);
+  });
+  return frag;
+}

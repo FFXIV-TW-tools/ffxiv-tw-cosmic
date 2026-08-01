@@ -60,6 +60,24 @@ check(withPrereq.every((x) => x.class === 'temporary'), '有連續任務落在�
 // 子標籤只掛臨時任務
 check(m.missions.every((x) => x.tags.length === 0 || x.class === 'temporary'), '有子標籤掛在臨時分頁之外');
 
+// 配方（→ crafter 深連結的依據）。**不是**「有需求物就有配方」——採集/釣魚任務有需求物、無配方。
+const withRecipes = m.missions.filter((x) => x.recipes.length > 0);
+check(withRecipes.length === 400, `有配方的任務 = ${withRecipes.length}，應為 400（8 製作職 × 50）`);
+check(withRecipes.every((x) => x.jobs.some((j) => m.jobs[j]?.role === 'crafter')),
+  '有配方的任務落在非製作職上（配方欄接錯 WKSMissionRecipe？）');
+// ⚠ 已知缺口（非本輪造成）：117 個任務抓不到需求物，其中 40 個有配方、含全部 16 個雙職業任務。
+// `WKSMissionUnit` 有多個 ToDo 槽（上游 BestCraft 的 entity 是 ToDo0/1/2），本站只讀了 col[11] 一個。
+// 數字寫死＝**追蹤而非默許**：修好會讓這條紅、逼人回來把數字改小；變多同樣紅。
+const noItems = m.missions.filter((x) => x.items.length === 0);
+check(noItems.length === 117, `抓不到需求物的任務 = ${noItems.length}，應為 117（已知 ToDo 槽缺口）`);
+check(withRecipes.filter((x) => x.items.length === 0).length === 40,
+  '有配方卻沒有需求物的任務數變動（已知 40，見 ToDo 槽缺口）');
+check(m.missions.every((x) => x.recipes.every((r) => r > 0)), '配方陣列含 0（空槽應在產生端剔除）');
+// 舊版把三段品質門檻塞在 _unverified.evalThresholds，且用任務 id 去查 WKSMissionToDoEvalutionRefin
+// ——那是錯的 join（真鍵是 Recipe.CollectableMetadata）。門檻已移到 crafter 側，這裡守著別回來。
+check(m.missions.every((x) => !x._unverified),
+  '任務仍帶 _unverified（三段品質門檻已移交 crafter 的 recipe_quality_stages，不該在此重生）');
+
 // 每筆都要有職業與獎勵——這兩欄空掉代表欄位對照崩了，UI 會整片空白但不報錯
 check(m.missions.every((x) => x.jobs.length > 0), '有任務沒有職業');
 check(m.missions.every((x) => x.reward.cosmo > 0 || x.reward.lunar > 0), '有任務信用點全為 0');

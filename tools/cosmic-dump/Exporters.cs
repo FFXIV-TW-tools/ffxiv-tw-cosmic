@@ -62,7 +62,6 @@ internal sealed class Exporters(GameData gd, JsonObject meta)
         var todoSheet = Sheet("WKSMissionToDo");
         var rewardSheet = Sheet("WKSMissionReward");
         var condSheet = Sheet("WKSMissionLotterySpecialCond");
-        var refinSheet = Sheet("WKSMissionToDoEvalutionRefin");
         var itemInfoSheet = Sheet("WKSItemInfo");
         var itemSheet = Sheet("Item");
         var weatherSheet = Sheet("Weather");
@@ -125,21 +124,11 @@ internal sealed class Exporters(GameData gd, JsonObject meta)
                 ["c14"] = (int)TcCosmicSheets.SlotUnknown(row),
                 ["items"] = RequiredItems(todoSheet, itemInfoSheet, itemSheet, unit.MissionToDo),
                 ["reward"] = Reward(rewardSheet, unit.RowId),
+                // 製作類任務要做的配方（`Recipe` row id，最多 5 個；採集/釣魚任務為空陣列）。
+                // 用途＝深連結到 crafter 求解手法。三段品質門檻**不在這裡**：那是配方的屬性
+                // （一般收藏品也有），權威在 monorepo game_ref 的 recipe_quality_stages。
+                ["recipes"] = MissionRecipes(recipeSheet, unit.MissionRecipe),
             };
-
-            // 未定性欄位集中放在 _unverified，UI 不讀——留著是為了日後查核，不是給人看的。
-            var unverified = new JsonObject
-            {
-                // c14：語意未定。**必須輸出**，因為 tools/compare-board-log.mjs 要拿它跟實測
-                // 記錄做相關性檢定（「c14 的視窗開著」與「任務真的出現」是否相關）。
-            };
-            if (refinSheet.TryGetRow(unit.RowId, out var refin))
-                unverified["evalThresholds"] = new JsonArray(TcCosmicSheets.EvalThresholds(refin).Select(v => (JsonNode)v).ToArray());
-            if (unit.MissionRecipe != 0 && recipeSheet.TryGetRow(unit.MissionRecipe, out var rec))
-                unverified["recipeIds"] = new JsonArray(Enumerable.Range(0, 5)
-                    .Select(i => (int)rec.ReadUInt32Column(i)).Where(v => v > 0)
-                    .Select(v => (JsonNode)v).ToArray());
-            if (unverified.Count > 0) m["_unverified"] = unverified;
 
             list.Add(m);
         }
@@ -225,6 +214,22 @@ internal sealed class Exporters(GameData gd, JsonObject meta)
             conds[row.RowId.ToString()] = entry;
         }
         return conds;
+    }
+
+    /// <summary>
+    /// <c>WKSMissionRecipe</c> c0–c4＝該任務要做的 <c>Recipe</c> row id（0＝空槽）。
+    /// 採集／釣魚任務的 <c>MissionRecipe</c> 為 0 ⇒ 回空陣列。
+    /// </summary>
+    private static JsonArray MissionRecipes(ExcelSheet<RawRow> recipeSheet, uint missionRecipeId)
+    {
+        var arr = new JsonArray();
+        if (missionRecipeId == 0 || !recipeSheet.TryGetRow(missionRecipeId, out var rec)) return arr;
+        for (var i = 0; i < 5; i++)
+        {
+            var id = rec.ReadUInt32Column(i);
+            if (id > 0) arr.Add((JsonNode)(int)id);
+        }
+        return arr;
     }
 
     private static JsonArray RequiredItems(ExcelSheet<RawRow> todoSheet, ExcelSheet<RawRow> itemInfoSheet,

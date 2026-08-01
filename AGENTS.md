@@ -23,7 +23,8 @@ FFXIV 繁中服「宇宙探索」（月球 / 渴望灣）規劃站。**純靜態
 |---|---|---|
 | `WKSMissionLotterySpecialCond` row 15–22 | 台服 client 三欄全 0（上游國際服當它們是 Clouds/Rain，但渴望灣天氣表根本沒這兩種天氣） | `type: "unknown"`／UI 顯示「條件未定」、可接欄顯示「未知」 |
 | ET 時段條件的**單位** | 上游把 c0/c1 命名為 Start/End Time，值是 2 小時階梯；**未經遊戲內核對** | 照 ET 小時呈現，但列入 BACKLOG 待實地驗證 |
-| `WKSMissionToDoEvalutionRefin` 三欄 | 與銀星／金星不同量綱，疑為銅/銀/金百分比門檻，**未核對** | 落 `_unverified.evalThresholds`，**不進 UI** |
+| ~~`WKSMissionToDoEvalutionRefin` 三欄~~ | ✅ 2026-08-01 定性＝**滿品質百分比**（官方欄名 `LowPercent`/`MidPercent`/`HighPercent`），且**不歸本站管** | 已移出本站。權威＝monorepo `game_ref.sqlite` 的 `recipe_quality_stages`，消費端 crafter。⚠ **鍵是配方的 `Recipe.CollectableMetadata`，不是任務 id**——本站原本用任務 id 查，錯得毫無訊號（見 CHANGELOG 2026-08-01） |
+| 需求物（`items`） | **117 個任務抓不到**（含全部 16 個雙職業任務），`WKSMissionUnit` 有多個 ToDo 槽而本站只讀 col[11] 一個 | 數字寫死進 `validate.mjs`；修好會讓該條紅、逼人回來改小 |
 | 宇宙工具 c23–c27 五階 | client 內名稱為空＝台服未實裝 | 只報階數（`unreleasedStages`），不編造名稱 |
 
 **由來**：ICE fork（`XIVpluginsDev/ICE-Dev`）那輪連續五次拿 0 當佔位，其中 `MapPosition` 讓採集完全不執行、
