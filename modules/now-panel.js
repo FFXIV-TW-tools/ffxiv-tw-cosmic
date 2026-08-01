@@ -11,14 +11,14 @@
  * 三組數字＋倒數＋緊急註記，看的人得先讀懂四個概念才知道要不要去玩。
  * 這版只回答一句話能問的問題：現在能做什麼、下次什麼時候。
  *
- * ## 只列「有條件的」
+ * ## 只列「有條件的臨時任務」
  * 不限時的任務隨時都在，不需要一個面板告訴你——它們在任務清單分頁。
  * 這裡列的是有時段／天候閘的那 63 個，也就是真正需要盯時間的。
  *
- * **基礎與臨時都收，不按分類裁**（2026-08-01）：原本只收臨時任務，理由是面板叫「臨時任務」——
- * 那是拿面板名去裁資料。實際上 ET 02:00–04:00 只有一個任務、且當時被判成基礎，
- * 於是那個時段面板永遠空白，而 Owner 在遊戲裡看得到。面板名已改成「現在開放的任務」。
- * （後續 #400 的實測也推翻了「rank≤4＝基礎」這個判準本身，見 TcCosmicSheets.MissionClass。）
+ * ⚠ 2026-08-01 曾因為 ET 02:00–04:00 面板空白而把基礎任務也放進來——**那是治標**。
+ * 根因是分類判準錯（#400 rank A 帶 ET 條件被判成基礎，實際在遊戲的臨時分頁）。
+ * 判準修好後 63 個有條件的任務全是臨時任務，面板已收回只收臨時。
+ * 教訓：畫面少東西時先問「資料判對了嗎」，不要先放寬篩選——那會把錯的分類蓋掉。
  *
  * ## 「現在」是保證，「下一個」是預測
  * 兩者都算得準（天氣＝unix 時間的純函數、ET 時段已對過遊戲）。
@@ -34,10 +34,8 @@ const COND_TEXT = {
   time: (c) => `ET ${String(c.start).padStart(2, '0')}:00–${String(c.end).padStart(2, '0')}:00`,
   weather: (c) => c.label.replace(/^天候：/, ''),
 };
-/** 臨時任務的子標籤（Addon#16872/16873）。**只掛臨時任務**，基礎任務不適用。 */
+/** 臨時任務的子標籤（Addon#16872/16873）。子標籤是臨時分頁的定義，基礎任務不會有。 */
 const COND_KIND = { time: '時間限定任務', weather: '天氣限定任務' };
-/** 遊戲的三個分頁名（Addon#16748/16749/16750）。基礎任務用它，不套子標籤。 */
-const CLASS_LABEL = { basic: '基礎任務', temporary: '臨時任務', critical: '緊急任務' };
 
 export function createNowPanel(root, { windows, missions, conditions, jobs, forecaster, onJump }) {
   const byId = new Map(missions.map((m) => [m.id, m]));
@@ -94,14 +92,15 @@ export function createNowPanel(root, { windows, missions, conditions, jobs, fore
   function relevant(m) {
     if ((m.conds ?? []).length === 0) return false;
     /*
-     * **基礎任務也要進來**（2026-08-01 修）。原本寫死只收 `temporary`，理由是「面板名叫臨時任務」
-     * ——那是拿面板名去裁資料，把使用者要的東西擋在外面。22 個 ET 條件任務裡有 11 個是基礎任務，
-     * 而且 **ET 02:00–04:00 整個時段就只有一個任務、剛好是基礎的**（#400 採集精密空氣淨化裝置所需的材料）
-     * ⇒ 那個時段面板必定空白，Owner 在遊戲裡看到卻在網站上找不到。
-     * 面板名已改成「現在開放的任務」——描述這份清單在做什麼，不是自造一個遊戲沒有的分類。
-     * 緊急任務仍排除：它是伺服器推播、算不出來也偵測不到（見 renderCaveat）。
+     * 面板名叫「臨時任務」就只放臨時任務。
+     *
+     * ⚠ 2026-08-01 一度改成「基礎任務也收」，那是**錯的修法**：當時 ET 02:00–04:00 面板空白，
+     * 根因是**分類判準錯了**（#400 rank A 帶 ET 條件被判成基礎，實際在遊戲的臨時分頁），
+     * 不是面板篩太緊。判準修好後（見 TcCosmicSheets.MissionClass），63 個有條件的任務
+     * **全部**都是臨時任務，這個過濾器對它們是 no-op ⇒ 收回來，不要用放寬篩選去蓋資料的錯。
+     * 留著它是為了萬一日後真出現「有條件的基礎任務」時，這裡不會默默把它混進來。
      */
-    if (m.class === 'critical') return false;
+    if (m.class !== 'temporary') return false;
     if (m.jobs.length > 1) return false;
     if (jobFilter.length && !m.jobs.some((j) => jobFilter.includes(j))) return false;
     return true;
@@ -127,8 +126,7 @@ export function createNowPanel(root, { windows, missions, conditions, jobs, fore
    * 這裡就要改。分析指令＝`node tools/compare-board-log.mjs`。
    */
   function collapseByRank(list) {
-    // 分類也進 key：基礎與臨時是遊戲的兩個分頁，不該互相蓋掉
-    const key = (m) => `${m.jobs[0]}|${m.conds[0] ?? 0}|${m.class}`;
+    const key = (m) => `${m.jobs[0]}|${m.conds[0] ?? 0}`;
     const best = new Map();
     for (const m of list) {
       const cur = best.get(key(m));
@@ -142,12 +140,7 @@ export function createNowPanel(root, { windows, missions, conditions, jobs, fore
     return [...best.values()];
   }
 
-  /**
-   * 條件欄文字＝分類 ＋ 實際的值。每個任務最多一個條件，不必處理組合。
-   *
-   * **子標籤只掛臨時任務**（遊戲如此，Addon#16871–16873）⇒ 基礎任務不能寫「時間限定任務」，
-   * 那是自造分類。基礎任務就寫「基礎任務」，條件值照舊。
-   */
+  /** 條件欄文字＝遊戲的子分類名 ＋ 實際的值。每個任務最多一個條件，不必處理組合。 */
   function condText(m) {
     const groups = new Map();
     for (const id of m.conds ?? []) {
@@ -156,9 +149,8 @@ export function createNowPanel(root, { windows, missions, conditions, jobs, fore
       if (!groups.has(cond.type)) groups.set(cond.type, []);
       groups.get(cond.type).push(COND_TEXT[cond.type](cond));
     }
-    const kind = (type) => (m.class === 'temporary' ? COND_KIND[type] : CLASS_LABEL[m.class] ?? '');
     const parts = [...groups.entries()]
-      .map(([type, texts]) => `${kind(type)}　${texts.join('、')}`);
+      .map(([type, texts]) => `${COND_KIND[type]}　${texts.join('、')}`);
     return parts.join('　＋　') || '—';
   }
 
@@ -383,12 +375,11 @@ export function createNowPanel(root, { windows, missions, conditions, jobs, fore
     const pool = collapseByRank(missions.filter(relevant));
 
     const open = pool.filter((m) => isOpen(m, now) === true);
-    fill(nowList, open, '現在沒有條件開啟中的任務');
+    fill(nowList, open, '現在沒有條件開啟中的臨時任務');
     // textContent 會把 #np-scope 一起洗掉 ⇒ 只換第一個文字節點
     nowHead.firstChild.nodeValue = open.length
-      // 面板收基礎與臨時兩類 ⇒ 這裡不寫死某一類的名字（分類寫在每列的「限定條件」欄）
-      ? `現在有 ${open.length} 個任務`
-      : '現在沒有條件開啟中的任務';
+      ? `現在有 ${open.length} 個臨時任務`
+      : '現在沒有條件開啟中的臨時任務';
     renderScope();
 
     // 下一批＝最早會開的那個時刻，以及那一刻同時開啟的所有任務
@@ -403,7 +394,7 @@ export function createNowPanel(root, { windows, missions, conditions, jobs, fore
       if (soonest === null || start < soonest) soonest = start;
     }
     const nextBatch = withEta.filter((x) => x.start === soonest).map((x) => x.m);
-    fill(nextList, nextBatch, '接下來 4 天內沒有會開啟的任務');
+    fill(nextList, nextBatch, '接下來 4 天內沒有會開啟的臨時任務');
     // 倒數後面補現實時間：「4 分 52 秒後」還要自己心算，「（12:47）」才是能直接對錶的
     nextHead.textContent = soonest === null
       ? '接下來沒有'
