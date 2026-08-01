@@ -8,11 +8,11 @@ import { setupTabs } from './tabs.js';
 import { createForecaster } from './weather-forecast.js';
 import { buildWindows } from './window-index.js';
 import { createForecastView } from './forecast-view.js';
-import { createJobBoardView } from './job-board-view.js';
+import { createNowPanel } from './now-panel.js';
 import { createMissionView } from './mission-view.js';
 import { createToolsView } from './tools-view.js';
 import { createDevStageView } from './dev-stage-view.js';
-import { createJobPicker, createRankPicker } from './job-prefs.js';
+import { createJobPicker } from './job-prefs.js';
 import { createAlarm } from './alarm.js';
 
 const TICK_MS = 1000;
@@ -66,27 +66,19 @@ async function main() {
     document.querySelector('#panel-missions').scrollIntoView({ block: 'start' });
   }
 
-  const forecastView = createForecastView(document.querySelector('#panel-forecast'), {
-    forecaster, weatherData, missions, conditions, jobs, onJump: jumpToMissions,
-  });
+  const forecastView = createForecastView({ forecaster, weatherData, missions, conditions });
 
-  const jobBoardView = createJobBoardView(document.querySelector('#panel-forecast'), {
-    windows, missions, conditions, jobs, onJump: jumpToMissions,
+  const nowPanel = createNowPanel(document.querySelector('#panel-forecast'), {
+    windows, missions, conditions, jobs, forecaster, onJump: jumpToMissions,
   });
 
   createToolsView(document.querySelector('#panel-tools'), { chains: toolData.chains });
   createDevStageView(document.querySelector('#panel-dev'), { devData });
 
   const picker = createJobPicker(document.querySelector('#job-picker'), jobs, (ids) => {
-    jobBoardView.setJobs(ids);
+    nowPanel.setJobs(ids);
   });
-  jobBoardView.setJobs(picker.get());
-
-  // 「我的階級」＝任務板真正的第一道門，離線不可知 ⇒ 由使用者提供
-  const rankPicker = createRankPicker(document.querySelector('#rank-picker'), (rank) => {
-    jobBoardView.setMaxRank(rank);
-  });
-  jobBoardView.setMaxRank(rankPicker.get());
+  nowPanel.setJobs(picker.get());
 
   // 鬧鐘吃「我練的職業」——沒選就是全部
   const alarm = createAlarm(document.querySelector('#panel-forecast'), {
@@ -102,7 +94,7 @@ async function main() {
   function tick() {
     const now = Math.floor(Date.now() / 1000);
     forecastView.render(now);
-    jobBoardView.render(now);
+    nowPanel.render(now);
     alarm.check(now);
     const block = Math.floor(now / CONDITION_TICK);
     if (block !== lastBlock) {

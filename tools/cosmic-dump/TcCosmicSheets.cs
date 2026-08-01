@@ -1,3 +1,4 @@
+using ICE.Utilities.TcSheets;
 using Lumina.Excel;
 
 namespace CosmicDump;
@@ -53,6 +54,23 @@ internal static class TcCosmicSheets
     public static (int Start, int End, int WeatherId) SpecialCond(RawRow cond)
         => (cond.ReadUInt8Column(0), cond.ReadUInt8Column(1), cond.ReadUInt16Column(2));
 
+    /// <summary>
+    /// 任務的開放條件——**直接用 ICE fork 的 <c>TcMissionUnit.LotterySpecialCond</c>**，
+    /// 本檔不再自己定義。這正是 csproj 編譯 ICE 那份唯一來源的用意：欄位對照只能有一份，
+    /// 抄第二份的代價就是這輪踩到的——ICE 把它對到 col[14]（錯），網站照抄，兩邊一起錯，
+    /// 而且錯得一模一樣所以互相驗不出來。
+    ///
+    /// <para>正解是 <b>col[15]</b>，已於 2026-08-01 在 ICE fork 修正；證據＝ICE 內部
+    /// 依遊戲內觀察手建的 <c>SinusMapV2</c> 與 col[15] <b>22/22 吻合、與 col[14] 零筆吻合</b>。</para>
+    ///
+    /// <para>每個任務**最多一個條件**，所以沒有 AND/OR 可言。先前為了兜住「兩個槽」的觀察，
+    /// 在 AND 與 OR 之間來回翻案五次——全部是在錯誤的欄位對照上做推理。</para>
+    /// </summary>
+    public static uint Condition(RawRow unit) => new TcMissionUnit(unit).LotterySpecialCond;
+
+    /// <summary>col[14]（語意未定）——只給 <c>tools/compare-board-log.mjs</c> 的相關性檢定用。</summary>
+    public static uint SlotUnknown(RawRow unit) => new TcMissionUnit(unit).SlotUnknown;
+
     /// <summary><c>WKSItemInfo</c> c0＝<c>Item</c> row id（ICE 已驗：103→月水盾草、366→月面隕石、372→月鉻鐵礦）。</summary>
     public static uint ItemInfoItemId(RawRow info) => info.ReadUInt32Column(0);
 
@@ -66,18 +84,39 @@ internal static class TcCosmicSheets
         => [refin.ReadUInt16Column(0), refin.ReadUInt16Column(1), refin.ReadUInt16Column(2)];
 
     /// <summary>
-    /// <c>WKSMissionUnit</c> c18＝<b>基礎任務旗標</b>（1＝基礎、0＝非基礎）。
-    /// <para><b>反解依據</b>：與任務類型交叉後是完美二分——c18=1 共 264 筆，rank 全為 D/C/B，
-    /// 且<b>全部 33 個緊急任務都在這側、零個高難</b>；c18=0 共 280 筆，rank 全為 A1/A2/A3，
-    /// 含全部 96 個「高難」與 96 個「高難+」。264+280=544，分界恰好落在 B 與 A1 之間。</para>
-    /// <para>為什麼不直接用 rank &gt;= 4 判斷（目前兩者等價）：這是<b>遊戲自己的分類欄</b>，
-    /// 日後改版若把分界移動，跟著這欄走才會對；用 rank 推是我們的假設。
-    /// 由來＝2026-07-31 Owner 指出「（A1 無條件的無人機任務）不是基礎任務，就要顯示」。</para>
-    /// <para><b>遊戲的三分類</b>（Owner 2026-07-31 給的正名）＝基礎／臨時／緊急，
-    /// 對到資料上是：緊急＝<c>IsSpecialQuest</c>（33，落在 c18=1 側）／
-    /// 基礎＝c18=1 且非緊急（231）／臨時＝c18=0（280）。三者互斥且合計 544。</para>
+    /// 遊戲自己的三個分頁。原文出自 <c>Addon</c>#16748「基礎任務」／#16749「臨時任務」／#16750「緊急任務」。
+    ///
+    /// <para><b>判準＝rank，不是 c18</b>。原本拿 c18 當「基礎旗標」是錯的：交叉表顯示
+    /// c18=1 ⇔ rank≤3 完全等價 ⇒ 該欄沒帶任何獨立資訊，只是把 rank 4（A）誤推到臨時側。</para>
+    ///
+    /// <para><b>正確分界的決定性證據＝任務名前綴，零例外</b>：無前綴 352 筆
+    /// ＝rank D 99／C 77／B 88／<b>A 88</b>；【高難】96 筆全 rank 5；【高難+】96 筆全 rank 6。
+    /// 也就是 <b>A 仍是無前綴的字母階、與 D/C/B 同群</b>，對上 Owner 2026-07-31 的遊戲內回報
+    /// 「基礎任務才有分 D C B A」。</para>
+    ///
+    /// <para>故：緊急＝<see cref="IsCritical"/>（33，全 rank D）／基礎＝rank≤4 且非緊急（319）／
+    /// 臨時＝rank≥5（192）。三者互斥、合計 544。</para>
     /// </summary>
-    public static bool IsBasic(RawRow row) => row.ReadUInt8Column(18) == 1;
+    public static string MissionClass(RawRow row)
+        => IsCritical(row) ? "critical" : row.ReadUInt8Column(6) <= 4 ? "basic" : "temporary";
+
+    /// <summary><c>WKSMissionUnit</c> c5＝緊急任務旗標。33 筆，全為 rank D。</summary>
+    public static bool IsCritical(RawRow row) => row.ReadPackedBoolColumn(5);
+
+    /// <summary>
+    /// <c>WKSMissionUnit</c> c16＝<b>前置任務</b>（0＝無）。這就是上游 ICE 一直填 0 的 <c>LockedBehind</c>，
+    /// 也是遊戲「連續任務」（<c>Addon</c>#16871）的資料來源；遊戲的門檻提示＝#16777「完成以下任務」。
+    ///
+    /// <para><b>反解依據</b>（88 筆非零，三項同時成立才採信）：
+    /// ① 指向的任務<b>與本任務同職業 88/88</b>——其餘候選欄差得遠（c1 47/544、c17 4/448）；
+    /// ② 名稱語意直接對得上，且遊戲自己在名字裡寫了「續·」：
+    /// 「【高難】續·製作傳動用的長桿」→ #33「製作傳動用的長桿」(A)、
+    /// 「【高難+】製作月球車所需的貨物包裝材料」→ #41「【高難】續·製作貨物包裝材料」(高難)；
+    /// ③ 全部落在 rank 5/6（高難 33 ＋ 高難+ 55）＝連續任務只出現在臨時分頁，與遊戲一致。</para>
+    ///
+    /// <para>鏈條可多層：A → 高難 → 高難+。</para>
+    /// </summary>
+    public static uint Prerequisite(RawRow row) => row.ReadUInt16Column(16);
 
     /// <summary>
     /// <c>WKSDevGrade</c>（134 列）＝月門基地的建設階段。c1＝短標題、c5＝基地等級、c7＝階段序。

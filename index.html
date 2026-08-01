@@ -58,15 +58,26 @@
 </head>
 <body>
   <header class="page-header">
-    <h1 class="codex-h1"><span class="ph-icon" aria-hidden="true">🌙</span>宇宙探索</h1>
+    <h1 class="codex-h1"><span class="ph-icon" aria-hidden="true">🌙</span>宇宙探索<span class="codex-badge codex-badge--warn cos-beta">BETA</span></h1>
     <div class="cos-header-tools">
+      <!-- 「我的階級」已移除（Owner 2026-07-31）：它只在還沒解到【高難】時有作用，
+           解開之後永遠不過濾任何東西，等於常駐一個沒有用的控制項。 -->
       <span class="codex-label" id="fc-zone">渴望灣</span>
-      <span id="rank-picker"></span>
       <span id="job-picker"></span>
     </div>
   </header>
 
   <main class="codex-container cos-main">
+    <!-- BETA 告示。刻意不寫資料來源（Owner 2026-08-01）——使用者要知道的是
+         「哪些可以信、哪些還不能」，來源與他無關。 -->
+    <p class="codex-body cos-betanote">
+      <strong>⚠️ BETA — 部分資料仍待驗證。</strong>
+      <strong>天氣預報、ET 時段、任務分類與獎勵</strong>已對照遊戲內確認；
+      但<strong>「條件成立後任務會不會出現在你的任務板上」還有幾層規則尚未釐清</strong>
+      ——已知的有各職業的階級門與前置任務鏈。
+      看到與遊戲不符的地方請回報，那對釐清規則很有幫助。
+    </p>
+
     <div class="codex-empty cos-hideable" id="app-status" hidden>
       <div class="codex-empty__icon" aria-hidden="true">🛰</div>
       <div>載入中…</div>
@@ -74,41 +85,33 @@
 
     <div class="codex-tabs" id="cos-tabs" role="tablist" aria-label="宇宙探索分頁">
       <button class="codex-tab" role="tab" data-tab="forecast" id="tab-forecast"
-              aria-controls="panel-forecast" aria-selected="true">天氣時間軸</button>
+              aria-controls="panel-forecast" aria-selected="true">臨時任務</button>
+      <button class="codex-tab" role="tab" data-tab="weather" id="tab-weather"
+              aria-controls="panel-weather" aria-selected="false" tabindex="-1">天氣預報</button>
       <button class="codex-tab" role="tab" data-tab="missions" id="tab-missions"
               aria-controls="panel-missions" aria-selected="false" tabindex="-1">任務清單</button>
-      <button class="codex-tab" role="tab" data-tab="tools" id="tab-tools"
-              aria-controls="panel-tools" aria-selected="false" tabindex="-1">宇宙工具</button>
-      <button class="codex-tab" role="tab" data-tab="dev" id="tab-dev"
-              aria-controls="panel-dev" aria-selected="false" tabindex="-1">基地進度</button>
+      <!-- 宇宙工具／基地進度暫時隱藏（Owner 2026-07-31：「目前好像也沒什麼用」）。
+           面板與資料都留著，拿掉 hidden 即可復原 —— 不刪，因為工具升級鏈是原始需求之一。 -->
     </div>
 
-    <!-- ══ 分頁一：天氣時間軸 ══ -->
+    <!-- ══ 分頁一：臨時任務（現在天氣三格是它的前提，所以留在同一頁）══ -->
     <section id="panel-forecast" role="tabpanel" aria-labelledby="tab-forecast" tabindex="0">
       <div class="cos-stats" id="fc-now"></div>
 
-      <section class="cos-panel" id="jb-panel">
+      <!-- 緊急事件告誡緊貼在天氣三格底下 —— 它講的就是「上面那個天氣可能被蓋掉」，
+           擺在任務清單尾巴等於跟它要修飾的東西隔了一整個區塊（Owner 2026-07-31）。
+           只在特殊天氣（靈風／月塵）進行中才顯示；文案由 JS 填入。 -->
+      <p class="codex-small cos-np__caveat cos-hideable" id="np-caveat" hidden></p>
+
+      <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel" id="jb-panel">
+        <span class="codex-hud" aria-hidden="true"></span>
         <h2 class="codex-h2 cos-panel__title">
-          現在有什麼可能出現
-          <span class="codex-help-trigger" data-help="遊戲把任務分成基礎／臨時／緊急三類（這是 client 自己的分類欄，不是我們用階級推的）。｜看板只放臨時與緊急 —— 基礎任務 231 個隨時都在，放進來會把重點淹掉，入口在下方。｜主數字＝「池子裡現在有幾個」，不是「任務板上有幾個」：遊戲會從你符合的池裡抽幾個給你。｜倒數＝下一個條件視窗開啟後池子會多幾個。">
-            這些數字是什麼 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
+          臨時任務
+          <span class="codex-help-trigger" data-help="遊戲的三個分類是基礎任務／臨時任務／緊急任務；臨時任務底下再分連續任務／時間限定任務／天氣限定任務。本面板只放臨時任務裡有時段或天候條件的那些。｜時段到了、天氣對了，任務就會出現；還擋著的只有前置任務與該職的階級。｜天氣與 ET 時段都能精準推算，全 7 個繁中服伺服器同步。｜獎勵欄的 Ⅰ–Ⅳ 是宇宙工具各階可得的經驗值。｜緊急任務要等伺服器推事件，這裡算不出來。">
+            這裡列什麼 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
           </span>
         </h2>
-        <p class="codex-body cos-jb-lead">
-          <strong>本站給的是「池」，不是任務板的實際內容。</strong>
-          遊戲會從你符合條件的池裡<strong>抽</strong>幾個放上任務板，所以數字一定比你實際看到的多。
-          要看板上實際有什麼，只能在遊戲內（或用 ICE 這類遊戲內插件）。
-        </p>
-        <ul class="codex-body cos-jb-gates">
-          <li><strong>任務分三類</strong>：基礎 231（D/C/B，全部無條件）· 臨時 280（A1/A2/A3）· 緊急 33。
-            看板只放<strong>臨時與緊急</strong>。</li>
-          <li><strong>臨時任務有 184 個是無條件的</strong> —— 隨時在池子裡，不用等視窗。
-            只有 96 個綁時段條件。</li>
-          <li><strong>階級門（離線不可知）</strong> —— 任務板只給你已解鎖階級的任務。
-            右上角「我的階級」填了之後，超過的就不會算進來。</li>
-          <li><strong>緊急還多一層</strong> —— 標 <span class="cos-jb-lead__crit">⚡</span> 的除了條件，
-            還要等伺服器推播緊急事件，那層離線完全算不出來。</li>
-        </ul>
+
         <div class="cos-alarm">
           <label class="codex-switch">
             <input type="checkbox" class="codex-switch__input" id="al-enabled">
@@ -127,15 +130,36 @@
           </div>
           <p class="codex-small cos-alarm__status" id="al-status">關閉中</p>
         </div>
-        <div class="cos-jobboard" id="jb-board"></div>
-        <p class="cos-jb-foot" id="jb-foot"></p>
+
+        <h3 class="codex-h3 cos-np__head" id="np-now-head">現在<span class="codex-small cos-np__scope" id="np-scope"></span></h3>
+        <p class="codex-small cos-np__cols" aria-hidden="true">
+          <span>職業</span><span>限定條件</span><span>任務名稱</span><span>獎勵</span><span>還缺什麼</span>
+        </p>
+        <ul class="cos-np" id="np-now"></ul>
+
+        <h3 class="codex-h3 cos-np__head" id="np-next-head">下一批</h3>
+        <p class="codex-small cos-np__cols" aria-hidden="true">
+          <span>職業</span><span>限定條件</span><span>任務名稱</span><span>獎勵</span><span>還缺什麼</span>
+        </p>
+        <ul class="cos-np" id="np-next"></ul>
+
+        <p class="codex-small cos-np__note">
+          <strong>「我練的職業」＝把該職當成已經解到最高階</strong>（本站無從得知你每個職業練到哪，
+          所以由你勾選）。沒解到【高難】/【高難+】的職業，列出來的那幾階在遊戲內不會出現。
+          <br>有時段條件的基礎任務不列在這裡（不同分類，在任務清單分頁）；
+          雙職業任務也不列 —— 它們的出現規則本站尚未解出。
+        </p>
       </section>
 
+    </section>
+
+    <!-- ══ 分頁二：天氣預報（純預報，不混任務資訊）══ -->
+    <section id="panel-weather" role="tabpanel" aria-labelledby="tab-weather" tabindex="0" hidden>
       <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
         <span class="codex-hud" aria-hidden="true"></span>
         <h2 class="codex-h2 cos-panel__title">
           特殊天氣預報
-          <span class="codex-help-trigger" data-help="只列月塵與靈風。晴朗佔 70%、而且沒有任何任務綁它，整片列出來只會稀釋重點。｜天氣＝unix 時間的純函數，全繁中服 7 個伺服器同一秒看到的天氣完全相同，可推算到任意未來。｜每段固定 23 分 20 秒（＝8 艾歐澤亞小時）。｜這一欄是**必然**的：時間到了天氣就是那樣。任務會不會出現是另一回事。">
+          <span class="codex-help-trigger" data-help="只列月塵與靈風。晴朗佔 70%、而且沒有任何任務綁它，整片列出來只會稀釋重點。｜這裡是純天氣預報，任務在「臨時任務」分頁。｜天氣＝unix 時間的純函數，全繁中服 7 個伺服器同一秒看到的天氣完全相同，可推算到任意未來。｜每段固定 23 分 20 秒（＝8 艾歐澤亞小時）。｜這一欄是**必然**的：時間到了天氣就是那樣。任務會不會出現是另一回事。">
             怎麼算的 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
           </span>
         </h2>
@@ -143,12 +167,11 @@
           <table class="codex-table codex-table--fixed codex-table--zebra codex-table--sticky" id="fc-timeline">
             <thead>
               <tr>
-                <th style="width:9%">日期</th>
-                <th class="codex-table__num" style="width:13%">本地時間</th>
-                <th class="codex-table__num" style="width:11%">ET</th>
-                <th style="width:26%">天氣</th>
-                <th class="codex-table__num" style="width:20%">天候任務</th>
-                <th class="codex-table__num" style="width:21%">距離現在</th>
+                <th style="width:14%">日期</th>
+                <th class="codex-table__num" style="width:20%">本地時間</th>
+                <th class="codex-table__num" style="width:14%">ET</th>
+                <th style="width:29%">天氣</th>
+                <th class="codex-table__num" style="width:23%">距離現在</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -168,42 +191,42 @@
           <strong>每台伺服器各自不同</strong>：
         </p>
         <ul class="codex-body cos-serverdiff">
-          <li><strong>月門基地開發階段</strong> —— client 內有 134 個建設階段
+          <li><strong>月門基地開發階段</strong> —— 共 134 個建設階段
             （一級→二級→三級基地、宇宙快線內環／西北／東南／西南線、隧道、機庫、宇宙港、發電站、升降梯…），
             每個伺服器<strong>各自累積進度</strong>。這是你在不同伺服器看到「狀態不一樣」最主要的來源。</li>
           <li><strong>緊急事件</strong>（磁暴／流星雨／孢子霧）—— 伺服器推播，每個實例各自計時。</li>
-          <li><strong>任務板實際內容</strong> —— 條件表原名帶 <em>Lottery</em>（抽選），條件成立只是取得資格。</li>
+          <li><strong>不限時任務的任務板內容</strong> —— 看板名額有限，392 個不限時的任務會輪替；
+            有時段或天候條件的那批不受影響，條件到了就會出現。</li>
         </ul>
         <p class="codex-body">
-          緊急事件那三種天氣<strong>不在渴望灣的天氣機率表裡</strong>——掃過 client 全部 172 張天氣表，
-          這四個天氣 id 一個都沒出現，代表時間演算法<strong>永遠不會</strong>擲出它們。
-          所以本站只做算得準的部分，並標出必要條件視窗（靈風時段）。
+          緊急事件那三種天氣<strong>不在渴望灣的天氣機率表裡</strong>，時間演算法<strong>永遠不會</strong>
+          擲出它們。所以本站只做算得準的部分，並標出必要條件視窗（靈風時段）。
         </p>
         <p class="codex-body cos-caveat">
           ⚠️ <strong>尚未確認</strong>：開發階段會不會影響「哪些任務出得來」。
-          掃過任務表所有未定性欄位，唯一像分組鍵的那欄是<strong>按職業三人組分群</strong>
-          （鍛造／甲冑／金工一組、木工／皮革／裁縫一組），不是開發階段。
-          沒有證據，也沒有反證 —— 待遊戲內核對。
+          遊戲內確實有這道門（提示寫著「探索進度不足，任務尚未觸發」），但本站尚未釐清它的規則，
+          因此不計算這道門。
         </p>
       </section>
     </section>
 
-    <!-- ══ 分頁二：任務清單 ══ -->
+    <!-- ══ 分頁三：任務清單 ══ -->
     <section id="panel-missions" role="tabpanel" aria-labelledby="tab-missions" tabindex="0" hidden>
       <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
         <span class="codex-hud" aria-hidden="true"></span>
+        <!-- 兩段式：上排四組 chip 篩選（順序＝表格欄序），下排搜尋＋開關＋筆數。
+             原本全部塞進同一個 auto-fit grid，四欄高度差很多 ⇒ 一堆空洞、搜尋被擠到
+             職業底下、開關浮在中間（Owner 2026-08-01）。 -->
         <div class="cos-filters">
-          <div class="codex-field cos-filter">
-            <label class="codex-field__label" for="mv-search">搜尋任務或素材</label>
-            <input class="codex-input" id="mv-search" type="search" autocomplete="off">
+          <div class="cos-filter cos-filter--jobs">
+            <span class="codex-field__label">職業</span>
+            <div class="cos-chips" id="mv-jobs"></div>
           </div>
           <div class="cos-filter">
             <span class="codex-field__label">任務類型</span>
             <div class="cos-chips" id="mv-classes"></div>
-          </div>
-          <div class="cos-filter">
-            <span class="codex-field__label">職業</span>
-            <div class="cos-chips" id="mv-jobs"></div>
+            <span class="codex-field__label cos-sublabel">└ 臨時任務的子標籤</span>
+            <div class="cos-chips" id="mv-tags"></div>
           </div>
           <div class="cos-filter">
             <span class="codex-field__label">難度</span>
@@ -213,15 +236,25 @@
             <span class="codex-field__label">開放條件</span>
             <div class="cos-chips" id="mv-conds"></div>
           </div>
-          <div class="cos-filter cos-filter--switches">
-            <label class="codex-switch">
-              <input type="checkbox" class="codex-switch__input" id="mv-available">
-              <span class="codex-switch__track" aria-hidden="true"></span>
-              <span>只看條件成立的</span>
-            </label>
-          </div>
         </div>
-        <p class="codex-small cos-count">符合筆數：<span id="mv-count">—</span></p>
+
+        <div class="cos-filterfoot">
+          <div class="codex-field cos-filterfoot__search">
+            <label class="codex-field__label" for="mv-search">搜尋任務或素材</label>
+            <input class="codex-input" id="mv-search" type="search" autocomplete="off">
+          </div>
+          <label class="codex-switch">
+            <input type="checkbox" class="codex-switch__input" id="mv-available">
+            <span class="codex-switch__track" aria-hidden="true"></span>
+            <span>只看條件成立的</span>
+          </label>
+          <label class="codex-switch">
+            <input type="checkbox" class="codex-switch__input" id="mv-hidebulk" checked>
+            <span class="codex-switch__track" aria-hidden="true"></span>
+            <span>隱藏不限時的基礎任務（302）</span>
+          </label>
+          <p class="codex-small cos-count">符合筆數：<span id="mv-count">—</span></p>
+        </div>
       </section>
 
       <div class="codex-empty cos-hideable" id="mv-empty" hidden>
@@ -233,17 +266,18 @@
         <table class="codex-table codex-table--fixed codex-table--zebra codex-table--sticky" id="mv-table">
           <thead>
             <tr>
-              <th style="width:20%">任務</th>
-              <th style="width:6%">類型</th>
-              <th style="width:9%">職業</th>
-              <th class="codex-table__num" style="width:6%">難度</th>
-              <th class="codex-table__num" style="width:7%">時限</th>
+              <!-- 欄序＝誰 → 是什麼 → 何時 → 代價 → 報酬，與主面板同一套邏輯
+                   （Owner 2026-08-01：原本的順序沒有連貫性）。 -->
+              <th style="width:5%">職業</th>
+              <th style="width:10%">類型</th>
+              <th class="codex-table__num" style="width:5%">難度</th>
+              <th style="width:19%">任務</th>
               <th style="width:16%">開放條件</th>
-              <th style="width:18%">需求物</th>
-              <th class="codex-table__num" style="width:10%">
-                宇宙 / 月球
-              </th>
-              <th style="width:8%">條件</th>
+              <th style="width:7%">現在</th>
+              <th class="codex-table__num" style="width:5%">時限</th>
+              <th style="width:17%">需求物</th>
+              <th class="codex-table__num" style="width:5%">宇宙</th>
+              <th class="codex-table__num" style="width:5%">月球</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -263,7 +297,7 @@
         <span class="codex-hud" aria-hidden="true"></span>
         <h2 class="codex-h2 cos-panel__title">
           月門基地開發進度
-          <span class="codex-help-trigger" data-help="16 期開拓紀錄與 63 個施工階段是從 client 解出來的，全服共用同一套流程。｜但「你的伺服器現在在第幾期」是伺服器狀態，離線算不出來 —— 必須你自己填（遊戲內開拓紀錄看得到）。｜每個伺服器各自累積進度，所以分開記。">
+          <span class="codex-help-trigger" data-help="16 期開拓紀錄與 63 個施工階段全服共用同一套流程。｜但「你的伺服器現在在第幾期」是伺服器狀態，離線算不出來 —— 必須你自己填（遊戲內開拓紀錄看得到）。｜每個伺服器各自累積進度，所以分開記。">
             資料哪來的 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
           </span>
         </h2>
@@ -290,7 +324,7 @@
 
     <footer class="cos-footer">
       <p class="codex-small">
-        資料來源：FFXIV 台服 client <span id="meta-client">—</span>（產生於 <span id="meta-generated">—</span>）。
+        對應遊戲版本 <span id="meta-client">—</span>（資料更新於 <span id="meta-generated">—</span>）。
         天氣為時間函數、全伺服器同步；緊急任務為伺服器端狀態，本站不提供。
       </p>
     </footer>

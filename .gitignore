@@ -2,3 +2,6 @@ tmp/
 bin/
 obj/
 .adversarial-reviews/
+
+# CF Pages build 產物（由 deploy-prepare.sh 生成，不入 git）
+_site/

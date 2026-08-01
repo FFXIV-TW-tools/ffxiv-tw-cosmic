@@ -1,7 +1,7 @@
 {
   "meta": {
     "clientVersion": "2026.07.22.0000.0000",
-    "generatedAt": "2026-07-31T06:43:15Z",
+    "generatedAt": "2026-07-31T16:35:22Z",
     "generator": "tools/cosmic-dump"
   },
   "_note": "月門基地開發階段。client 只有「有哪些階段」；「你的伺服器在第幾期」是伺服器狀態、離線不可知，需使用者自行輸入。",

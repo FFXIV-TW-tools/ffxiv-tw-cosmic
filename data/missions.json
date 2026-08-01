@@ -1,14 +1,14 @@
 {
   "meta": {
     "clientVersion": "2026.07.22.0000.0000",
-    "generatedAt": "2026-07-31T06:43:15Z",
+    "generatedAt": "2026-07-31T16:35:22Z",
     "generator": "tools/cosmic-dump"
   },
   "_note": "544 筆渴望灣任務。conditions 為額外開放條件；type=unknown 者語意未定，刻意不猜。",
   "conditions": {
     "0": {
       "type": "none",
-      "label": "無條件"
+      "label": "不限時"
     },
     "1": {
       "type": "time",
@@ -125,13 +125,33 @@
       "label": "條件未定"
     }
   },
+  "condLogic": "and",
+  "condLogicVerified": true,
   "rankLabels": {
     "1": "D",
     "2": "C",
     "3": "B",
-    "4": "A1",
-    "5": "A2",
-    "6": "A3"
+    "4": "A",
+    "5": "高難",
+    "6": "高難+"
+  },
+  "classLabels": {
+    "basic": "基礎任務",
+    "temporary": "臨時任務",
+    "critical": "緊急任務"
+  },
+  "tagLabels": {
+    "sequential": "連續任務",
+    "time": "時間限定任務",
+    "weather": "天氣限定任務"
+  },
+  "_addonRows": {
+    "基礎任務": 16748,
+    "臨時任務": 16749,
+    "緊急任務": 16750,
+    "連續任務": 16871,
+    "時間限定任務": 16872,
+    "天氣限定任務": 16873
   },
   "missions": [
     {
@@ -143,10 +163,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48258,
@@ -184,10 +207,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48276,
@@ -225,10 +251,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48277,
@@ -266,10 +295,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48278,
@@ -307,10 +339,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48279,
@@ -348,10 +383,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48280,
@@ -389,10 +427,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48258,
@@ -434,10 +475,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48281,
@@ -479,10 +523,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48282,
@@ -524,10 +571,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48283,
@@ -570,10 +620,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1100,
       "gold": 2500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48284,
@@ -616,10 +669,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2250,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48285,
@@ -662,10 +718,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48286,
@@ -708,10 +767,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48291,
@@ -753,10 +815,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48258,
@@ -798,10 +863,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1700,
       "gold": 2000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48292,
@@ -843,10 +911,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 2700,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48293,
@@ -888,10 +959,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48294,
@@ -933,10 +1007,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 2700,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48295,
@@ -978,10 +1055,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1000,
       "gold": 1300,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48296,
@@ -1028,10 +1108,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1000,
       "gold": 1300,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48297,
@@ -1077,11 +1160,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48258,
@@ -1122,11 +1208,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48298,
@@ -1167,11 +1256,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48299,
@@ -1212,11 +1304,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 700,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48300,
@@ -1257,11 +1352,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2600,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48301,
@@ -1315,10 +1413,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48304,
@@ -1360,10 +1461,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 840,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48305,
@@ -1405,10 +1509,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 840,
       "gold": 1000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48306,
@@ -1450,10 +1557,17 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2800,
       "gold": 3000,
-      "cond": 1,
+      "conds": [
+        13
+      ],
+      "c14": 1,
       "items": [
         {
           "itemId": 48307,
@@ -1511,10 +1625,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 420,
       "silver": 560,
       "gold": 880,
-      "cond": 0,
+      "conds": [
+        14
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48310,
@@ -1561,10 +1682,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 330,
       "silver": 560,
       "gold": 880,
-      "cond": 0,
+      "conds": [
+        13
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48311,
@@ -1610,11 +1738,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48312,
@@ -1656,10 +1787,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 33,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48313,
@@ -1704,11 +1840,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48314,
@@ -1750,10 +1889,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 35,
       "timeLimit": 1200,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48315,
@@ -1799,10 +1943,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 36,
       "timeLimit": 300,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48316,
@@ -1848,10 +1997,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 850,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48317,
@@ -1893,10 +2045,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 38,
       "timeLimit": 240,
       "silver": 900,
       "gold": 1000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48318,
@@ -1941,11 +2098,16 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [
+        1
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48319,
@@ -1987,10 +2149,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 40,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48320,
@@ -2036,10 +2203,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 41,
       "timeLimit": 270,
       "silver": 2700,
       "gold": 3000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48261,
@@ -2085,10 +2257,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "time"
+      ],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 980,
       "gold": 1080,
-      "cond": 1,
+      "conds": [
+        7
+      ],
+      "c14": 1,
       "items": [
         {
           "itemId": 48323,
@@ -2135,10 +2314,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 43,
       "timeLimit": 600,
       "silver": 980,
       "gold": 1080,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48325,
@@ -2185,10 +2369,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 44,
       "timeLimit": 420,
       "silver": 1000,
       "gold": 1080,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48321,
@@ -2235,10 +2424,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48238,
@@ -2276,10 +2468,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48239,
@@ -2317,10 +2512,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48240,
@@ -2358,10 +2556,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48326,
@@ -2399,10 +2600,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48327,
@@ -2440,10 +2644,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48241,
@@ -2481,10 +2688,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48238,
@@ -2526,10 +2736,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48242,
@@ -2571,10 +2784,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48328,
@@ -2616,10 +2832,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48329,
@@ -2662,10 +2881,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1100,
       "gold": 2500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48330,
@@ -2708,10 +2930,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2250,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48331,
@@ -2754,10 +2979,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48332,
@@ -2800,10 +3028,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48334,
@@ -2845,10 +3076,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48238,
@@ -2890,10 +3124,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1700,
       "gold": 2000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48335,
@@ -2935,10 +3172,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 2700,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48336,
@@ -2980,10 +3220,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48337,
@@ -3025,10 +3268,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 2700,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48338,
@@ -3070,10 +3316,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1000,
       "gold": 1300,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48339,
@@ -3120,10 +3369,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1000,
       "gold": 1300,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48340,
@@ -3169,11 +3421,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48238,
@@ -3214,11 +3469,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48243,
@@ -3259,11 +3517,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48341,
@@ -3304,11 +3565,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 700,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48342,
@@ -3349,11 +3613,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2600,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48244,
@@ -3407,10 +3674,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48343,
@@ -3452,10 +3722,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 840,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48344,
@@ -3497,10 +3770,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 840,
       "gold": 1000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48345,
@@ -3542,10 +3818,17 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2800,
       "gold": 3000,
-      "cond": 1,
+      "conds": [
+        14
+      ],
+      "c14": 1,
       "items": [
         {
           "itemId": 48346,
@@ -3603,10 +3886,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 420,
       "silver": 560,
       "gold": 880,
-      "cond": 0,
+      "conds": [
+        13
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48349,
@@ -3653,10 +3943,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 330,
       "silver": 560,
       "gold": 880,
-      "cond": 0,
+      "conds": [
+        14
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48350,
@@ -3702,11 +3999,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48351,
@@ -3748,10 +4048,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 78,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48352,
@@ -3796,11 +4101,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48353,
@@ -3842,10 +4150,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 80,
       "timeLimit": 1200,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48354,
@@ -3891,10 +4204,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 81,
       "timeLimit": 300,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48355,
@@ -3940,10 +4258,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 850,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48247,
@@ -3985,10 +4306,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 83,
       "timeLimit": 240,
       "silver": 900,
       "gold": 1000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48248,
@@ -4033,11 +4359,16 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [
+        3
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48356,
@@ -4079,10 +4410,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 85,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48357,
@@ -4128,10 +4464,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 86,
       "timeLimit": 270,
       "silver": 2700,
       "gold": 3000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48249,
@@ -4177,10 +4518,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "time"
+      ],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 980,
       "gold": 1080,
-      "cond": 1,
+      "conds": [
+        9
+      ],
+      "c14": 1,
       "items": [
         {
           "itemId": 48361,
@@ -4227,10 +4575,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 88,
       "timeLimit": 600,
       "silver": 980,
       "gold": 1080,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48363,
@@ -4277,10 +4630,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 89,
       "timeLimit": 420,
       "silver": 1000,
       "gold": 1080,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48358,
@@ -4327,10 +4685,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48238,
@@ -4368,10 +4729,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48239,
@@ -4409,10 +4773,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48240,
@@ -4450,10 +4817,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48364,
@@ -4491,10 +4861,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48250,
@@ -4532,10 +4905,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48241,
@@ -4573,10 +4949,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48238,
@@ -4618,10 +4997,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48242,
@@ -4663,10 +5045,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48365,
@@ -4708,10 +5093,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48366,
@@ -4754,10 +5142,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1100,
       "gold": 2500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48367,
@@ -4800,10 +5191,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2250,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48368,
@@ -4846,10 +5240,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48369,
@@ -4892,10 +5289,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48371,
@@ -4937,10 +5337,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48238,
@@ -4982,10 +5385,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1700,
       "gold": 2000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48372,
@@ -5027,10 +5433,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 2700,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48373,
@@ -5072,10 +5481,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48374,
@@ -5117,10 +5529,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 2700,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48375,
@@ -5162,10 +5577,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1000,
       "gold": 1300,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48376,
@@ -5212,10 +5630,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1000,
       "gold": 1300,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48377,
@@ -5261,11 +5682,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48238,
@@ -5306,11 +5730,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48243,
@@ -5351,11 +5778,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48378,
@@ -5396,11 +5826,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 700,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48379,
@@ -5441,11 +5874,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2600,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48244,
@@ -5499,10 +5935,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48380,
@@ -5544,10 +5983,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 840,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48381,
@@ -5589,10 +6031,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 840,
       "gold": 1000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48382,
@@ -5634,10 +6079,17 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2800,
       "gold": 3000,
-      "cond": 1,
+      "conds": [
+        13
+      ],
+      "c14": 1,
       "items": [
         {
           "itemId": 48383,
@@ -5695,10 +6147,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 420,
       "silver": 560,
       "gold": 880,
-      "cond": 0,
+      "conds": [
+        13
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48386,
@@ -5745,10 +6204,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 330,
       "silver": 560,
       "gold": 880,
-      "cond": 0,
+      "conds": [
+        14
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48387,
@@ -5794,11 +6260,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48388,
@@ -5840,10 +6309,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 123,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48389,
@@ -5888,11 +6362,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48390,
@@ -5934,10 +6411,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 125,
       "timeLimit": 1200,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48391,
@@ -5983,10 +6465,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 126,
       "timeLimit": 300,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48392,
@@ -6032,10 +6519,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 850,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48247,
@@ -6077,10 +6567,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 128,
       "timeLimit": 240,
       "silver": 900,
       "gold": 1000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48248,
@@ -6125,11 +6620,16 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [
+        5
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48393,
@@ -6171,10 +6671,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 130,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48394,
@@ -6220,10 +6725,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 131,
       "timeLimit": 270,
       "silver": 2700,
       "gold": 3000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48249,
@@ -6269,10 +6779,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "time"
+      ],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 980,
       "gold": 1080,
-      "cond": 1,
+      "conds": [
+        11
+      ],
+      "c14": 1,
       "items": [
         {
           "itemId": 48397,
@@ -6319,10 +6836,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 133,
       "timeLimit": 600,
       "silver": 980,
       "gold": 1080,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48399,
@@ -6369,10 +6891,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 134,
       "timeLimit": 420,
       "silver": 1000,
       "gold": 1080,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48395,
@@ -6419,10 +6946,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48238,
@@ -6460,10 +6990,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48239,
@@ -6501,10 +7034,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48240,
@@ -6542,10 +7078,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48400,
@@ -6583,10 +7122,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48250,
@@ -6624,10 +7166,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48401,
@@ -6665,10 +7210,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48238,
@@ -6710,10 +7258,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48242,
@@ -6755,10 +7306,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48402,
@@ -6800,10 +7354,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48403,
@@ -6846,10 +7403,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1100,
       "gold": 2500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48404,
@@ -6892,10 +7452,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2250,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48405,
@@ -6938,10 +7501,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48406,
@@ -6984,10 +7550,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48407,
@@ -7029,10 +7598,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48238,
@@ -7074,10 +7646,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1700,
       "gold": 2000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48408,
@@ -7119,10 +7694,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 2700,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48409,
@@ -7164,10 +7742,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48410,
@@ -7209,10 +7790,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 2700,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48411,
@@ -7254,10 +7838,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1000,
       "gold": 1300,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48412,
@@ -7304,10 +7891,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1000,
       "gold": 1300,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48413,
@@ -7353,11 +7943,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48238,
@@ -7398,11 +7991,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48243,
@@ -7443,11 +8039,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48414,
@@ -7488,11 +8087,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 700,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48415,
@@ -7533,11 +8135,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2600,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48244,
@@ -7591,10 +8196,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48416,
@@ -7636,10 +8244,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 840,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48417,
@@ -7681,10 +8292,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 840,
       "gold": 1000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48418,
@@ -7726,10 +8340,17 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2800,
       "gold": 3000,
-      "cond": 1,
+      "conds": [
+        14
+      ],
+      "c14": 1,
       "items": [
         {
           "itemId": 48419,
@@ -7787,10 +8408,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 420,
       "silver": 560,
       "gold": 880,
-      "cond": 0,
+      "conds": [
+        13
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48422,
@@ -7837,10 +8465,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 330,
       "silver": 560,
       "gold": 880,
-      "cond": 0,
+      "conds": [
+        14
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48423,
@@ -7886,11 +8521,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48424,
@@ -7932,10 +8570,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 168,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48425,
@@ -7980,11 +8623,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48426,
@@ -8026,10 +8672,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 170,
       "timeLimit": 1200,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48427,
@@ -8075,10 +8726,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 171,
       "timeLimit": 300,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48428,
@@ -8124,10 +8780,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 850,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48247,
@@ -8169,10 +8828,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 173,
       "timeLimit": 240,
       "silver": 900,
       "gold": 1000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48248,
@@ -8217,11 +8881,16 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [
+        7
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48429,
@@ -8263,10 +8932,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 175,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48430,
@@ -8312,10 +8986,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 176,
       "timeLimit": 270,
       "silver": 2700,
       "gold": 3000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48249,
@@ -8361,10 +9040,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "time"
+      ],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 980,
       "gold": 1080,
-      "cond": 1,
+      "conds": [
+        1
+      ],
+      "c14": 1,
       "items": [
         {
           "itemId": 48434,
@@ -8411,10 +9097,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 178,
       "timeLimit": 600,
       "silver": 980,
       "gold": 1080,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48436,
@@ -8461,10 +9152,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 179,
       "timeLimit": 420,
       "silver": 1000,
       "gold": 1080,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48431,
@@ -8511,10 +9207,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48259,
@@ -8552,10 +9251,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48437,
@@ -8593,10 +9295,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48438,
@@ -8634,10 +9339,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48439,
@@ -8675,10 +9383,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48440,
@@ -8716,10 +9427,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48441,
@@ -8757,10 +9471,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48259,
@@ -8802,10 +9519,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48442,
@@ -8847,10 +9567,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48443,
@@ -8892,10 +9615,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48444,
@@ -8938,10 +9664,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1100,
       "gold": 2500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48445,
@@ -8984,10 +9713,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2250,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48446,
@@ -9030,10 +9762,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48447,
@@ -9076,10 +9811,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48452,
@@ -9121,10 +9859,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48259,
@@ -9166,10 +9907,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1700,
       "gold": 2000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48453,
@@ -9211,10 +9955,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 2700,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48454,
@@ -9256,10 +10003,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48455,
@@ -9301,10 +10051,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 2700,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48456,
@@ -9346,10 +10099,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1000,
       "gold": 1300,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48457,
@@ -9396,10 +10152,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1000,
       "gold": 1300,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48458,
@@ -9445,11 +10204,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48259,
@@ -9490,11 +10252,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48459,
@@ -9535,11 +10300,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48460,
@@ -9580,11 +10348,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 700,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48461,
@@ -9625,11 +10396,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2600,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48462,
@@ -9683,10 +10457,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48465,
@@ -9728,10 +10505,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 840,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48466,
@@ -9773,10 +10553,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 840,
       "gold": 1000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48467,
@@ -9818,10 +10601,17 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2800,
       "gold": 3000,
-      "cond": 1,
+      "conds": [
+        13
+      ],
+      "c14": 1,
       "items": [
         {
           "itemId": 48468,
@@ -9879,10 +10669,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 420,
       "silver": 560,
       "gold": 880,
-      "cond": 0,
+      "conds": [
+        14
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48471,
@@ -9929,10 +10726,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 330,
       "silver": 560,
       "gold": 880,
-      "cond": 0,
+      "conds": [
+        13
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48472,
@@ -9978,11 +10782,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48473,
@@ -10024,10 +10831,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 213,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48474,
@@ -10072,11 +10884,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48475,
@@ -10118,10 +10933,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 215,
       "timeLimit": 1200,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48476,
@@ -10167,10 +10987,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 216,
       "timeLimit": 300,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48477,
@@ -10216,10 +11041,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 850,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48478,
@@ -10261,10 +11089,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 218,
       "timeLimit": 240,
       "silver": 900,
       "gold": 1000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48479,
@@ -10309,11 +11142,16 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [
+        9
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48480,
@@ -10355,10 +11193,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 220,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48481,
@@ -10404,10 +11247,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 221,
       "timeLimit": 270,
       "silver": 2700,
       "gold": 3000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48261,
@@ -10453,10 +11301,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "time"
+      ],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 980,
       "gold": 1080,
-      "cond": 1,
+      "conds": [
+        3
+      ],
+      "c14": 1,
       "items": [
         {
           "itemId": 48484,
@@ -10503,10 +11358,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 223,
       "timeLimit": 600,
       "silver": 980,
       "gold": 1080,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48486,
@@ -10553,10 +11413,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 224,
       "timeLimit": 420,
       "silver": 1000,
       "gold": 1080,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48482,
@@ -10603,10 +11468,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48260,
@@ -10644,10 +11512,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48487,
@@ -10685,10 +11556,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48488,
@@ -10726,10 +11600,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48489,
@@ -10767,10 +11644,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48490,
@@ -10808,10 +11688,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48491,
@@ -10849,10 +11732,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48260,
@@ -10894,10 +11780,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48492,
@@ -10939,10 +11828,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48493,
@@ -10984,10 +11876,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48494,
@@ -11030,10 +11925,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1100,
       "gold": 2500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48495,
@@ -11076,10 +11974,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2250,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48496,
@@ -11122,10 +12023,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48497,
@@ -11168,10 +12072,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48502,
@@ -11213,10 +12120,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48260,
@@ -11258,10 +12168,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1700,
       "gold": 2000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48503,
@@ -11303,10 +12216,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 2700,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48504,
@@ -11348,10 +12264,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48505,
@@ -11393,10 +12312,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 2700,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48506,
@@ -11438,10 +12360,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1000,
       "gold": 1300,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48507,
@@ -11488,10 +12413,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1000,
       "gold": 1300,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48508,
@@ -11537,11 +12465,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48260,
@@ -11582,11 +12513,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48509,
@@ -11627,11 +12561,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48510,
@@ -11672,11 +12609,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 700,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48511,
@@ -11717,11 +12657,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2600,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48512,
@@ -11775,10 +12718,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48515,
@@ -11820,10 +12766,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 840,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48516,
@@ -11865,10 +12814,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 840,
       "gold": 1000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48517,
@@ -11910,10 +12862,17 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2800,
       "gold": 3000,
-      "cond": 1,
+      "conds": [
+        14
+      ],
+      "c14": 1,
       "items": [
         {
           "itemId": 48518,
@@ -11971,10 +12930,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 420,
       "silver": 560,
       "gold": 880,
-      "cond": 0,
+      "conds": [
+        14
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48521,
@@ -12021,10 +12987,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 330,
       "silver": 560,
       "gold": 880,
-      "cond": 0,
+      "conds": [
+        13
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48522,
@@ -12070,11 +13043,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48523,
@@ -12116,10 +13092,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 258,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48524,
@@ -12164,11 +13145,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48525,
@@ -12210,10 +13194,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 260,
       "timeLimit": 1200,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48526,
@@ -12259,10 +13248,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 261,
       "timeLimit": 300,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48527,
@@ -12308,10 +13302,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 850,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48528,
@@ -12353,10 +13350,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 263,
       "timeLimit": 240,
       "silver": 900,
       "gold": 1000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48529,
@@ -12401,11 +13403,16 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [
+        11
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48530,
@@ -12447,10 +13454,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 265,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48531,
@@ -12496,10 +13508,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 266,
       "timeLimit": 270,
       "silver": 2700,
       "gold": 3000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48261,
@@ -12545,10 +13562,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "time"
+      ],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 980,
       "gold": 1080,
-      "cond": 1,
+      "conds": [
+        5
+      ],
+      "c14": 1,
       "items": [
         {
           "itemId": 48534,
@@ -12595,10 +13619,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 268,
       "timeLimit": 600,
       "silver": 980,
       "gold": 1080,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48536,
@@ -12645,10 +13674,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 269,
       "timeLimit": 420,
       "silver": 1000,
       "gold": 1080,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48532,
@@ -12695,10 +13729,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48268,
@@ -12736,10 +13773,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48269,
@@ -12777,10 +13817,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48537,
@@ -12818,10 +13861,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48538,
@@ -12859,10 +13905,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48539,
@@ -12900,10 +13949,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48270,
@@ -12941,10 +13993,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48268,
@@ -12986,10 +14041,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48540,
@@ -13031,10 +14089,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48541,
@@ -13076,10 +14137,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48542,
@@ -13122,10 +14186,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1100,
       "gold": 2500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48543,
@@ -13168,10 +14235,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2250,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48544,
@@ -13214,10 +14284,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48545,
@@ -13260,10 +14333,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48550,
@@ -13305,10 +14381,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48268,
@@ -13350,10 +14429,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1700,
       "gold": 2000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48551,
@@ -13395,10 +14477,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 2700,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48552,
@@ -13440,10 +14525,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48553,
@@ -13485,10 +14573,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 2700,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48554,
@@ -13530,10 +14621,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1000,
       "gold": 1300,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48555,
@@ -13580,10 +14674,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1000,
       "gold": 1300,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48556,
@@ -13629,11 +14726,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48268,
@@ -13674,11 +14774,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48559,
@@ -13719,11 +14822,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48560,
@@ -13764,11 +14870,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 700,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48561,
@@ -13809,11 +14918,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2600,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48562,
@@ -13867,10 +14979,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48565,
@@ -13912,10 +15027,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 840,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48566,
@@ -13957,10 +15075,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 840,
       "gold": 1000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48567,
@@ -14002,10 +15123,17 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2800,
       "gold": 3000,
-      "cond": 1,
+      "conds": [
+        13
+      ],
+      "c14": 1,
       "items": [
         {
           "itemId": 48568,
@@ -14063,10 +15191,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 420,
       "silver": 560,
       "gold": 880,
-      "cond": 0,
+      "conds": [
+        13
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48571,
@@ -14113,10 +15248,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 330,
       "silver": 560,
       "gold": 880,
-      "cond": 0,
+      "conds": [
+        14
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48572,
@@ -14162,11 +15304,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48573,
@@ -14208,10 +15353,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 303,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48574,
@@ -14256,11 +15406,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48575,
@@ -14302,10 +15455,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 305,
       "timeLimit": 1200,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48576,
@@ -14351,10 +15509,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 306,
       "timeLimit": 300,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48577,
@@ -14400,10 +15563,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 850,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48271,
@@ -14445,10 +15611,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 308,
       "timeLimit": 240,
       "silver": 900,
       "gold": 1000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48272,
@@ -14493,11 +15664,16 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [
+        1
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48578,
@@ -14539,10 +15715,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 310,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48579,
@@ -14588,10 +15769,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 311,
       "timeLimit": 270,
       "silver": 2700,
       "gold": 3000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48580,
@@ -14637,10 +15823,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "time"
+      ],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 980,
       "gold": 1080,
-      "cond": 1,
+      "conds": [
+        7
+      ],
+      "c14": 1,
       "items": [
         {
           "itemId": 48583,
@@ -14687,10 +15880,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 313,
       "timeLimit": 600,
       "silver": 980,
       "gold": 1080,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48585,
@@ -14737,10 +15935,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 314,
       "timeLimit": 420,
       "silver": 1000,
       "gold": 1080,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48581,
@@ -14787,10 +15990,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48273,
@@ -14828,10 +16034,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48269,
@@ -14869,10 +16078,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48586,
@@ -14910,10 +16122,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48587,
@@ -14951,10 +16166,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48588,
@@ -14992,10 +16210,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48270,
@@ -15033,10 +16254,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48273,
@@ -15078,10 +16302,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48589,
@@ -15123,10 +16350,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48590,
@@ -15168,10 +16398,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48591,
@@ -15214,10 +16447,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1100,
       "gold": 2500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48592,
@@ -15260,10 +16496,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1200,
       "gold": 2250,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48593,
@@ -15306,10 +16545,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48594,
@@ -15352,10 +16594,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48599,
@@ -15397,10 +16642,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48273,
@@ -15442,10 +16690,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1700,
       "gold": 2000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48600,
@@ -15487,10 +16738,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 2700,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48601,
@@ -15532,10 +16786,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1600,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48602,
@@ -15577,10 +16834,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 2700,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48603,
@@ -15622,10 +16882,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1000,
       "gold": 1300,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48604,
@@ -15672,10 +16935,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 1000,
       "gold": 1300,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48605,
@@ -15721,11 +16987,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48273,
@@ -15766,11 +17035,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48608,
@@ -15811,11 +17083,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 0,
       "silver": 700,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48609,
@@ -15856,11 +17131,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 700,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48610,
@@ -15901,11 +17179,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2600,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48611,
@@ -15959,10 +17240,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48614,
@@ -16004,10 +17288,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 840,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48615,
@@ -16049,10 +17336,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 840,
       "gold": 1000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48616,
@@ -16094,10 +17384,17 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2800,
       "gold": 3000,
-      "cond": 1,
+      "conds": [
+        14
+      ],
+      "c14": 1,
       "items": [
         {
           "itemId": 48617,
@@ -16155,10 +17452,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 420,
       "silver": 560,
       "gold": 880,
-      "cond": 0,
+      "conds": [
+        13
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48620,
@@ -16205,10 +17509,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 330,
       "silver": 560,
       "gold": 880,
-      "cond": 0,
+      "conds": [
+        14
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48621,
@@ -16254,11 +17565,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48622,
@@ -16300,10 +17614,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 348,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48623,
@@ -16348,11 +17667,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48624,
@@ -16394,10 +17716,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 350,
       "timeLimit": 1200,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48625,
@@ -16443,10 +17770,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 351,
       "timeLimit": 300,
       "silver": 1000,
       "gold": 1600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48626,
@@ -16492,10 +17824,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 850,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48271,
@@ -16537,10 +17872,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 353,
       "timeLimit": 240,
       "silver": 900,
       "gold": 1000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48272,
@@ -16585,11 +17925,16 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 2300,
       "gold": 3000,
-      "cond": 0,
+      "conds": [
+        3
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48627,
@@ -16631,10 +17976,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 355,
       "timeLimit": 1200,
       "silver": 2500,
       "gold": 3000,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48628,
@@ -16680,10 +18030,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 356,
       "timeLimit": 270,
       "silver": 2700,
       "gold": 3000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48629,
@@ -16729,10 +18084,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "time"
+      ],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 980,
       "gold": 1080,
-      "cond": 1,
+      "conds": [
+        9
+      ],
+      "c14": 1,
       "items": [
         {
           "itemId": 48632,
@@ -16779,10 +18141,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 358,
       "timeLimit": 600,
       "silver": 980,
       "gold": 1080,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48634,
@@ -16829,10 +18196,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 359,
       "timeLimit": 420,
       "silver": 1000,
       "gold": 1080,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48630,
@@ -16879,10 +18251,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 1550,
       "gold": 1700,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48635,
@@ -16917,10 +18292,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 1550,
       "gold": 1700,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48635,
@@ -16955,10 +18333,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 4920,
       "gold": 5020,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48635,
@@ -16993,10 +18374,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 4920,
       "gold": 5020,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48641,
@@ -17031,10 +18415,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 1550,
       "gold": 1700,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48635,
@@ -17069,10 +18456,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 1550,
       "gold": 1700,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48641,
@@ -17107,10 +18497,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 1550,
       "gold": 1900,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48649,
@@ -17154,10 +18547,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 4920,
       "gold": 5270,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48644,
@@ -17196,10 +18592,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 1550,
       "gold": 1900,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48649,
@@ -17243,10 +18642,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 850,
       "gold": 1050,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 3,
@@ -17279,10 +18681,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 2000,
       "gold": 2600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 3,
@@ -17315,10 +18720,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 2850,
       "gold": 3550,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 3,
@@ -17351,10 +18759,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 120,
       "gold": 140,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 3,
@@ -17387,10 +18798,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 1550,
       "gold": 1950,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48654,
@@ -17439,10 +18853,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 4920,
       "gold": 5320,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48654,
@@ -17481,10 +18898,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 1550,
       "gold": 1950,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48654,
@@ -17533,10 +18953,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 850,
       "gold": 1050,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 5,
@@ -17569,10 +18992,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 2000,
       "gold": 2600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 5,
@@ -17605,10 +19031,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 2850,
       "gold": 3550,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 5,
@@ -17641,10 +19070,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 130,
       "gold": 150,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 6,
@@ -17681,10 +19113,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 4400,
       "gold": 4600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48661,
@@ -17726,11 +19161,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 2800,
       "gold": 3200,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48654,
@@ -17778,11 +19216,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 4800,
       "gold": 5100,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48649,
@@ -17820,11 +19261,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 3000,
       "gold": 3400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48644,
@@ -17872,11 +19316,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 2350,
       "gold": 2950,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 10,
@@ -17908,11 +19355,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 4000,
       "gold": 5200,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 10,
@@ -17945,10 +19395,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 2850,
       "gold": 3250,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48649,
@@ -17997,10 +19450,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 1750,
       "gold": 1950,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48639,
@@ -18039,10 +19495,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 1160,
       "gold": 1680,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [],
       "reward": {
         "cosmo": 15,
@@ -18075,10 +19534,17 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 900,
       "gold": 1100,
-      "cond": 2,
+      "conds": [
+        14
+      ],
+      "c14": 2,
       "items": [],
       "reward": {
         "cosmo": 11,
@@ -18115,10 +19581,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 300,
       "silver": 900,
       "gold": 1300,
-      "cond": 0,
+      "conds": [
+        13
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48661,
@@ -18161,10 +19634,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 300,
       "silver": 1310,
       "gold": 1680,
-      "cond": 0,
+      "conds": [
+        14
+      ],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 16,
@@ -18200,11 +19680,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 2800,
       "gold": 3200,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48635,
@@ -18253,10 +19736,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 393,
       "timeLimit": 600,
       "silver": 2350,
       "gold": 2950,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 21,
@@ -18292,11 +19780,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 4800,
       "gold": 5100,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48644,
@@ -18335,10 +19826,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 395,
       "timeLimit": 600,
       "silver": 4200,
       "gold": 5400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 20,
@@ -18375,10 +19871,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 396,
       "timeLimit": 180,
       "silver": 900,
       "gold": 1200,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 22,
@@ -18415,10 +19916,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 3000,
       "gold": 3400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48649,
@@ -18467,10 +19971,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 398,
       "timeLimit": 180,
       "silver": 1750,
       "gold": 2100,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48673,
@@ -18512,11 +20021,16 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 3000,
       "gold": 3400,
-      "cond": 0,
+      "conds": [
+        2
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48641,
@@ -18565,10 +20079,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 402,
       "timeLimit": 180,
       "silver": 7000,
       "gold": 7950,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [],
       "reward": {
         "cosmo": 21,
@@ -18605,10 +20124,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 400,
       "timeLimit": 600,
       "silver": 900,
       "gold": 1100,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [],
       "reward": {
         "cosmo": 22,
@@ -18645,10 +20169,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "time"
+      ],
+      "prereq": 0,
       "timeLimit": 300,
       "silver": 900,
       "gold": 1300,
-      "cond": 1,
+      "conds": [
+        8
+      ],
+      "c14": 1,
       "items": [
         {
           "itemId": 48669,
@@ -18691,10 +20222,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 403,
       "timeLimit": 300,
       "silver": 1330,
       "gold": 1730,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [],
       "reward": {
         "cosmo": 27,
@@ -18731,10 +20267,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 404,
       "timeLimit": 180,
       "silver": 1800,
       "gold": 2250,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48669,
@@ -18777,10 +20318,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 1550,
       "gold": 1700,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48674,
@@ -18815,10 +20359,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 1550,
       "gold": 1700,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48674,
@@ -18853,10 +20400,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 4920,
       "gold": 5020,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48675,
@@ -18891,10 +20441,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 4920,
       "gold": 5020,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48680,
@@ -18929,10 +20482,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 1550,
       "gold": 1700,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48675,
@@ -18967,10 +20523,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 1550,
       "gold": 1700,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48680,
@@ -19005,10 +20564,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 1550,
       "gold": 1900,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48686,
@@ -19052,10 +20614,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 4920,
       "gold": 5270,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48681,
@@ -19094,10 +20659,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 1550,
       "gold": 1900,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48689,
@@ -19141,10 +20709,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 850,
       "gold": 1050,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 3,
@@ -19177,10 +20748,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 2000,
       "gold": 2600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 3,
@@ -19213,10 +20787,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 2850,
       "gold": 3550,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 3,
@@ -19249,10 +20826,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 120,
       "gold": 140,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 3,
@@ -19285,10 +20865,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 1550,
       "gold": 1950,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48702,
@@ -19337,10 +20920,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 4920,
       "gold": 5320,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48693,
@@ -19379,10 +20965,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 1550,
       "gold": 1950,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48705,
@@ -19431,10 +21020,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 850,
       "gold": 1050,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 5,
@@ -19467,10 +21059,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 2000,
       "gold": 2600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 5,
@@ -19503,10 +21098,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 2850,
       "gold": 3550,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 5,
@@ -19539,10 +21137,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 130,
       "gold": 150,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 6,
@@ -19579,10 +21180,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 4400,
       "gold": 4600,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48709,
@@ -19624,11 +21228,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 2800,
       "gold": 3200,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48702,
@@ -19676,11 +21283,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 4800,
       "gold": 5100,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48689,
@@ -19718,11 +21328,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 3000,
       "gold": 3400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48681,
@@ -19770,11 +21383,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 2350,
       "gold": 2950,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 10,
@@ -19806,11 +21422,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 4000,
       "gold": 5200,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 10,
@@ -19843,10 +21462,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 2850,
       "gold": 3250,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48686,
@@ -19895,10 +21517,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 1750,
       "gold": 1950,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48677,
@@ -19937,10 +21562,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 1160,
       "gold": 1680,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [],
       "reward": {
         "cosmo": 15,
@@ -19973,10 +21601,17 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 900,
       "gold": 1100,
-      "cond": 2,
+      "conds": [
+        13
+      ],
+      "c14": 2,
       "items": [],
       "reward": {
         "cosmo": 11,
@@ -20013,10 +21648,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 300,
       "silver": 900,
       "gold": 1300,
-      "cond": 0,
+      "conds": [
+        14
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48700,
@@ -20059,10 +21701,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 300,
       "silver": 1310,
       "gold": 1680,
-      "cond": 0,
+      "conds": [
+        13
+      ],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 16,
@@ -20098,11 +21747,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 2800,
       "gold": 3200,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48686,
@@ -20151,10 +21803,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 438,
       "timeLimit": 600,
       "silver": 2350,
       "gold": 2950,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 21,
@@ -20190,11 +21847,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 4800,
       "gold": 5100,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48679,
@@ -20233,10 +21893,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 440,
       "timeLimit": 600,
       "silver": 4200,
       "gold": 5400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 20,
@@ -20273,10 +21938,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 441,
       "timeLimit": 180,
       "silver": 900,
       "gold": 1200,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 22,
@@ -20313,10 +21983,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 3000,
       "gold": 3400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 48681,
@@ -20365,10 +22038,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 443,
       "timeLimit": 180,
       "silver": 1750,
       "gold": 2100,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [
         {
           "itemId": 48722,
@@ -20410,11 +22088,16 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 600,
       "silver": 3000,
       "gold": 3400,
-      "cond": 0,
+      "conds": [
+        6
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 48689,
@@ -20463,10 +22146,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 447,
       "timeLimit": 180,
       "silver": 7000,
       "gold": 7950,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [],
       "reward": {
         "cosmo": 21,
@@ -20503,10 +22191,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 445,
       "timeLimit": 600,
       "silver": 900,
       "gold": 1100,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [],
       "reward": {
         "cosmo": 22,
@@ -20543,10 +22236,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "time"
+      ],
+      "prereq": 0,
       "timeLimit": 300,
       "silver": 900,
       "gold": 1300,
-      "cond": 1,
+      "conds": [
+        12
+      ],
+      "c14": 1,
       "items": [
         {
           "itemId": 48716,
@@ -20589,10 +22289,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 448,
       "timeLimit": 300,
       "silver": 1330,
       "gold": 1730,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [],
       "reward": {
         "cosmo": 27,
@@ -20629,10 +22334,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 449,
       "timeLimit": 180,
       "silver": 1800,
       "gold": 2250,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 48719,
@@ -20675,10 +22385,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 16700,
       "gold": 16900,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 2,
@@ -20707,10 +22420,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 630,
       "gold": 1280,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 2,
@@ -20739,10 +22455,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 15100,
       "gold": 15300,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 45701,
@@ -20777,10 +22496,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 1300,
       "gold": 1500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 3,
@@ -20809,10 +22531,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 16600,
       "gold": 16800,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 3,
@@ -20841,10 +22566,13 @@
       "rank": 1,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 5200,
       "gold": 5500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 3,
@@ -20873,10 +22601,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 2040,
       "gold": 3690,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 3,
@@ -20909,10 +22640,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 15000,
       "gold": 15400,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 45717,
@@ -20956,10 +22690,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 1500,
       "gold": 2000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 6,
@@ -20992,10 +22729,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 3000,
       "gold": 4000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 6,
@@ -21028,10 +22768,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 31000,
       "gold": 37000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 6,
@@ -21064,10 +22807,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 300,
       "gold": 1000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 6,
@@ -21100,10 +22846,13 @@
       "rank": 2,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 12500,
       "gold": 13000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 11,
@@ -21136,10 +22885,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 15600,
       "gold": 16100,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 45743,
@@ -21178,10 +22930,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 3500,
       "gold": 3700,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 11,
@@ -21214,10 +22969,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 4000,
       "gold": 5000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 10,
@@ -21250,10 +23008,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 5540,
       "gold": 6280,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 12,
@@ -21286,10 +23047,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 3800,
       "gold": 4500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 13,
@@ -21322,10 +23086,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 15500,
       "gold": 16100,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 9,
@@ -21358,10 +23125,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 15100,
       "gold": 15500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 11,
@@ -21398,10 +23168,13 @@
       "rank": 3,
       "critical": false,
       "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 44000,
       "gold": 50000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 12,
@@ -21437,11 +23210,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 15800,
       "gold": 16100,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 45783,
@@ -21479,11 +23255,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 3000,
       "gold": 3500,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 20,
@@ -21515,11 +23294,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 14700,
       "gold": 14850,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 19,
@@ -21551,11 +23333,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 7200,
       "gold": 7700,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 21,
@@ -21587,11 +23372,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 10000,
       "gold": 15000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 20,
@@ -21624,10 +23412,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 10240,
       "gold": 10260,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 21,
@@ -21660,10 +23451,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 34000,
       "gold": 36000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 14,
@@ -21696,10 +23490,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 2250,
       "gold": 2650,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [],
       "reward": {
         "cosmo": 18,
@@ -21732,10 +23529,17 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 15300,
       "gold": 15500,
-      "cond": 1,
+      "conds": [
+        14
+      ],
+      "c14": 1,
       "items": [],
       "reward": {
         "cosmo": 21,
@@ -21772,10 +23576,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 300,
       "silver": 1600,
       "gold": 2000,
-      "cond": 0,
+      "conds": [
+        13
+      ],
+      "c14": 0,
       "items": [
         {
           "itemId": 45870,
@@ -21818,10 +23629,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 240,
       "silver": 8500,
       "gold": 8550,
-      "cond": 0,
+      "conds": [
+        14
+      ],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 28,
@@ -21857,11 +23675,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 5000,
       "gold": 6000,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 31,
@@ -21894,10 +23715,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 483,
       "timeLimit": 1800,
       "silver": 14700,
       "gold": 15700,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 45846,
@@ -21939,11 +23765,14 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 6500,
       "gold": 6540,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 13,
@@ -21976,10 +23805,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 485,
       "timeLimit": 1800,
       "silver": 15900,
       "gold": 16200,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 28,
@@ -22016,10 +23850,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 486,
       "timeLimit": 270,
       "silver": 9600,
       "gold": 12300,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 40,
@@ -22056,10 +23895,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 12200,
       "gold": 12900,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 25,
@@ -22092,10 +23934,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 488,
       "timeLimit": 300,
       "silver": 3050,
       "gold": 3450,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [],
       "reward": {
         "cosmo": 38,
@@ -22131,11 +23978,16 @@
       ],
       "rank": 4,
       "critical": false,
-      "class": "temporary",
+      "class": "basic",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1800,
       "silver": 4830,
       "gold": 9240,
-      "cond": 0,
+      "conds": [
+        4
+      ],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 20,
@@ -22168,10 +24020,15 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 490,
       "timeLimit": 1800,
       "silver": 5000,
       "gold": 6000,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [],
       "reward": {
         "cosmo": 47,
@@ -22208,10 +24065,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 491,
       "timeLimit": 300,
       "silver": 11640,
       "gold": 23140,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [],
       "reward": {
         "cosmo": 44,
@@ -22248,10 +24110,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "time"
+      ],
+      "prereq": 0,
       "timeLimit": 240,
       "silver": 300,
       "gold": 800,
-      "cond": 2,
+      "conds": [
+        10
+      ],
+      "c14": 2,
       "items": [],
       "reward": {
         "cosmo": 21,
@@ -22288,10 +24157,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 493,
       "timeLimit": 510,
       "silver": 1600,
       "gold": 2300,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [],
       "reward": {
         "cosmo": 56,
@@ -22328,10 +24202,15 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "sequential"
+      ],
+      "prereq": 494,
       "timeLimit": 480,
       "silver": 8000,
       "gold": 20000,
-      "cond": 2,
+      "conds": [],
+      "c14": 2,
       "items": [],
       "reward": {
         "cosmo": 60,
@@ -22369,10 +24248,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2700,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 24,
@@ -22409,10 +24291,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2700,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 24,
@@ -22449,10 +24334,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2700,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 24,
@@ -22489,10 +24377,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2700,
-      "cond": 3,
+      "conds": [
+        13
+      ],
+      "c14": 3,
       "items": [],
       "reward": {
         "cosmo": 24,
@@ -22529,10 +24424,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2700,
-      "cond": 4,
+      "conds": [
+        14
+      ],
+      "c14": 4,
       "items": [],
       "reward": {
         "cosmo": 24,
@@ -22569,10 +24471,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2700,
-      "cond": 5,
+      "conds": [
+        13
+      ],
+      "c14": 5,
       "items": [],
       "reward": {
         "cosmo": 24,
@@ -22609,10 +24518,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2700,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 24,
@@ -22649,10 +24561,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2700,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 24,
@@ -22689,10 +24604,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2700,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 24,
@@ -22729,10 +24647,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2700,
-      "cond": 6,
+      "conds": [
+        14
+      ],
+      "c14": 6,
       "items": [],
       "reward": {
         "cosmo": 24,
@@ -22769,10 +24694,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2700,
-      "cond": 7,
+      "conds": [
+        13
+      ],
+      "c14": 7,
       "items": [],
       "reward": {
         "cosmo": 24,
@@ -22809,10 +24741,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2700,
-      "cond": 8,
+      "conds": [
+        14
+      ],
+      "c14": 8,
       "items": [],
       "reward": {
         "cosmo": 24,
@@ -22849,10 +24788,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2700,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 41,
@@ -22889,10 +24831,13 @@
       "rank": 5,
       "critical": false,
       "class": "temporary",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2700,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 42,
@@ -22929,10 +24874,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2700,
-      "cond": 9,
+      "conds": [
+        13
+      ],
+      "c14": 9,
       "items": [],
       "reward": {
         "cosmo": 46,
@@ -22969,10 +24921,17 @@
       "rank": 6,
       "critical": false,
       "class": "temporary",
+      "tags": [
+        "weather"
+      ],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 1800,
       "gold": 2700,
-      "cond": 10,
+      "conds": [
+        14
+      ],
+      "c14": 10,
       "items": [],
       "reward": {
         "cosmo": 51,
@@ -23008,10 +24967,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [],
       "reward": {
         "cosmo": 33,
@@ -23051,10 +25013,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 13,
+      "conds": [],
+      "c14": 13,
       "items": [],
       "reward": {
         "cosmo": 35,
@@ -23094,10 +25059,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 13,
+      "conds": [],
+      "c14": 13,
       "items": [],
       "reward": {
         "cosmo": 36,
@@ -23137,10 +25105,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 33,
@@ -23180,10 +25151,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 16,
+      "conds": [],
+      "c14": 16,
       "items": [],
       "reward": {
         "cosmo": 34,
@@ -23223,10 +25197,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 13,
+      "conds": [],
+      "c14": 13,
       "items": [],
       "reward": {
         "cosmo": 36,
@@ -23266,10 +25243,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 34,
@@ -23309,10 +25289,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 33,
@@ -23352,10 +25335,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 16,
+      "conds": [],
+      "c14": 16,
       "items": [],
       "reward": {
         "cosmo": 36,
@@ -23395,10 +25381,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [],
       "reward": {
         "cosmo": 33,
@@ -23438,10 +25427,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 35,
@@ -23481,10 +25473,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 35,
@@ -23524,10 +25519,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 33,
@@ -23567,10 +25565,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 16,
+      "conds": [],
+      "c14": 16,
       "items": [],
       "reward": {
         "cosmo": 34,
@@ -23610,10 +25611,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 13,
+      "conds": [],
+      "c14": 13,
       "items": [],
       "reward": {
         "cosmo": 36,
@@ -23653,10 +25657,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [],
       "reward": {
         "cosmo": 33,
@@ -23696,10 +25703,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 13,
+      "conds": [],
+      "c14": 13,
       "items": [],
       "reward": {
         "cosmo": 35,
@@ -23739,10 +25749,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 13,
+      "conds": [],
+      "c14": 13,
       "items": [],
       "reward": {
         "cosmo": 36,
@@ -23782,10 +25795,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [],
       "reward": {
         "cosmo": 34,
@@ -23825,10 +25841,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 16,
+      "conds": [],
+      "c14": 16,
       "items": [],
       "reward": {
         "cosmo": 34,
@@ -23868,10 +25887,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 13,
+      "conds": [],
+      "c14": 13,
       "items": [],
       "reward": {
         "cosmo": 36,
@@ -23911,10 +25933,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [],
       "reward": {
         "cosmo": 33,
@@ -23954,10 +25979,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 16,
+      "conds": [],
+      "c14": 16,
       "items": [],
       "reward": {
         "cosmo": 34,
@@ -23997,10 +26025,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 13,
+      "conds": [],
+      "c14": 13,
       "items": [],
       "reward": {
         "cosmo": 35,
@@ -24040,10 +26071,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 46181,
@@ -24086,10 +26120,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 46182,
@@ -24132,10 +26169,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 46184,
@@ -24178,10 +26218,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 16,
+      "conds": [],
+      "c14": 16,
       "items": [
         {
           "itemId": 46282,
@@ -24224,10 +26267,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 13,
+      "conds": [],
+      "c14": 13,
       "items": [
         {
           "itemId": 46281,
@@ -24270,10 +26316,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 13,
+      "conds": [],
+      "c14": 13,
       "items": [
         {
           "itemId": 46279,
@@ -24316,10 +26365,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 1,
+      "conds": [],
+      "c14": 1,
       "items": [
         {
           "itemId": 45937,
@@ -24362,10 +26414,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 0,
+      "conds": [],
+      "c14": 0,
       "items": [
         {
           "itemId": 45939,
@@ -24408,10 +26463,13 @@
       "rank": 1,
       "critical": true,
       "class": "critical",
+      "tags": [],
+      "prereq": 0,
       "timeLimit": 1200,
       "silver": 0,
       "gold": 0,
-      "cond": 13,
+      "conds": [],
+      "c14": 13,
       "items": [
         {
           "itemId": 45945,

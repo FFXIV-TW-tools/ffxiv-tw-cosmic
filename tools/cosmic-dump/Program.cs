@@ -107,9 +107,36 @@ internal static class Program
         var basic = ClassCount("basic");
         var temporary = ClassCount("temporary");
         var critical = ClassCount("critical");
-        if (basic != 231) problems.Add($"基礎任務 = {basic}，應為 231（D/C/B 非緊急）");
-        if (temporary != 280) problems.Add($"臨時任務 = {temporary}，應為 280（A1/A2/A3）");
+        if (basic != 319) problems.Add($"基礎任務 = {basic}，應為 319（rank D/C/B/A 非緊急）");
+        if (temporary != 192) problems.Add($"臨時任務 = {temporary}，應為 192（高難 96 ＋ 高難+ 96）");
         if (critical != 33) problems.Add($"緊急任務 = {critical}，應為 33");
+
+        // 條件任務＝LotterySpecialCond（col[15]）非零者 63 筆：ET 22 ＋ 靈風 20 ＋ 月塵 21。
+        // ET 那 22 筆與 ICE 手工表 SinusMapV2 逐筆吻合。
+        var conditioned = missions["missions"]!.AsArray().Count(m => m!["conds"]!.AsArray().Count > 0);
+        if (conditioned != 63) problems.Add($"有條件任務 = {conditioned}，應為 63（ICE 的 LotterySpecialCond＝col[15]）");
+        var multiCond = missions["missions"]!.AsArray().Count(m => m!["conds"]!.AsArray().Count > 1);
+        if (multiCond > 0) problems.Add($"{multiCond} 筆任務有多個條件（LotterySpecialCond 是單一欄）");
+
+        // 子標籤（可疊加）。連續＝c16 前置任務非零，全部落在臨時分頁。
+        int TagCount(string t) => missions["missions"]!.AsArray()
+            .Count(m => m!["tags"]!.AsArray().Any(x => (string)x! == t));
+        var seq = TagCount("sequential");
+        var timed = TagCount("time");
+        var weathered = TagCount("weather");
+        if (seq != 88) problems.Add($"連續任務 = {seq}，應為 88（高難 33 ＋ 高難+ 55）");
+
+        // 三個子標籤只掛臨時任務（Owner 2026-07-31 依遊戲 UI 指正）
+        var taggedOutsideTemp = missions["missions"]!.AsArray()
+            .Count(m => m!["tags"]!.AsArray().Count > 0 && (string)m["class"]! != "temporary");
+        if (taggedOutsideTemp > 0) problems.Add($"{taggedOutsideTemp} 筆子標籤掛在臨時分頁之外");
+        var seqOutsideTemp = missions["missions"]!.AsArray()
+            .Count(m => m!["prereq"]!.GetValue<int>() != 0 && (string)m["class"]! != "temporary");
+        if (seqOutsideTemp > 0) problems.Add($"{seqOutsideTemp} 筆前置任務落在臨時分頁之外");
+        var danglingPrereq = missions["missions"]!.AsArray()
+            .Select(m => m!["prereq"]!.GetValue<int>()).Where(v => v != 0)
+            .Count(v => missions["missions"]!.AsArray().All(m => m!["id"]!.GetValue<int>() != v));
+        if (danglingPrereq > 0) problems.Add($"{danglingPrereq} 筆前置任務指向不存在的任務");
 
         var chainCount = tools["chains"]!.AsArray().Count;
         if (chainCount != 11) problems.Add($"宇宙工具鏈 = {chainCount} 條，應為 11（DoH 8 ＋ DoL 3）");
@@ -126,7 +153,8 @@ internal static class Program
         if (devStages["worlds"]!.AsArray().Count != 7) problems.Add("繁中服伺服器數不是 7");
 
         Console.WriteLine($"\n健全性：任務 {missionCount} 筆／天氣 {weather["table"]!.AsArray().Count} 種（總和 {rateSum}%）／工具鏈 {chainCount} 條");
-        Console.WriteLine($"　　　　基礎 {basic} ／臨時 {temporary} ／緊急 {critical}");
+        Console.WriteLine($"　　　　基礎 {basic} ／臨時 {temporary} ／緊急 {critical}／有條件 {conditioned}");
+        Console.WriteLine($"　　　　子標籤：連續 {seq} ／時間限定 {timed} ／天氣限定 {weathered}");
         Console.WriteLine($"　　　　開發階段 {phaseCount} 期／{stageCount} 個施工階段／{devStages["worlds"]!.AsArray().Count} 個伺服器");
         foreach (var p in problems) Console.Error.WriteLine($"  ✗ {p}");
         if (problems.Count > 0) Console.Error.WriteLine("\n未通過 — 不寫出任何檔案。");

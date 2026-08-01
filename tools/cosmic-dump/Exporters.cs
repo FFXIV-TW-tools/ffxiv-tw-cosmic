@@ -70,7 +70,22 @@ internal sealed class Exporters(GameData gd, JsonObject meta)
 
         var o = Wrap("544 筆渴望灣任務。conditions 為額外開放條件；type=unknown 者語意未定，刻意不猜。");
         o["conditions"] = Conditions(condSheet, weatherSheet);
-        o["rankLabels"] = new JsonObject { ["1"] = "D", ["2"] = "C", ["3"] = "B", ["4"] = "A1", ["5"] = "A2", ["6"] = "A3" };
+        // 兩個條件槽的組合邏輯＝**同類型 OR、跨類型 AND**（requirement-group）。
+        // 依據：① 11 筆兩槽都是互斥 ET 時段，純 AND 不可滿足 ⇒ 同類型必為 OR
+        //       ② Owner 2026-07-31 靈風時段實測，ET＋天候的 3 筆在天候開著、ET 未到時
+        //          **不在板上** ⇒ 跨類型必為 AND。兩項證據只有分維度處理才同時成立。
+        o["condLogic"] = "and";
+        o["condLogicVerified"] = true;
+        // 階級標籤用遊戲自己的說法：rank 1–4＝無前綴的 D/C/B/A（基礎分頁），5/6＝【高難】/【高難+】（臨時分頁）。
+        o["rankLabels"] = new JsonObject { ["1"] = "D", ["2"] = "C", ["3"] = "B", ["4"] = "A", ["5"] = "高難", ["6"] = "高難+" };
+        // 分頁名與子標籤全部用 client 原文，並記下 Addon row id 供改版後回頭核對。
+        o["classLabels"] = new JsonObject { ["basic"] = "基礎任務", ["temporary"] = "臨時任務", ["critical"] = "緊急任務" };
+        o["tagLabels"] = new JsonObject { ["sequential"] = "連續任務", ["time"] = "時間限定任務", ["weather"] = "天氣限定任務" };
+        o["_addonRows"] = new JsonObject
+        {
+            ["基礎任務"] = 16748, ["臨時任務"] = 16749, ["緊急任務"] = 16750,
+            ["連續任務"] = 16871, ["時間限定任務"] = 16872, ["天氣限定任務"] = 16873,
+        };
 
         var list = new JsonArray();
         foreach (var row in unitSheet)
@@ -89,19 +104,35 @@ internal sealed class Exporters(GameData gd, JsonObject meta)
                 ["jobs"] = jobIds,
                 ["rank"] = (int)unit.LevelGroup,
                 ["critical"] = unit.IsSpecialQuest,
-                // 遊戲內的三分類：基礎／臨時／緊急。緊急優先（它也在 c18=1 側）。
-                ["class"] = unit.IsSpecialQuest ? "critical"
-                          : TcCosmicSheets.IsBasic(row) ? "basic" : "temporary",
+                // 遊戲的三個分頁：基礎（D/C/B/A）／臨時（高難、高難+）／緊急。
+                ["class"] = TcCosmicSheets.MissionClass(row),
+                // 遊戲在臨時任務上加的子標籤（可同時成立，例如「連續任務」＋「時間限定任務」）。
+                ["tags"] = Tags(row, condSheet),
+                // 前置任務（c16，0＝無）。有值＝遊戲的「連續任務」，要先完成它才會出現。
+                ["prereq"] = (int)TcCosmicSheets.Prerequisite(row),
                 ["timeLimit"] = (int)unit.MissionTime,
                 ["silver"] = (int)unit.SilverStarRequirement,
                 ["gold"] = (int)unit.GoldStarRequirement,
-                ["cond"] = (int)unit.LotterySpecialCond,
+                // 條件＝ICE 的 LotterySpecialCond（col[15]）。每個任務最多一個。
+                // 仍用陣列是因為 UI 已按陣列寫，且日後若解出 col[14] 語意可直接擴充。
+                ["conds"] = TcCosmicSheets.Condition(row) is var cond && cond != 0
+                    ? new JsonArray((JsonNode)(int)cond)
+                    : new JsonArray(),
+                /*
+                 * col[14] 非零（119 筆）。**不再拿它當條件**（欄位對照已修正為 col[15]），
+                 * 但實測顯示它與「任務會不會出現」仍高度相關，語意未知 ⇒ 只輸出、不判定。
+                 */
+                ["c14"] = (int)TcCosmicSheets.SlotUnknown(row),
                 ["items"] = RequiredItems(todoSheet, itemInfoSheet, itemSheet, unit.MissionToDo),
                 ["reward"] = Reward(rewardSheet, unit.RowId),
             };
 
             // 未定性欄位集中放在 _unverified，UI 不讀——留著是為了日後查核，不是給人看的。
-            var unverified = new JsonObject();
+            var unverified = new JsonObject
+            {
+                // c14：語意未定。**必須輸出**，因為 tools/compare-board-log.mjs 要拿它跟實測
+                // 記錄做相關性檢定（「c14 的視窗開著」與「任務真的出現」是否相關）。
+            };
             if (refinSheet.TryGetRow(unit.RowId, out var refin))
                 unverified["evalThresholds"] = new JsonArray(TcCosmicSheets.EvalThresholds(refin).Select(v => (JsonNode)v).ToArray());
             if (unit.MissionRecipe != 0 && recipeSheet.TryGetRow(unit.MissionRecipe, out var rec))
@@ -131,11 +162,40 @@ internal sealed class Exporters(GameData gd, JsonObject meta)
         return buf.ToString().Trim();
     }
 
+    /// <summary>
+    /// 遊戲替任務掛的子標籤。三個都是**可同時成立**的旗標，不是互斥分類——
+    /// 例如「【高難+】製作月球車所需的貨物包裝材料」同時是連續任務與時間限定任務（44 筆屬此類）。
+    ///
+    /// <para><b>只掛在臨時任務上</b>（Owner 2026-07-31：「臨時任務才有那三個子標籤」）。
+    /// 基礎任務與緊急任務即使有時段／天候條件也不掛——條件本身照樣出現在
+    /// <c>conds</c> 欄與清單的「開放條件」欄，只是遊戲不用這三個標籤稱呼它們。</para>
+    /// </summary>
+    private static JsonArray Tags(RawRow row, ExcelSheet<RawRow> condSheet)
+    {
+        var tags = new JsonArray();
+        if (TcCosmicSheets.MissionClass(row) != "temporary") return tags;
+        if (TcCosmicSheets.Prerequisite(row) != 0) tags.Add("sequential");
+        var hasTime = false;
+        var hasWeather = false;
+        foreach (var id in new[] { TcCosmicSheets.Condition(row) }.Where(x => x != 0))
+        {
+            if (!condSheet.TryGetRow(id, out var c)) continue;
+            var (_, end, weatherId) = TcCosmicSheets.SpecialCond(c);
+            if (weatherId != 0) hasWeather = true;
+            else if (end != 0) hasTime = true;
+        }
+        if (hasTime) tags.Add("time");
+        if (hasWeather) tags.Add("weather");
+        return tags;
+    }
+
     private static JsonObject Conditions(ExcelSheet<RawRow> condSheet, ExcelSheet<RawRow> weatherSheet)
     {
         var conds = new JsonObject
         {
-            ["0"] = new JsonObject { ["type"] = "none", ["label"] = "無條件" },
+            // ⚠ 標籤刻意不叫「無條件」——它只代表 client 的兩個條件槽是空的（沒有時段/天候閘），
+            // 不代表「你現在看得到」。階級門、前置任務鏈（LockedBehind 未定性）、抽選門都還在。
+            ["0"] = new JsonObject { ["type"] = "none", ["label"] = "不限時" },
         };
         foreach (var row in condSheet)
         {

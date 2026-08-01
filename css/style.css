@@ -40,6 +40,21 @@ body {
  * 也不觸碰 .codex-* 根 selector）。已記 docs/BACKLOG.md B-002 提報 portal 收進集中守衛。 */
 .cos-hideable[hidden] { display: none; }
 
+/* 標題旁的 BETA 標——不要撐高 .page-header（控制項高度上限 38px 的同一條鐵則） */
+.cos-beta {
+  margin-left: var(--space-2, 8px);
+  vertical-align: middle;
+}
+
+/* BETA 告示：警示色左邊條，與一般段落區隔，但不搶內容的視覺權重 */
+.cos-betanote {
+  margin: var(--space-4, 16px) 0 0;
+  padding: var(--space-3, 12px);
+  border-left: 3px solid var(--color-warn, #e8a45a);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--color-surface, #101824);
+}
+
 .cos-header-tools {
   display: flex;
   align-items: center;
@@ -105,12 +120,32 @@ body {
 .cos-tablewrap { margin-top: var(--space-3, 12px); }
 
 /* ── 任務篩選 ─────────────────────────────────────────────── */
+/* 上排＝四組 chip 篩選。職業佔兩欄（11 個圖示排一列比較好掃），其餘各一欄。
+   `align-items: start` 讓高度不一的欄各自靠上，不會被最高的那欄撐開留白。 */
 .cos-filters {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: 2fr 1.4fr 1fr 1.2fr;
   gap: var(--space-4, 16px);
   align-items: start;
 }
+
+/* 下排＝搜尋 ＋ 開關 ＋ 筆數，同一條基線對齊；筆數推到最右 */
+.cos-filterfoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4, 16px);
+  margin-top: var(--space-4, 16px);
+  padding-top: var(--space-3, 12px);
+  border-top: 1px solid var(--color-border, #2b3f56);
+}
+
+.cos-filterfoot__search {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.cos-filterfoot .cos-count { margin: 0 0 0 auto; }
 
 .cos-filter {
   display: flex;
@@ -119,21 +154,18 @@ body {
   min-width: 0;
 }
 
-.cos-filter--switches {
-  gap: var(--space-3, 12px);
-  justify-content: flex-end;
-}
-
 .cos-chips {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1, 4px);
 }
 
-.cos-count {
-  margin: var(--space-4, 16px) 0 0;
-  color: var(--color-text-muted, #c0c9da);
-}
+/* 職業 chip 分兩列（製作 / 採集）：外層改直向堆疊，內層每列自己 wrap */
+#mv-jobs,
+.cos-jobpick__body { flex-direction: column; align-items: flex-start; }
+.cos-chips--row { width: 100%; }
+
+.cos-count { color: var(--color-text-muted, #c0c9da); }
 
 .cos-more {
   text-align: center;
@@ -199,6 +231,7 @@ body {
 @media (max-width: 700px) {
   body { padding-top: 64px; }   /* 重置也要補回，否則被 fixed navbar 蓋住 */
   .cos-filters { grid-template-columns: 1fr; }
+  .cos-filterfoot .cos-count { margin-left: 0; }
 }
 
 /* ── 職業偏好選擇器（page-header 內）───────────────────────── */
@@ -242,56 +275,109 @@ body {
   align-items: center;
 }
 
-/* ── 職業倒數看板（主畫面）───────────────────────────────── */
-.cos-jobboard {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: var(--space-2, 8px);
-  /* 11 張卡在 1920 下是 2 列；先撐住高度免得 JS 填入時把下方時間軸往下推（CLS 鐵則） */
-  min-height: 230px;
+/* ── 限時任務面板（主畫面）─────────────────────────────────
+   舊版是 11 張職業卡片各帶三個數字＋倒數，資訊量過大（Owner 2026-07-31「不要那麼複雜了」）。
+   現在只有兩段清單：現在開著的、下一批。每列一個任務，不做卡片格線。 */
+.cos-np__head {
+  margin: var(--space-4, 16px) 0 var(--space-2, 8px);
 }
 
-/* 整張卡可點：用 button 保鍵盤可達，外觀壓回卡片（非按鈕感） */
-.cos-jc {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-1, 4px);
+/* 階級門說明：它是自動套用的過濾，必須看得見 —— 隱形過濾比不過濾更糟 */
+.cos-np__progress {
+  margin: var(--space-2, 8px) 0 0;
+  color: var(--color-text-muted, #c0c9da);
+}
+
+/* 範圍說明跟在標題後面，權重要低於標題本身 */
+.cos-np__scope {
+  margin-left: var(--space-2, 8px);
+  color: var(--color-text-muted, #c0c9da);
+  font-weight: normal;
+}
+
+.cos-np {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  /* 先撐住高度，免得 JS 填入時把下方時間軸往下推（CLS 鐵則） */
+  min-height: 44px;
+}
+
+.cos-np__item + .cos-np__item { margin-top: var(--space-1, 4px); }
+
+/* 面板底部的補充：不列在上面的那 16 筆，語氣與告誡區分開（它不是警告） */
+.cos-np__note {
+  margin: var(--space-3, 12px) 0 0;
+  color: var(--color-text-muted, #c0c9da);
+}
+
+/* 面板底部的告誡：講「上面那些什麼時候會不準」，與資料列分開一段 */
+.cos-np__caveat {
+  margin: var(--space-3, 12px) 0 0;
   padding: var(--space-3, 12px);
-  border: 1px solid var(--color-border, #2b3f56);
-  border-left: 3px solid var(--color-border, #2b3f56);
-  border-radius: var(--radius-md, 8px);
+  border-left: 3px solid var(--color-warn, #e8a45a);
+  border-radius: var(--radius-sm, 6px);
   background: var(--color-surface, #101824);
+  color: var(--color-text-muted, #c0c9da);
+}
+
+/* 欄位標題：與資料列共用同一組 grid 欄寬，否則標題會對不準（Owner 2026-07-31：「很不直觀」）。
+   純視覺輔助 ⇒ aria-hidden，不讓讀螢幕器把它當成一列資料。 */
+.cos-np__cols {
+  display: grid;
+  grid-template-columns: var(--cos-np-cols);
+  gap: var(--space-2, 8px);
+  margin: 0 0 var(--space-1, 4px);
+  padding: 0 var(--space-3, 12px);
+  color: var(--color-text-muted, #c0c9da);
+}
+
+.cos-np__cols span:last-child { text-align: right; }
+
+/* 獎勵各佔一格、靠右對齊 ⇒ 上下能直接比大小。等寬數字避免逐列寬度跳動。 */
+.cos-np__num {
+  color: var(--color-text-muted, #c0c9da);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+:root {
+  /* 預設值只是 JS 接手前的佔位；實際欄數由 now-panel.js 依資料中的宇宙工具階數產生。
+     **必須用 rem 不能用 em**：欄位標題列是 .codex-small、資料列是預設字級，
+     em 會各自對自己的 font-size 解析 ⇒ 兩者欄寬不同、標題對不到資料（實測差 46px）。 */
+  --cos-np-cols: 52px 22rem minmax(0, 1fr) 4rem 4rem 3rem 3rem 3rem 3rem 8rem;
+}
+
+/* 雙職業任務的兩個圖示必須待在同一格，否則第二個會自己佔掉一欄、把後面全往右推 */
+.cos-np__icons {
+  display: flex;
+  gap: var(--space-1, 4px);
+  align-items: center;
+}
+
+/* 整列可點 → 必須是 button；grid 讓四欄逐列對齊（末欄固定寬，沒有註記時也不會讓前欄變形） */
+.cos-np__btn {
+  display: grid;
+  grid-template-columns: var(--cos-np-cols);
+  gap: var(--space-2, 8px);
+  align-items: center;
+  width: 100%;
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  text-align: left;
   color: inherit;
   font: inherit;
-  text-align: left;
+  background: var(--color-surface, #101824);
+  border: 1px solid var(--color-border, #2b3f56);
+  border-radius: var(--radius-sm, 6px);
   cursor: pointer;
-  transition: background var(--transition-fast, 0.15s), border-color var(--transition-fast, 0.15s);
 }
 
-.cos-jc:hover {
-  background: var(--color-surface-hover, #18222f);
-  border-color: var(--accent);
-}
+.cos-np__btn:hover { border-color: var(--accent); }
 
-/* 現在可做＝左緣綠條，語意用顏色**加**文字雙載（不讓顏色當唯一資訊載體） */
-.cos-jc.is-open { border-left-color: var(--color-success, #7dd87d); }
+.cos-np__kind { color: var(--accent); }
 
-.cos-jc__head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2, 8px);
-  min-width: 0;
-}
-
-.cos-jc__icon {
-  flex: 0 0 auto;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-xs, 4px);
-}
-
-.cos-jc__name {
-  flex: 1;
+.cos-np__name {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -299,37 +385,45 @@ body {
   font-weight: var(--fw-semibold, 600);
 }
 
-.cos-jc__eta {
-  margin: 0;
-  font-variant-numeric: tabular-nums;
-}
-
-.cos-jc.is-open .cos-jc__eta { color: var(--color-success, #7dd87d); }
-.cos-jc__eta.is-none { color: var(--color-text-muted, #c0c9da); }
-
-.cos-jc__kind { font-weight: var(--fw-semibold, 600); }
-.cos-jc__cond { color: var(--color-text-muted, #c0c9da); }
-
-.cos-jb-foot { margin: var(--space-3, 12px) 0 0; }
-
-/* 緊急任務的額外不確定性提示：條件之外還要伺服器事件，不與其他類型同色同權重 */
-.cos-jc__crit {
+/* 前置是唯一離線算不出來的門 ⇒ 用警示色，不能和其他資訊同權重 */
+.cos-np__gate {
   color: var(--color-warn, #e8a45a);
-  border-top: 1px dashed var(--color-border, #2b3f56);
-  padding-top: var(--space-1, 4px);
-  margin-top: var(--space-1, 4px);
+  white-space: nowrap;
+  text-align: right;
 }
 
-/* 看板前的定調文字：把「必然／不必然」講在最前面，不讓使用者從卡片自己推 */
-.cos-jb-lead {
-  margin: 0 0 var(--space-3, 12px);
-  padding: var(--space-3, 12px);
-  border-left: 3px solid var(--color-border, #2b3f56);
-  border-radius: var(--radius-sm, 6px);
-  background: var(--color-surface, #101824);
+.cos-np__empty {
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  color: var(--color-text-muted, #c0c9da);
 }
 
-.cos-jb-lead__crit { color: var(--color-warn, #e8a45a); }
+/* 只放圖示的 chip：拿掉為文字準備的左右內距，否則按鈕會變成兩倍寬的空盒 */
+.cos-chip--icon {
+  padding-inline: var(--space-2, 8px);
+  line-height: 0;
+}
+
+/* 職業一律以圖示代替文字（名字 3–4 字 × 11 職會把表格與 chip 列撐爛）。
+   語意由 alt／title／aria-label 承載，這裡只管尺寸與對齊。 */
+.cos-jobicon {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-xs, 4px);
+  vertical-align: middle;
+}
+
+.cos-jobcell { white-space: nowrap; }
+.cos-jobcell .cos-jobicon + .cos-jobicon { margin-left: var(--space-1, 4px); }
+
+/* 任務清單「類型」欄的子標籤（連續／時間限定／天氣限定）— 與分頁 badge 並列 */
+.cos-tag { margin-left: var(--space-1, 4px); }
+
+/* 子標籤篩選縮排在「任務類型」之下——它們只掛在臨時任務上，不是平行的第四種篩選 */
+.cos-sublabel {
+  margin-top: var(--space-2, 8px);
+  padding-left: var(--space-2, 8px);
+  color: var(--color-text-muted, #c0c9da);
+}
 
 /* 全服一樣 vs 每台不同 的說明清單 */
 .cos-serverdiff {
@@ -424,31 +518,3 @@ body {
   color: var(--color-text-muted, #c0c9da);
 }
 
-/* 四道門的說明：條件倒數只是其中一道，版面上要跟倒數本身分開 */
-.cos-jb-gates {
-  margin: 0 0 var(--space-3, 12px);
-  padding: var(--space-3, 12px) var(--space-3, 12px) var(--space-3, 12px) var(--space-6, 32px);
-  border-left: 3px solid var(--color-warn, #e8a45a);
-  border-radius: var(--radius-sm, 6px);
-  background: var(--color-surface, #101824);
-}
-
-.cos-jb-gates li { margin-bottom: var(--space-1, 4px); }
-.cos-jb-gates li:last-child { margin-bottom: 0; }
-
-/* 標題列的階級選擇器：控制項高度必須 ≤ 38px，否則撐高整條標題列 */
-.cos-rankpick {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2, 8px);
-}
-
-.cos-rankpick .codex-select { width: auto; }
-
-/* 未驗證的時段解讀：與已證實的天氣視窗視覺分離，不能長得一樣可信 */
-.cos-jc__unverified {
-  color: var(--color-warn, #e8a45a);
-  border-top: 1px dashed var(--color-border, #2b3f56);
-  padding-top: var(--space-1, 4px);
-  margin-top: var(--space-1, 4px);
-}

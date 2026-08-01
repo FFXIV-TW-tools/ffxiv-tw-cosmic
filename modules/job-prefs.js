@@ -5,74 +5,9 @@
  * 這個純屬本站的檢視狀態，沒有跨工具語意，塞進去只會污染共用設定面。
  */
 
+import { jobIcon } from './job-icon.js';
+
 const KEY = 'ffxiv-tw-cosmic:jobs';
-const RANK_KEY = 'ffxiv-tw-cosmic:rank';
-
-/** 階級由低到高。任務板只會出現「你已解鎖的階級」的任務——這是離線不可知的個人進度。 */
-export const RANKS = [
-  { value: 1, label: 'D' },
-  { value: 2, label: 'C' },
-  { value: 3, label: 'B' },
-  { value: 4, label: 'A1' },
-  { value: 5, label: 'A2' },
-  { value: 6, label: 'A3' },
-];
-
-export function loadRank() {
-  const n = Number(localStorage.getItem(RANK_KEY));
-  return RANKS.some((r) => r.value === n) ? n : null;
-}
-
-export function saveRank(rank) {
-  try {
-    if (rank) localStorage.setItem(RANK_KEY, String(rank));
-    else localStorage.removeItem(RANK_KEY);
-  } catch {
-    // 記不住不影響本次 session
-  }
-}
-
-/**
- * 「我目前的最高階級」選擇器。
- * 由來＝2026-07-31 Owner 實地回報「條件符合了但現場一個任務都沒看到」：全部 119 個條件任務
- * 都是 A2／A3 高難或緊急，沒解鎖該階級的人條件開了也看不到。這是離線算不出來、
- * 只能由使用者提供的關鍵輸入。
- */
-export function createRankPicker(host, onChange) {
-  const field = document.createElement('span');
-  field.className = 'cos-rankpick';
-
-  const label = document.createElement('label');
-  label.className = 'codex-label';
-  label.setAttribute('for', 'rank-pick');
-  label.textContent = '我的階級';
-
-  const sel = document.createElement('select');
-  sel.className = 'codex-select';
-  sel.id = 'rank-pick';
-  const none = document.createElement('option');
-  none.value = '';
-  none.textContent = '未設定';
-  sel.append(none);
-  for (const r of RANKS) {
-    const o = document.createElement('option');
-    o.value = String(r.value);
-    o.textContent = r.label;
-    sel.append(o);
-  }
-  const current = loadRank();
-  sel.value = current ? String(current) : '';
-
-  sel.addEventListener('change', () => {
-    const v = Number(sel.value) || null;
-    saveRank(v);
-    onChange(v);
-  });
-
-  field.append(label, sel);
-  host.append(field);
-  return { get: () => Number(sel.value) || null };
-}
 
 export function loadJobs() {
   try {
@@ -115,11 +50,15 @@ export function createJobPicker(host, jobs, onChange) {
   body.className = 'codex-accordion__body cos-jobpick__body';
   details.append(body);
 
+  // 製作職在上、採集職在下（與任務清單的職業篩選同一個分組方式）
+  const jobRows = { crafter: iconRow(), gatherer: iconRow() };
   for (const [id, job] of entries) {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'codex-chip';
-    b.textContent = job.label;
+    b.className = 'codex-chip cos-chip--icon';
+    b.append(jobIcon(job, { size: 22 }));
+    b.setAttribute('aria-label', job.label);
+    b.title = job.label;
     b.setAttribute('aria-pressed', String(selected.has(id)));
     b.addEventListener('click', () => {
       if (selected.has(id)) selected.delete(id);
@@ -127,7 +66,14 @@ export function createJobPicker(host, jobs, onChange) {
       b.setAttribute('aria-pressed', String(selected.has(id)));
       commit();
     });
-    body.append(b);
+    (jobRows[job.role] ?? jobRows.crafter).append(b);
+  }
+  body.append(jobRows.crafter, jobRows.gatherer);
+
+  function iconRow() {
+    const d = document.createElement('div');
+    d.className = 'cos-chips cos-chips--row';
+    return d;
   }
 
   const clear = document.createElement('button');

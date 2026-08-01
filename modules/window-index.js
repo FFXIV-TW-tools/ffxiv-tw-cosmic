@@ -1,8 +1,11 @@
 /**
  * 「限時視窗」索引——把任務依開放條件聚成視窗，並算出每個視窗的開闔時間。純邏輯、無 DOM。
  *
- * 為什麼要有這層：544 個任務裡 425 個是**隨時可做**的，真正需要盯時間的只有 119 個。
- * 建議與時間軸都只該圍繞這 119 個轉，其餘用「獎勵排序」即可，不需要預測。
+ * 為什麼要有這層：544 個任務裡 392 個沒有時段／天候閘，真正需要盯時間的只有 152 個。
+ * 建議與時間軸都只該圍繞這 152 個轉，其餘用「獎勵排序」即可，不需要預測。
+ *
+ * 一個任務可以同時屬於兩個視窗（c14/c15 兩個槽），而兩槽是 **AND** ——
+ * 兩個視窗都開著才會出現，證據鏈見 weather-forecast.js 的 conditionsMet。
  */
 
 import { EORZEA_DAY, inEorzeaWindow, nextEorzeaWindow } from './eorzea-time.js';
@@ -14,12 +17,15 @@ import { EORZEA_DAY, inEorzeaWindow, nextEorzeaWindow } from './eorzea-time.js';
  * @returns {object[]} 每個非「無條件」視窗一筆，含任務、職業與開闔計算
  */
 export function buildWindows(conditions, missions, forecaster) {
+  // 一個任務可以有**兩個**條件（client 的 c14/c15 兩個槽）⇒ 會同時屬於兩個視窗
   const grouped = new Map();
   for (const m of missions) {
-    const cond = conditions[m.cond];
-    if (!cond || cond.type === 'none') continue;
-    if (!grouped.has(m.cond)) grouped.set(m.cond, []);
-    grouped.get(m.cond).push(m);
+    for (const cid of m.conds ?? []) {
+      const cond = conditions[cid];
+      if (!cond || cond.type === 'none') continue;
+      if (!grouped.has(cid)) grouped.set(cid, []);
+      grouped.get(cid).push(m);
+    }
   }
 
   const out = [];
@@ -35,15 +41,16 @@ export function buildWindows(conditions, missions, forecaster) {
       criticalCount: list.filter((m) => m.critical).length,
 
       /**
-       * 這個視窗的時間解讀有沒有獨立證據。
-       *  · weather：**有**。條件表的天氣 id（49 靈風／148 月塵）2/2 命中渴望灣天氣表裡的兩個
+       * 這個視窗的時間解讀有沒有獨立證據。**兩種都有了**（2026-07-31）。
+       *  · weather：條件表的天氣 id（49 靈風／148 月塵）2/2 命中渴望灣天氣表裡的兩個
        *    非「晴朗」天氣，而天氣演算法本身已用中薩納蘭／摩杜納回推驗證過。
-       *  · time：**沒有**。12 列的 (start,end) 剛好等於 2(N-1),2N ——值完全由列號決定、
-       *    不帶額外資訊，跟「ET 小時」相容也跟任何 2 級距的東西相容。唯一依據是上游把那兩欄
-       *    命名為 Start/End Time，那是命名不是證據。且任務分布（59/35/1×8/0/0）不像每日時間表。
-       *    ⇒ 一律標「未驗證」，不讓它跟已證實的天氣視窗長得一樣可信。
+       *  · time：原本標未驗證——12 列的 (start,end) 剛好等於 2(N-1),2N，值完全由列號決定、
+       *    跟「ET 小時」相容也跟任何 2 級距的東西相容，唯一依據是上游的欄位命名。
+       *    現已由 Owner 遊戲內核對：#445「採集精密空氣淨化裝置所需的材料」(園藝師/A) 本站解出
+       *    ET 10:00–12:00，遊戲顯示 10:00~11:59，逐位吻合；同名的採掘師版 (#400) 是 02:00–04:00，
+       *    兩者不同 ⇒ 不是碰巧對上任意 2 小時級距。單位確認為**艾歐澤亞小時**。
        */
-      verified: cond.type === 'weather',
+      verified: cond.type === 'weather' || cond.type === 'time',
 
       /** 現在是否開著。條件語意未定者回 null——不可當 false（會把它們說成「不能做」）。 */
       isOpen(now) {
@@ -106,7 +113,7 @@ export function upcomingWindows(windows, now, limit = 3) {
 export function topAlwaysAvailable(conditions, missions, jobIds, limit = 5) {
   const wanted = jobIds && jobIds.length ? new Set(jobIds) : null;
   return missions
-    .filter((m) => conditions[m.cond]?.type === 'none')
+    .filter((m) => (m.conds ?? []).length === 0)
     .filter((m) => !wanted || m.jobs.some((j) => wanted.has(j)))
     .map((m) => ({ mission: m, total: m.reward.cosmo + m.reward.lunar }))
     .sort((a, b) => b.total - a.total || a.mission.rank - b.mission.rank)

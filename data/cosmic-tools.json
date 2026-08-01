@@ -1,7 +1,7 @@
 {
   "meta": {
     "clientVersion": "2026.07.22.0000.0000",
-    "generatedAt": "2026-07-31T06:43:15Z",
+    "generatedAt": "2026-07-31T16:35:22Z",
     "generator": "tools/cosmic-dump"
   },
   "_note": "宇宙工具升級鏈：原型 v0.1→v0.8→成品共 9 階。unreleasedStages ＝台服尚未實裝的後續階數（名稱在 client 內為空）。",

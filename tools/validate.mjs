@@ -1,0 +1,82 @@
+/**
+ * 站台資料的不變量檢查——**不需要遊戲 client**，只驗已經產出的 `data/*.json`。
+ *
+ *   node tools/validate.mjs
+ *
+ * ## 跟 `tools/cosmic-dump` 的健全性閘差在哪
+ * 那一支在**產生時**擋（需要 sqpack，只有裝了台服 client 的機器跑得動）；這一支在**推送時**擋，
+ * 任何人／任何機器都能跑。兩者守的東西刻意重疊——資料是 commit 進 repo 的靜態檔，
+ * 有人手改、merge 衝突解錯、或產生器換版後忘記重跑，只有這一層抓得到。
+ *
+ * ## 為什麼這些數字可以寫死
+ * 它們是台服 7.2 client 的事實，且每一項都有獨立佐證（見 `tools/cosmic-dump/TcCosmicSheets.cs`
+ * 的證據鏈與 `CHANGELOG.md`）。台服改版導致數字變動時**本檢查會紅**——那正是要的：
+ * 逼人回去確認欄位對照還成不成立，而不是靜默接受新數字。
+ */
+
+import { readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const DATA = join(dirname(fileURLToPath(import.meta.url)), '..', 'data');
+const read = (f) => JSON.parse(readFileSync(join(DATA, f), 'utf8'));
+
+const problems = [];
+const check = (ok, msg) => { if (!ok) problems.push(msg); };
+
+// ── 天氣 ──────────────────────────────────────────────────────────────
+const weather = read('weather.json');
+const rateSum = weather.table.reduce((a, w) => a + w.rate, 0);
+check(rateSum === 100, `渴望灣天氣機率總和 = ${rateSum}，應為 100`);
+check(weather.zone.territoryId === 1237, `territoryId = ${weather.zone.territoryId}，應為 1237（渴望灣）`);
+check(weather.periodSeconds === 1400, `天氣週期 = ${weather.periodSeconds}，應為 1400 秒`);
+check(weather.emergencyWeathers.length > 0, '緊急事件天氣清單為空（它是「無法離線預測」這個結論的依據）');
+
+// ── 任務 ──────────────────────────────────────────────────────────────
+const m = read('missions.json');
+check(m.missions.length === 544, `任務數 = ${m.missions.length}，應為 544`);
+
+const cls = (k) => m.missions.filter((x) => x.class === k).length;
+check(cls('basic') === 319, `基礎任務 = ${cls('basic')}，應為 319`);
+check(cls('temporary') === 192, `臨時任務 = ${cls('temporary')}，應為 192`);
+check(cls('critical') === 33, `緊急任務 = ${cls('critical')}，應為 33`);
+
+const conditioned = m.missions.filter((x) => x.conds.length > 0);
+check(conditioned.length === 63, `有條件任務 = ${conditioned.length}，應為 63（LotterySpecialCond＝col[15]）`);
+check(m.missions.every((x) => x.conds.length <= 1), '有任務帶超過一個條件（LotterySpecialCond 是單一欄）');
+
+// ET 條件任務 22 筆——與 ICE fork 手工表 SinusMapV2 逐筆吻合，是欄位對照正確的關鍵佐證
+const etIds = new Set(Object.entries(m.conditions).filter(([, c]) => c.type === 'time').map(([k]) => Number(k)));
+const etMissions = m.missions.filter((x) => x.conds.some((c) => etIds.has(c)));
+check(etMissions.length === 22, `ET 時段任務 = ${etMissions.length}，應為 22（對照 ICE 的 SinusMapV2）`);
+
+// 前置任務（＝遊戲的「連續任務」）
+const withPrereq = m.missions.filter((x) => x.prereq);
+check(withPrereq.length === 88, `連續任務 = ${withPrereq.length}，應為 88`);
+const ids = new Set(m.missions.map((x) => x.id));
+check(withPrereq.every((x) => ids.has(x.prereq)), '有前置任務指向不存在的任務');
+check(withPrereq.every((x) => x.class === 'temporary'), '有連續任務落在臨時分頁之外');
+
+// 子標籤只掛臨時任務
+check(m.missions.every((x) => x.tags.length === 0 || x.class === 'temporary'), '有子標籤掛在臨時分頁之外');
+
+// 每筆都要有職業與獎勵——這兩欄空掉代表欄位對照崩了，UI 會整片空白但不報錯
+check(m.missions.every((x) => x.jobs.length > 0), '有任務沒有職業');
+check(m.missions.every((x) => x.reward.cosmo > 0 || x.reward.lunar > 0), '有任務信用點全為 0');
+
+// ── 工具鏈 / 開發階段 ──────────────────────────────────────────────────
+const tools = read('cosmic-tools.json');
+check(tools.chains.length === 11, `宇宙工具鏈 = ${tools.chains.length} 條，應為 11（DoH 8 ＋ DoL 3）`);
+check(tools.chains.every((c) => c.stages.length === 9), '有工具鏈不是 9 階');
+
+const dev = read('dev-stages.json');
+check(dev.phases.length === 16, `開拓紀錄 = ${dev.phases.length} 期，應為 16`);
+check(dev.worlds.length === 7, `繁中服伺服器 = ${dev.worlds.length} 個，應為 7`);
+
+// ── 結果 ──────────────────────────────────────────────────────────────
+if (problems.length > 0) {
+  for (const p of problems) console.error(`  ✗ ${p}`);
+  console.error(`\n${problems.length} 項不變量失敗 — 資料可能被手改、merge 解錯，或台服改版後欄位對照失效。`);
+  process.exit(1);
+}
+console.log(`✓ 資料不變量全過（544 任務／63 有條件／88 連續／11 條工具鏈／client ${m.meta.clientVersion}）`);

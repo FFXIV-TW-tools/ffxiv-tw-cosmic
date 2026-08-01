@@ -1,0 +1,10 @@
+.gitignore
+AGENTS.md
+CHANGELOG.md
+CLAUDE.md
+README.md
+deploy-allow.txt
+deploy-deny.txt
+deploy-prepare.sh
+docs
+tools
