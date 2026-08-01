@@ -51,7 +51,7 @@ internal static class IconExporter
     ///
     /// <para>用低解析版（40×40）：站上顯示只有 20px，`_hr1` 是四倍面積、對 399 張圖是白付的體積。</para>
     /// </summary>
-    public static int ExportItems(GameData gd, IEnumerable<uint> iconIds, string outDir)
+    public static int ExportItems(GameData gd, IEnumerable<uint> iconIds, string outDir, string label = "需求物圖示")
     {
         Directory.CreateDirectory(outDir);
         var written = 0;
@@ -65,7 +65,7 @@ internal static class IconExporter
             written++;
         }
         var note = missing.Count > 0 ? $"（client 內找不到 {missing.Count} 張：{string.Join(",", missing.Take(5))}…）" : "";
-        Console.WriteLine($"  ✓ 需求物圖示 {written} 張 → {outDir}{note}");
+        Console.WriteLine($"  ✓ {label} {written} 張 → {outDir}{note}");
         return written;
     }
 

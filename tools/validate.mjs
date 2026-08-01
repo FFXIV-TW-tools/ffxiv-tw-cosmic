@@ -31,6 +31,9 @@ check(rateSum === 100, `渴望灣天氣機率總和 = ${rateSum}，應為 100`);
 check(weather.zone.territoryId === 1237, `territoryId = ${weather.zone.territoryId}，應為 1237（渴望灣）`);
 check(weather.periodSeconds === 1400, `天氣週期 = ${weather.periodSeconds}，應為 1400 秒`);
 check(weather.emergencyWeathers.length > 0, '緊急事件天氣清單為空（它是「無法離線預測」這個結論的依據）');
+// 天氣圖示＝遊戲原圖。缺 icon 時 UI 只顯示名稱、**不會退回 emoji**（那組自創對照已移除）⇒
+// 沒有這條的話「圖不見了」是靜默的，畫面照樣正常只是少一張圖。
+check(weather.table.every((w) => w.icon > 0), '有天氣沒有 icon id（UI 會只剩文字，且不會有任何錯誤訊號）');
 
 // ── 任務 ──────────────────────────────────────────────────────────────
 const m = read('missions.json');

@@ -11,8 +11,25 @@
 
 import { WEATHER_PERIOD, clockText, dateText, eorzeaClock, formatDuration } from './eorzea-time.js';
 
-/** 天氣 → emoji。純裝飾，資料本身以文字承載。 */
-const WEATHER_ICON = { 月塵: '🌘', 晴朗: '🌤', 靈風: '💨' };
+/**
+ * 天氣圖示＝**遊戲自己的圖**，由產生器從 client 解出放同源 `img/weather/<iconId>.png`
+ * （icon id 在 `weather.json` 的 table 上，來源見 `tools/cosmic-dump/Program.cs`）。
+ *
+ * ⚠ 2026-08-01 之前這裡是一組自己發明的 emoji（🌤💨🌘）——遊戲本來就有天氣圖示，
+ * 拿 emoji 代替是我擅自決定的，Owner 指正後改掉。**沒有 emoji fallback**：
+ * 圖載不到就只顯示名稱，不要再讓那組自創對照偷偷回來。
+ */
+function weatherIcon(w, size = 20) {
+  if (!w?.icon) return null;
+  const img = document.createElement('img');
+  img.className = 'cos-wicon';
+  img.src = `img/weather/${String(w.icon).padStart(6, '0')}.png`;
+  img.alt = '';                 // 天氣名就在旁邊，alt 再唸一次是重複
+  img.width = size;
+  img.height = size;
+  img.loading = 'lazy';
+  return img;
+}
 
 /** 渴望灣的「平常天氣」：佔 70%、沒有任何任務綁它 ⇒ 時間軸與倒數都不列它。 */
 const PLAIN_WEATHER = '晴朗';
@@ -93,13 +110,14 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
      * 只寫「接著是晴朗」對使用者毫無用處。
      */
     const next = forecaster.weatherAt(now + remain);
-    const nextText = `還剩 ${formatDuration(remain)} → 接著是 ${WEATHER_ICON[next.name] ?? ''} ${next.name}`;
+    // 註記是純文字（textContent），圖示放不進去；卡片主值那行已經有圖了，這裡寫名字就夠
+    const nextText = `還剩 ${formatDuration(remain)} → 接著是 ${next.name}`;
     const note = current.name === PLAIN_WEATHER && next.name === PLAIN_WEATHER
       ? `${nextText}（${nextSpecialNote(now)}）`
       : nextText;
     el.now.innerHTML = '';
     el.now.append(
-      block('目前天氣', `${WEATHER_ICON[current.name] ?? ''} ${current.name}`, note),
+      block('目前天氣', [weatherIcon(current, 28), document.createTextNode(` ${current.name}`)], note),
       block('艾歐澤亞時間', `${String(et.hour).padStart(2, '0')}:${String(et.minute).padStart(2, '0')}`, '天氣全伺服器同步，不分伺服器'),
       windyBlock(now),
       mechBlock(now),
@@ -146,7 +164,9 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
     l.textContent = label;
     const v = document.createElement('strong');
     v.className = 'codex-h2 cos-stat__value';
-    v.textContent = value;
+    // value 可以是字串或節點陣列（天氣那張要在名稱前放遊戲圖示）
+    if (Array.isArray(value)) v.append(...value.filter(Boolean));
+    else v.textContent = value;
     const n = document.createElement('span');
     n.className = 'codex-small cos-stat__note';
     n.textContent = note;
@@ -188,7 +208,7 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
         td(dateCell, 'cos-col-date'),
         td(clockText(slot.start), 'codex-table__num'),
         td(`${String(et.hour).padStart(2, '0')}:00`, 'codex-table__num'),
-        td(`${WEATHER_ICON[slot.weather.name] ?? ''} ${slot.weather.name}`),
+        weatherCell(slot.weather),
         td(isNow ? '進行中' : formatDuration(slot.start - now), 'codex-table__num'),
       );
       tbody.append(tr);
@@ -199,6 +219,16 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
     const e = document.createElement('td');
     if (cls) e.className = cls;
     e.textContent = text;
+    return e;
+  }
+
+  /** 時間軸的天氣欄：遊戲圖示 ＋ 名稱。 */
+  function weatherCell(w) {
+    const e = document.createElement('td');
+    e.className = 'cos-wcell';
+    const ico = weatherIcon(w);
+    if (ico) e.append(ico);
+    e.append(document.createTextNode(w.name));
     return e;
   }
 

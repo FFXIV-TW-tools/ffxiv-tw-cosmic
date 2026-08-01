@@ -418,6 +418,12 @@ body {
 /* 任務清單「類型」欄的子標籤（連續／時間限定／天氣限定）— 與分頁 badge 並列 */
 .cos-tag { margin-left: var(--space-1, 4px); }
 
+/* 天氣圖示（遊戲原圖，同源 img/weather/）。跟名稱同一行、垂直置中。 */
+.cos-wicon { flex: 0 0 auto; vertical-align: -0.15em; }
+.cos-wcell { white-space: nowrap; }
+.cos-wcell .cos-wicon { margin-right: var(--space-1, 4px); }
+.cos-stat__value .cos-wicon { vertical-align: -0.2em; }
+
 /* 欄位標題下的補充說明（「可點」這種 affordance 要寫出來，不能等人自己發現） */
 .cos-th-note { display: block; font-weight: var(--fw-regular, 400); }
 

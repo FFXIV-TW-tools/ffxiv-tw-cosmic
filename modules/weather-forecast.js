@@ -7,7 +7,7 @@ import { WEATHER_PERIOD, forecastTarget, periodStart } from './eorzea-time.js';
 
 /**
  * 建一個綁定某區機率表的預報器。
- * @param {{table: {id:number,name:string,rate:number}[]}} weatherData
+ * @param {{table: {id:number,name:string,rate:number,icon:number}[]}} weatherData
  */
 export function createForecaster(weatherData) {
   const table = weatherData.table;

@@ -7,10 +7,15 @@ using Lumina.Excel;
 namespace CosmicDump;
 
 /// <summary>把台服 client 的宇宙探索資料轉成網站吃的三份 JSON。每份自帶 meta（client 版本＋產生時間）。</summary>
-internal sealed class Exporters(GameData gd, JsonObject meta, IReadOnlyDictionary<uint, uint> itemIcons)
+internal sealed class Exporters(GameData gd, JsonObject meta,
+                                IReadOnlyDictionary<uint, uint> itemIcons,
+                                IReadOnlyDictionary<uint, uint> weatherIcons)
 {
     /// <summary>本次任務需求物實際用到的 icon id（Program 據此只匯出用得到的那些圖）。</summary>
     public HashSet<uint> UsedItemIcons { get; } = [];
+
+    /// <summary>渴望灣三種天氣實際用到的 icon id。</summary>
+    public HashSet<uint> UsedWeatherIcons { get; } = [];
 
     private ExcelSheet<RawRow> Sheet(string name) => gd.Excel.GetSheet<RawRow>(name: name);
 
@@ -28,7 +33,18 @@ internal sealed class Exporters(GameData gd, JsonObject meta, IReadOnlyDictionar
 
         var table = new JsonArray();
         foreach (var (id, pct) in TcCosmicSheets.WeatherRates(rates.GetRow(rateId)))
-            table.Add(new JsonObject { ["id"] = id, ["name"] = Name(id), ["rate"] = pct });
+        {
+            var w = new JsonObject { ["id"] = id, ["name"] = Name(id), ["rate"] = pct };
+            // 天氣圖示：遊戲本來就有，**不要拿 emoji 代替**（原本 UI 用 🌤💨🌘，是自己發明的，
+            // Owner 2026-08-01 指正）。icon id 來自 global datamine 的 Weather sheet，
+            // 與 Item.Icon 同樣**不猜台服 RawRow 欄位索引**——台服欄序與 global 定義對不上。
+            if (weatherIcons.TryGetValue((uint)id, out var iconId))
+            {
+                w["icon"] = (int)iconId;
+                UsedWeatherIcons.Add(iconId);
+            }
+            table.Add(w);
+        }
 
         // 緊急事件天氣：掃全表確認它們不在任何 WeatherRate 內 ⇒ 時間演算法永遠擲不出來。
         var inAnyRate = new HashSet<int>();

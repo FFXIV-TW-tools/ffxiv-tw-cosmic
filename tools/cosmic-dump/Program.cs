@@ -23,6 +23,12 @@ internal static class Program
     // ——台服欄序與 global 定義對不上，猜錯不報錯、只會靜默匯出一堆不相干的圖。
     private const string DefaultItemLookup = @"C:\FFXIVProject\data\item_dict\item_lookup.sqlite";
 
+    // 天氣圖示 id 的權威。同 Item.Icon 的理由：**不猜台服 RawRow 欄位索引**。
+    // 這份是 monorepo 的 datamine 快取（XIVDiscordBot/scripts/dump_datamining_tc.py 抓的 global CSV）；
+    // icon id 與地區無關，用 global 的沒問題。缺檔時本工具直接中止，不退回 emoji。
+    private const string DefaultWeatherCsv =
+        @"C:\FFXIVProject\data\item_dict\datamining_tc\en_Weather.csv";
+
     private static int Main(string[] args)
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -30,6 +36,7 @@ internal static class Program
         var sqpack = Arg(args, "--sqpack") ?? Environment.GetEnvironmentVariable("FFXIV_TC_SQPACK") ?? DefaultSqPack;
         var jobsJson = Arg(args, "--jobs") ?? DefaultJobsJson;
         var itemLookup = Arg(args, "--item-lookup") ?? DefaultItemLookup;
+        var weatherCsv = Arg(args, "--weather-csv") ?? DefaultWeatherCsv;
         var outDir = Arg(args, "--out") ?? DefaultOutDir();
 
         if (!Directory.Exists(sqpack))
@@ -45,6 +52,12 @@ internal static class Program
         if (!File.Exists(itemLookup))
         {
             Console.Error.WriteLine($"找不到物品表：{itemLookup}（用 --item-lookup 指定）");
+            return 2;
+        }
+        if (!File.Exists(weatherCsv))
+        {
+            Console.Error.WriteLine($"找不到天氣表：{weatherCsv}（用 --weather-csv 指定；"
+                + "缺檔時跑 XIVDiscordBot 的 `py -3.11 -m scripts.build_game_ref` 會重抓）");
             return 2;
         }
         Directory.CreateDirectory(outDir);
@@ -81,8 +94,10 @@ internal static class Program
 
         var itemIcons = LoadItemIcons(itemLookup);
         Console.WriteLine($"物品圖示對照：{itemIcons.Count} 筆（來源 item_lookup.sqlite）");
+        var weatherIcons = LoadWeatherIcons(weatherCsv);
+        Console.WriteLine($"天氣圖示對照：{weatherIcons.Count} 筆（來源 en_Weather.csv）");
 
-        var ex = new Exporters(gd, meta, itemIcons);
+        var ex = new Exporters(gd, meta, itemIcons, weatherIcons);
 
         // 先全部產在記憶體、sanity 過了才落地——分次寫檔中途失敗會留下混版的 data/。
         var weather = ex.Weather();
@@ -94,8 +109,9 @@ internal static class Program
 
         // 需求物圖示：同職業圖示的理由（CSP img-src 'self' 禁外連圖床）。放在 sanity 之後——
         // 資料不過關就不該留下一堆孤兒圖。
-        var itemIconDir = Path.Combine(Path.GetDirectoryName(outDir.TrimEnd('\\', '/'))!, "img", "items");
-        IconExporter.ExportItems(gd, ex.UsedItemIcons, itemIconDir);
+        var imgRoot = Path.Combine(Path.GetDirectoryName(outDir.TrimEnd('\\', '/'))!, "img");
+        IconExporter.ExportItems(gd, ex.UsedItemIcons, Path.Combine(imgRoot, "items"));
+        IconExporter.ExportItems(gd, ex.UsedWeatherIcons, Path.Combine(imgRoot, "weather"), "天氣圖示");
 
         Console.WriteLine("\n輸出：");
         Exporters.Write(Path.Combine(outDir, "weather.json"), weather);
@@ -205,6 +221,30 @@ internal static class Program
             var id = (uint)r.GetInt64(0);
             var name = Path.GetFileNameWithoutExtension(r.GetString(1));
             if (uint.TryParse(name, out var iconId) && iconId > 0) map[id] = iconId;
+        }
+        return map;
+    }
+
+    /// <summary>
+    /// weather id → icon id，來自 global datamine 的 <c>Weather</c> CSV。
+    /// 欄位**按表頭名找**（第一列是 <c>#,Name,…,Icon</c>），不寫死欄序——上游加欄就會位移。
+    /// </summary>
+    private static Dictionary<uint, uint> LoadWeatherIcons(string path)
+    {
+        var map = new Dictionary<uint, uint>();
+        var lines = File.ReadAllLines(path);
+        if (lines.Length == 0) return map;
+        var header = lines[0].Split(',');
+        var iconCol = Array.IndexOf(header, "Icon");
+        if (iconCol < 0)
+            throw new InvalidOperationException($"{path} 沒有 Icon 欄——上游 schema 變了，先確認再改對照");
+        // 前三列是 SE 的表頭區（欄名／型別／預設列），資料從第 4 列起
+        foreach (var line in lines.Skip(3))
+        {
+            var f = line.Split(',');
+            if (f.Length <= iconCol) continue;
+            if (uint.TryParse(f[0], out var id) && uint.TryParse(f[iconCol], out var icon) && icon > 0)
+                map[id] = icon;
         }
         return map;
     }

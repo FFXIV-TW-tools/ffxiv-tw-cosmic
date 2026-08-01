@@ -1,7 +1,7 @@
 {
   "meta": {
     "clientVersion": "2026.07.22.0000.0000",
-    "generatedAt": "2026-08-01T14:04:30Z",
+    "generatedAt": "2026-08-01T14:52:35Z",
     "generator": "tools/cosmic-dump"
   },
   "_note": "渴望灣天氣＝純時間函數，全伺服器同步；緊急事件天氣不在任何 WeatherRate 內＝伺服器推播，無法離線推算。",
@@ -15,17 +15,20 @@
     {
       "id": 148,
       "name": "月塵",
-      "rate": 15
+      "rate": 15,
+      "icon": 60222
     },
     {
       "id": 2,
       "name": "晴朗",
-      "rate": 70
+      "rate": 70,
+      "icon": 60202
     },
     {
       "id": 49,
       "name": "靈風",
-      "rate": 15
+      "rate": 15,
+      "icon": 60219
     }
   ],
   "emergencyWeathers": [
