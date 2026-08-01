@@ -85,7 +85,7 @@
 
     <div class="codex-tabs" id="cos-tabs" role="tablist" aria-label="宇宙探索分頁">
       <button class="codex-tab" role="tab" data-tab="forecast" id="tab-forecast"
-              aria-controls="panel-forecast" aria-selected="true">臨時任務</button>
+              aria-controls="panel-forecast" aria-selected="true">現在開放</button>
       <button class="codex-tab" role="tab" data-tab="weather" id="tab-weather"
               aria-controls="panel-weather" aria-selected="false" tabindex="-1">天氣預報</button>
       <button class="codex-tab" role="tab" data-tab="missions" id="tab-missions"
@@ -106,8 +106,8 @@
       <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel" id="jb-panel">
         <span class="codex-hud" aria-hidden="true"></span>
         <h2 class="codex-h2 cos-panel__title">
-          臨時任務
-          <span class="codex-help-trigger" data-help="遊戲的三個分類是基礎任務／臨時任務／緊急任務；臨時任務底下再分連續任務／時間限定任務／天氣限定任務。本面板只放臨時任務裡有時段或天候條件的那些。｜時段到了、天氣對了，任務就會出現；還擋著的只有前置任務與該職的階級。｜天氣與 ET 時段都能精準推算，全 7 個繁中服伺服器同步。｜獎勵欄的 Ⅰ–Ⅳ 是宇宙工具各階可得的經驗值。｜緊急任務要等伺服器推事件，這裡算不出來。">
+          現在開放的任務
+          <span class="codex-help-trigger" data-help="遊戲的三個分類是基礎任務／臨時任務／緊急任務；臨時任務底下再分連續任務／時間限定任務／天氣限定任務。本面板放的是**有時段或天候條件的任務**，基礎與臨時都收——ET 02:00–04:00 那個時段只有一個任務、而且是基礎任務，只收臨時的話那個時段會整個空白。每一列的「限定條件」欄會寫出它是哪一類。｜**每個職業、每個條件只會出一個任務**——同職同條件若有【高難】與【高難+】兩個，實測到目前都只出高階那個，所以本站列高階；標「階級擇一」的列，滑鼠停上去可看到另一個是哪個。為什麼只出高階（是否與該職的階級解鎖有關）尚未定論。｜時段到了、天氣對了，任務就會出現；還擋著的只有前置任務與該職的階級。｜天氣與 ET 時段都能精準推算，全 7 個繁中服伺服器同步。｜獎勵欄的 Ⅰ–Ⅳ 是宇宙工具各階可得的經驗值。｜緊急任務要等伺服器推事件，這裡算不出來。">
             這裡列什麼 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
           </span>
         </h2>
@@ -146,8 +146,8 @@
         <p class="codex-small cos-np__note">
           <strong>「我練的職業」＝把該職當成已經解到最高階</strong>（本站無從得知你每個職業練到哪，
           所以由你勾選）。沒解到【高難】/【高難+】的職業，列出來的那幾階在遊戲內不會出現。
-          <br>有時段條件的基礎任務不列在這裡（不同分類，在任務清單分頁）；
-          雙職業任務也不列 —— 它們的出現規則本站尚未解出。
+          <br>基礎與臨時任務都收（分類寫在「限定條件」欄）；緊急任務不收 —— 它是伺服器推播，
+          算不出來也偵測不到。雙職業任務也不列 —— 它們的出現規則本站尚未解出。
         </p>
       </section>
 
@@ -275,7 +275,7 @@
               <th style="width:16%">開放條件</th>
               <th style="width:7%">現在</th>
               <th class="codex-table__num" style="width:5%">時限</th>
-              <th style="width:17%">需求物</th>
+              <th style="width:20%">需求物<span class="codex-small cos-th-note">製作類可點 → 求解器算手法</span></th>
               <th class="codex-table__num" style="width:5%">宇宙</th>
               <th class="codex-table__num" style="width:5%">月球</th>
             </tr>

@@ -40,11 +40,40 @@ internal static class IconExporter
         return written;
     }
 
+    /// <summary>
+    /// 匯出任務需求物的圖示，檔名＝icon id（<c>img/items/038246.png</c>）。
+    ///
+    /// <para>只匯出**這次真的用到**的那些（由 <c>Exporters.UsedItemIcons</c> 給），
+    /// 不是整個 Item sheet——後者是四萬多張圖，對一個靜態站沒有意義。</para>
+    ///
+    /// <para>icon id 的來源是 monorepo 的 <c>item_lookup.sqlite</c>，**不是**猜 Lumina 的
+    /// Item sheet 欄位索引（台服欄序與 global 定義對不上，猜錯只會靜默匯出不相干的圖）。</para>
+    ///
+    /// <para>用低解析版（40×40）：站上顯示只有 20px，`_hr1` 是四倍面積、對 399 張圖是白付的體積。</para>
+    /// </summary>
+    public static int ExportItems(GameData gd, IEnumerable<uint> iconIds, string outDir)
+    {
+        Directory.CreateDirectory(outDir);
+        var written = 0;
+        var missing = new List<uint>();
+        foreach (var id in iconIds)
+        {
+            var tex = LoadIcon(gd, id, preferHighRes: false);
+            if (tex is null) { missing.Add(id); continue; }
+            File.WriteAllBytes(Path.Combine(outDir, $"{id:D6}.png"),
+                EncodePng(tex.Value.Rgba, tex.Value.Width, tex.Value.Height));
+            written++;
+        }
+        var note = missing.Count > 0 ? $"（client 內找不到 {missing.Count} 張：{string.Join(",", missing.Take(5))}…）" : "";
+        Console.WriteLine($"  ✓ 需求物圖示 {written} 張 → {outDir}{note}");
+        return written;
+    }
+
     /// <summary>圖示路徑慣例：`ui/icon/{千位資料夾}/{id}.tex`；優先取 `_hr1` 高解析版。</summary>
-    private static (byte[] Rgba, int Width, int Height)? LoadIcon(GameData gd, uint iconId)
+    private static (byte[] Rgba, int Width, int Height)? LoadIcon(GameData gd, uint iconId, bool preferHighRes = true)
     {
         var folder = iconId / 1000 * 1000;
-        foreach (var suffix in new[] { "_hr1", "" })
+        foreach (var suffix in preferHighRes ? ["_hr1", ""] : new[] { "", "_hr1" })
         {
             var path = $"ui/icon/{folder:D6}/{iconId:D6}{suffix}.tex";
             var tex = gd.GetFile<TexFile>(path);

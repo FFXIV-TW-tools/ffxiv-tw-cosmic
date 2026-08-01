@@ -32,6 +32,19 @@ export function crafterUrl(itemId) {
  * 需求物欄的內容。製作類任務（`recipes` 非空）每個需求物都是連結，採集/釣魚類是純文字。
  * 回傳 DocumentFragment，呼叫端自己決定塞進哪個容器。
  */
+/** 物品圖示（產生器從 client 解出來放同源 `img/items/`；CSP `img-src 'self'` 禁外連圖床）。 */
+function itemIcon(it) {
+  if (!it.icon) return null;      // 沒 icon 就不放，別用佔位圖假裝有
+  const img = document.createElement('img');
+  img.className = 'cos-itemico';
+  img.src = `img/items/${String(it.icon).padStart(6, '0')}.png`;
+  img.alt = '';                   // 名稱就在旁邊，alt 再唸一次是重複
+  img.width = 20;
+  img.height = 20;
+  img.loading = 'lazy';
+  return img;
+}
+
 export function requiredItems(mission) {
   const frag = document.createDocumentFragment();
   if (!mission.items?.length) {
@@ -40,16 +53,24 @@ export function requiredItems(mission) {
   }
   const craftable = (mission.recipes?.length ?? 0) > 0;
   mission.items.forEach((it, i) => {
-    if (i > 0) frag.append('、');
-    const text = `${it.name} ×${it.qty}`;
-    if (!craftable) { frag.append(text); return; }
-    const a = document.createElement('a');
-    a.href = crafterUrl(it.itemId);
-    a.target = TARGET;
-    a.className = 'cos-craftlink';
-    a.textContent = text;
-    a.title = `到製作求解器算「${it.name}」的手法與巨集`;
-    frag.append(a);
+    if (i > 0) frag.append(document.createElement('br'));
+    // 有 icon 就一律放（採集物也有），連結與否才看是不是製作類
+    const box = document.createElement(craftable ? 'a' : 'span');
+    box.className = craftable ? 'cos-craftlink' : 'cos-itemline';
+    const ico = itemIcon(it);
+    if (ico) box.append(ico);
+    box.append(document.createTextNode(`${it.name} ×${it.qty}`));
+    if (craftable) {
+      box.href = crafterUrl(it.itemId);
+      box.target = TARGET;
+      box.title = `到製作求解器算「${it.name}」的手法與巨集（另開分頁）`;
+      // 可點要看得出來：底線之外再給一個明確的動作記號，不能只靠 hover 才發現
+      const go = document.createElement('span');
+      go.className = 'cos-craftlink__go';
+      go.textContent = '⚒ 求解';
+      box.append(go);
+    }
+    frag.append(box);
   });
   return frag;
 }

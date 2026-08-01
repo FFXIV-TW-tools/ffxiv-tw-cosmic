@@ -16,6 +16,11 @@
   <ItemGroup>
     <PackageReference Include="Lumina" Version="7.6.1" />
     <PackageReference Include="Lumina.Excel" Version="7.5.0" />
+    <!-- 物品圖示 id 讀 monorepo `item_lookup.sqlite`（生態既有權威，crafter 的 items.json 也走它）。
+         **刻意不從 Lumina 的 Item sheet 猜 Icon 欄位索引**：台服 client 的欄序與 global 定義
+         對不上（實測 Name 在 global CSV 是 index 3、台服 RawRow 是 c9），猜錯不報錯、
+         只會靜默匯出一堆不相干的圖。 -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.11" />
   </ItemGroup>
 
   <!-- 🔒 DRY：台服欄位索引表**不在本 repo 複製一份**，直接編譯 ICE fork 內那份唯一定義。

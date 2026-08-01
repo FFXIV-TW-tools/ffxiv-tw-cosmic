@@ -37,8 +37,11 @@ const m = read('missions.json');
 check(m.missions.length === 544, `任務數 = ${m.missions.length}，應為 544`);
 
 const cls = (k) => m.missions.filter((x) => x.class === k).length;
-check(cls('basic') === 319, `基礎任務 = ${cls('basic')}，應為 319`);
-check(cls('temporary') === 192, `臨時任務 = ${cls('temporary')}，應為 192`);
+// 2026-08-01 修：分類判準從「rank≤4＝基礎」改成「rank≥5 **或**帶條件／前置＝臨時」。
+// 由來＝Owner 在遊戲內看到 #400（rank A、ET 02:00–04:00）出現在**臨時任務**分頁；
+// 交叉表顯示 rank 4 裡帶條件的剛好 11 筆、全是 ET 條件 ⇒ 有子標籤就進臨時分頁，與階級無關。
+check(cls('basic') === 308, `基礎任務 = ${cls('basic')}，應為 308`);
+check(cls('temporary') === 203, `臨時任務 = ${cls('temporary')}，應為 203（高難 96 ＋ 高難+ 96 ＋ 11 個帶 ET 條件的 A 階）`);
 check(cls('critical') === 33, `緊急任務 = ${cls('critical')}，應為 33`);
 
 const conditioned = m.missions.filter((x) => x.conds.length > 0);

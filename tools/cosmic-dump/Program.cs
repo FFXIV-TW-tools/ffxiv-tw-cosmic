@@ -5,6 +5,7 @@
 // 產出 data/weather.json / missions.json / cosmic-tools.json（各自帶 client 版本 meta）。
 // 台服每次改版後重跑；欄位索引若因改版失效，先跑 XIVpluginsDev/ICE-Dev/tools/tc-sheet-verify。
 using System.Text.Json.Nodes;
+using Microsoft.Data.Sqlite;
 using Lumina;
 using Lumina.Data;
 using Lumina.Excel;
@@ -18,12 +19,17 @@ internal static class Program
     // 職業繁中名的唯一權威（DRY 鐵則：不在本 repo 另建對照表）。
     private const string DefaultJobsJson = @"C:\FFXIVProject\data\item_dict\jobs.json";
 
+    // 物品圖示 id 的權威（同 crafter 的 items.json 來源）。**不從 Lumina 的 Item sheet 猜 Icon 欄位**
+    // ——台服欄序與 global 定義對不上，猜錯不報錯、只會靜默匯出一堆不相干的圖。
+    private const string DefaultItemLookup = @"C:\FFXIVProject\data\item_dict\item_lookup.sqlite";
+
     private static int Main(string[] args)
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
 
         var sqpack = Arg(args, "--sqpack") ?? Environment.GetEnvironmentVariable("FFXIV_TC_SQPACK") ?? DefaultSqPack;
         var jobsJson = Arg(args, "--jobs") ?? DefaultJobsJson;
+        var itemLookup = Arg(args, "--item-lookup") ?? DefaultItemLookup;
         var outDir = Arg(args, "--out") ?? DefaultOutDir();
 
         if (!Directory.Exists(sqpack))
@@ -34,6 +40,11 @@ internal static class Program
         if (!File.Exists(jobsJson))
         {
             Console.Error.WriteLine($"找不到職業對照表：{jobsJson}（用 --jobs 指定）");
+            return 2;
+        }
+        if (!File.Exists(itemLookup))
+        {
+            Console.Error.WriteLine($"找不到物品表：{itemLookup}（用 --item-lookup 指定）");
             return 2;
         }
         Directory.CreateDirectory(outDir);
@@ -68,7 +79,10 @@ internal static class Program
             kv => ((string)kv.Value["abbr"]!, (uint)(int)kv.Value["iconId"]!));
         IconExporter.Export(gd, iconJobs, iconDir);
 
-        var ex = new Exporters(gd, meta);
+        var itemIcons = LoadItemIcons(itemLookup);
+        Console.WriteLine($"物品圖示對照：{itemIcons.Count} 筆（來源 item_lookup.sqlite）");
+
+        var ex = new Exporters(gd, meta, itemIcons);
 
         // 先全部產在記憶體、sanity 過了才落地——分次寫檔中途失敗會留下混版的 data/。
         var weather = ex.Weather();
@@ -77,6 +91,11 @@ internal static class Program
         var devStages = ex.DevStages(LoadWorlds(jobsJson));
 
         if (!Sanity(weather, missions, tools, devStages)) return 1;
+
+        // 需求物圖示：同職業圖示的理由（CSP img-src 'self' 禁外連圖床）。放在 sanity 之後——
+        // 資料不過關就不該留下一堆孤兒圖。
+        var itemIconDir = Path.Combine(Path.GetDirectoryName(outDir.TrimEnd('\\', '/'))!, "img", "items");
+        IconExporter.ExportItems(gd, ex.UsedItemIcons, itemIconDir);
 
         Console.WriteLine("\n輸出：");
         Exporters.Write(Path.Combine(outDir, "weather.json"), weather);
@@ -107,8 +126,8 @@ internal static class Program
         var basic = ClassCount("basic");
         var temporary = ClassCount("temporary");
         var critical = ClassCount("critical");
-        if (basic != 319) problems.Add($"基礎任務 = {basic}，應為 319（rank D/C/B/A 非緊急）");
-        if (temporary != 192) problems.Add($"臨時任務 = {temporary}，應為 192（高難 96 ＋ 高難+ 96）");
+        if (basic != 308) problems.Add($"基礎任務 = {basic}，應為 308（rank D/C/B/A、無條件無前置、非緊急）");
+        if (temporary != 203) problems.Add($"臨時任務 = {temporary}，應為 203（高難 96 ＋ 高難+ 96 ＋ 11 個帶 ET 條件的 A 階）");
         if (critical != 33) problems.Add($"緊急任務 = {critical}，應為 33");
 
         // 條件任務＝LotterySpecialCond（col[15]）非零者 63 筆：ET 22 ＋ 靈風 20 ＋ 月塵 21。
@@ -167,6 +186,27 @@ internal static class Program
         var path = Path.Combine(Path.GetDirectoryName(jobsJsonPath)!, "servers.json");
         var root = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
         return root["dcs"]!["chocobo"]!["servers"]!.AsArray().Select(x => (string)x!).ToList();
+    }
+
+    /// <summary>
+    /// item id → icon id。來源 <c>item_lookup.sqlite</c> 的 <c>icon</c> 欄，存的是路徑
+    /// （如 <c>/i/038000/038246.png</c>）⇒ 取檔名數字即 icon id。
+    /// </summary>
+    private static Dictionary<uint, uint> LoadItemIcons(string path)
+    {
+        var map = new Dictionary<uint, uint>();
+        using var con = new SqliteConnection($"Data Source={path};Mode=ReadOnly");
+        con.Open();
+        using var cmd = con.CreateCommand();
+        cmd.CommandText = "SELECT id, icon FROM items WHERE icon IS NOT NULL AND icon != ''";
+        using var r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            var id = (uint)r.GetInt64(0);
+            var name = Path.GetFileNameWithoutExtension(r.GetString(1));
+            if (uint.TryParse(name, out var iconId) && iconId > 0) map[id] = iconId;
+        }
+        return map;
     }
 
     private static Dictionary<uint, JsonObject> LoadJobs(string path)

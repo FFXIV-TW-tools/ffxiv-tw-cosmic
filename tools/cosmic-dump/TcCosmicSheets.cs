@@ -100,11 +100,27 @@ internal static class TcCosmicSheets
     /// 也就是 <b>A 仍是無前綴的字母階、與 D/C/B 同群</b>，對上 Owner 2026-07-31 的遊戲內回報
     /// 「基礎任務才有分 D C B A」。</para>
     ///
-    /// <para>故：緊急＝<see cref="IsCritical"/>（33，全 rank D）／基礎＝rank≤4 且非緊急（319）／
-    /// 臨時＝rank≥5（192）。三者互斥、合計 544。</para>
+    /// <para><b>⚠ 但 rank 不是唯一判準（2026-08-01 修）</b>：Owner 在遊戲內看到
+    /// #400「採集精密空氣淨化裝置所需的材料」（rank A、無前綴、ET 02:00–04:00）
+    /// 出現在<b>臨時任務</b>分頁。交叉表顯示 rank 4 裡「有條件或前置」的**剛好就是 11 筆**，
+    /// 全是 ET 條件任務 ⇒ <b>有子標籤（條件／前置）就進臨時分頁，與階級無關</b>。
+    /// 這也對得上 Owner 最初的描述「臨時任務底下再分 連續／時間限定／天氣限定」——
+    /// 子標籤是臨時分頁的定義，不是附加屬性。</para>
+    ///
+    /// <para>故：緊急＝<see cref="IsCritical"/>（33，全 rank D）／
+    /// 臨時＝rank≥5 <b>或</b>帶條件／前置（192＋11＝203）／基礎＝其餘（308）。</para>
+    ///
+    /// <para><b>殘留未定</b>：52 筆【高難】既無條件也無前置。名稱前綴說它們不是 D/C/B/A 那群，
+    /// 故仍歸臨時；但「臨時分頁的每一筆都有子標籤」若成立，它們就該另有歸屬。
+    /// 沒有遊戲內觀察前不動它們。</para>
     /// </summary>
     public static string MissionClass(RawRow row)
-        => IsCritical(row) ? "critical" : row.ReadUInt8Column(6) <= 4 ? "basic" : "temporary";
+    {
+        if (IsCritical(row)) return "critical";
+        if (row.ReadUInt8Column(6) >= 5) return "temporary";
+        // 帶條件或前置＝有子標籤 ⇒ 臨時分頁（實測：#400 rank A + ET 條件出現在臨時分頁）
+        return Condition(row) != 0 || Prerequisite(row) != 0 ? "temporary" : "basic";
+    }
 
     /// <summary><c>WKSMissionUnit</c> c5＝緊急任務旗標。33 筆，全為 rank D。</summary>
     public static bool IsCritical(RawRow row) => row.ReadPackedBoolColumn(5);

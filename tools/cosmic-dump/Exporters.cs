@@ -7,8 +7,11 @@ using Lumina.Excel;
 namespace CosmicDump;
 
 /// <summary>把台服 client 的宇宙探索資料轉成網站吃的三份 JSON。每份自帶 meta（client 版本＋產生時間）。</summary>
-internal sealed class Exporters(GameData gd, JsonObject meta)
+internal sealed class Exporters(GameData gd, JsonObject meta, IReadOnlyDictionary<uint, uint> itemIcons)
 {
+    /// <summary>本次任務需求物實際用到的 icon id（Program 據此只匯出用得到的那些圖）。</summary>
+    public HashSet<uint> UsedItemIcons { get; } = [];
+
     private ExcelSheet<RawRow> Sheet(string name) => gd.Excel.GetSheet<RawRow>(name: name);
 
     private JsonObject Wrap(string note) => new() { ["meta"] = meta.DeepClone(), ["_note"] = note };
@@ -232,7 +235,7 @@ internal sealed class Exporters(GameData gd, JsonObject meta)
         return arr;
     }
 
-    private static JsonArray RequiredItems(ExcelSheet<RawRow> todoSheet, ExcelSheet<RawRow> itemInfoSheet,
+    private JsonArray RequiredItems(ExcelSheet<RawRow> todoSheet, ExcelSheet<RawRow> itemInfoSheet,
                                            ExcelSheet<RawRow> itemSheet, uint todoId)
     {
         var arr = new JsonArray();
@@ -247,7 +250,14 @@ internal sealed class Exporters(GameData gd, JsonObject meta)
             var itemId = TcCosmicSheets.ItemInfoItemId(info);
             var nm = itemSheet.TryGetRow(itemId, out var it) ? TcCosmicSheets.ItemName(it) : "";
             if (nm.Length == 0) continue;
-            arr.Add(new JsonObject { ["itemId"] = (int)itemId, ["name"] = nm, ["qty"] = (int)qty });
+            var o = new JsonObject { ["itemId"] = (int)itemId, ["name"] = nm, ["qty"] = (int)qty };
+            // icon 缺就不寫欄位（UI 端自己退成無圖），不要塞 0 冒充——那會變成「找不到 000000.png」的破圖
+            if (itemIcons.TryGetValue(itemId, out var iconId))
+            {
+                o["icon"] = (int)iconId;
+                UsedItemIcons.Add(iconId);
+            }
+            arr.Add(o);
         }
         return arr;
     }

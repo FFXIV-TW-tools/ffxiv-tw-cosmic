@@ -418,10 +418,24 @@ body {
 /* 任務清單「類型」欄的子標籤（連續／時間限定／天氣限定）— 與分頁 badge 並列 */
 .cos-tag { margin-left: var(--space-1, 4px); }
 
-/* 需求物 → 製作求解器的深連結。虛線底線而非實線：整欄可能有好幾個，實線會讓表格看起來像連結牆。
-   顏色走 accent（本站與全生態一律 cyan），不自造色。 */
+/* 欄位標題下的補充說明（「可點」這種 affordance 要寫出來，不能等人自己發現） */
+.cos-th-note { display: block; font-weight: var(--fw-regular, 400); }
+
+/* 需求物：圖示 + 名稱 ×數量（+ 製作類再帶「⚒ 求解」連到求解器）。
+   一列一個物品（多需求物任務會有 2–3 個），圖示與文字垂直置中。 */
+.cos-itemline, .cos-craftlink { display: inline-flex; align-items: center; gap: var(--space-1, 4px); }
+.cos-itemico { flex: 0 0 auto; border-radius: 2px; }
+
+/* 顏色走 accent（本站與全生態一律 cyan），不自造色。虛線底線而非實線：一欄可能有好幾個，
+   實線會讓表格看起來像連結牆。 */
 .cos-craftlink { color: var(--accent); text-decoration: underline dotted; text-underline-offset: 2px; }
 .cos-craftlink:hover, .cos-craftlink:focus-visible { text-decoration-style: solid; }
+/* 「可以點過去」要看得出來，不能只靠 hover 才發現 ⇒ 給一個常駐的動作記號 */
+.cos-craftlink__go {
+  flex: 0 0 auto; margin-left: var(--space-1, 4px); padding: 0 var(--space-1, 4px);
+  border: 1px solid currentColor; border-radius: 3px;
+  font-size: var(--fs-small); line-height: 1.5; text-decoration: none; white-space: nowrap;
+}
 
 /* 子標籤篩選縮排在「任務類型」之下——它們只掛在臨時任務上，不是平行的第四種篩選 */
 .cos-sublabel {
