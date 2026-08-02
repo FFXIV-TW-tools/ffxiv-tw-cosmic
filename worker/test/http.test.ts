@@ -544,6 +544,29 @@ describe('管理', () => {
     expect(res.status).toBe(400);
   });
 
+  it('purge 只刪已撤銷／已撤回的，跑完的真實事件留著', async () => {
+    stubDiscord();
+    const worldA = devStages.worlds[5];
+    await clearWorld(worldA);
+    // 一筆會被撤銷的
+    const doomed = (await (await post('/report', { uuid: uuid(), world: worldA, startsInMinutes: 0 })).json() as any).eventId;
+    await revoke(doomed);
+
+    const res = await SELF.fetch('https://x/admin/purge', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer admin-secret', 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json() as any;
+    expect(body.deleted).toBeGreaterThan(0);
+
+    const h = await (await SELF.fetch('https://x/history?limit=100')).json() as any;
+    expect(h.rows.find((x: any) => x.id === doomed)).toBeUndefined();
+    // 沒有任何 revoked/withdrawn 殘留
+    expect(h.rows.filter((x: any) => ['revoked','withdrawn'].includes(x.status)).length).toBe(0);
+  });
+
   it('stats 有分來源的桶', async () => {
     const res = await SELF.fetch('https://x/admin/stats', { headers: { Authorization: 'Bearer admin-secret' } });
     const s = await res.json() as any;

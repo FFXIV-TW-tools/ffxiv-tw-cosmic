@@ -39,7 +39,7 @@
 
 ```bash
 pnpm install
-pnpm test              # 37 個整合測試（vitest-pool-workers）
+pnpm test              # 38 個整合測試（vitest-pool-workers）
 pnpm test:logic        # 20 個純函式測試（node --test）
 pnpm cf:deploy:dry     # 0 error 才往下
 # STOP（對外發佈，由 shawn 執行）：
@@ -75,6 +75,7 @@ npx wrangler secret put PLUGIN_TOKEN    # ICE 插件回報用的共享密鑰
 | `POST` | `/admin/revoke` | `{eventId}` — 撤銷。⚠ 已推播的 Discord 訊息收不回來 |
 | `POST` | `/admin/block` | `{uuid, note}` — 封鎖並刪除其訂閱 |
 | `POST` | `/admin/adjust` | `{eventId, startAt}` — 校正開始時間（`endAt` 依 20 分鐘常數重算、`startExact` 轉 false）。通報時間只可能是「送出的那一刻」，發現得晚就整段偏，這是唯一的修正手段 |
+| `POST` | `/admin/purge` | 刪掉**已撤銷／已撤回**的事件。判準用狀態不用時間：真實事件跑完後狀態仍是 `active`（過期是 lazy 判定），所以只會刪到被人明確撤掉的那些（測試資料、誤按） |
 | `GET` | `/admin/stats` | 分桶計數（plugin／manual 通報量、附議率、否認率、fan-out 失敗、熔斷數） |
 
 **狀態碼**：`401` token 不符／`403` origin 不合或 UUID 已封鎖／`404` 事件不存在／

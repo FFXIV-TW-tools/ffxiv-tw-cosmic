@@ -378,6 +378,25 @@ export class CosmicEventsDO extends DurableObject {
     return { ok: true, startAt, endAt: startAt + L.EVENT_DURATION, now };
   }
 
+  /**
+   * 清掉已撤銷／已撤回的事件（管理端）。
+   *
+   * **為什麼可以刪**：歷史表刻意保留「被撤銷的也列出來」，那條原則是為了**不隱藏真實事件**——
+   * 誰在什麼時候撤掉了什麼，本來就是資料的一部分。但測試資料與誤按不是真實事件，
+   * 留著只會讓「緊急事件實際何時發生」這份唯一能累積的資料被雜訊稀釋。
+   *
+   * **判準用狀態、不用時間或 id 範圍**：真實事件跑完之後狀態仍是 `active`（過期是用 `endAt`
+   * lazy 判定的，不會改狀態），所以只有被人明確撤銷／撤回的才會被刪到。
+   */
+  purgeRevoked(now) {
+    const rows = this.sql
+      .exec("SELECT id, world, startAt, status FROM events WHERE status IN ('revoked','withdrawn')")
+      .toArray();
+    this.sql.exec("DELETE FROM events WHERE status IN ('revoked','withdrawn')");
+    this._bump('event_purged', rows.length);
+    return { ok: true, deleted: rows.length, rows, now };
+  }
+
   block(uuid, note, now) {
     this.sql.exec(
       'INSERT INTO blocked (uuid, at, note) VALUES (?, ?, ?) ON CONFLICT(uuid) DO UPDATE SET at = ?, note = ?',
