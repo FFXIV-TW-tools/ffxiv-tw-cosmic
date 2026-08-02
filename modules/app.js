@@ -14,6 +14,8 @@ import { createToolsView } from './tools-view.js';
 import { createDevStageView } from './dev-stage-view.js';
 import { createJobPicker } from './job-prefs.js';
 import { createAlarm } from './alarm.js';
+import { createEmergencyView } from './emergency-view.js';
+import { createEmergencyNotify } from './emergency-notify.js';
 
 const TICK_MS = 1000;
 
@@ -75,6 +77,15 @@ async function main() {
   createToolsView(document.querySelector('#panel-tools'), { chains: toolData.chains });
   createDevStageView(document.querySelector('#panel-dev'), { devData });
 
+  // 緊急事件是全站唯一有後端的一頁。通知模組先建，view 拿到現況時轉給它——
+  // 反過來會讓 view 得知道通知的存在，多一條不必要的依賴。
+  const emPanel = document.querySelector('#panel-emergency');
+  const emNotify = createEmergencyNotify(emPanel, { worlds: devData.worlds });
+  const emView = createEmergencyView(emPanel, {
+    worlds: devData.worlds,
+    onState: (state) => emNotify.onState(state),
+  });
+
   const picker = createJobPicker(document.querySelector('#job-picker'), jobs, (ids) => {
     nowPanel.setJobs(ids);
   });
@@ -96,6 +107,7 @@ async function main() {
     forecastView.render(now);
     nowPanel.render(now);
     alarm.check(now);
+    emView.render(now);
     const block = Math.floor(now / CONDITION_TICK);
     if (block !== lastBlock) {
       lastBlock = block;

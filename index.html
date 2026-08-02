@@ -90,6 +90,8 @@
               aria-controls="panel-weather" aria-selected="false" tabindex="-1">天氣預報</button>
       <button class="codex-tab" role="tab" data-tab="missions" id="tab-missions"
               aria-controls="panel-missions" aria-selected="false" tabindex="-1">任務清單</button>
+      <button class="codex-tab" role="tab" data-tab="emergency" id="tab-emergency"
+              aria-controls="panel-emergency" aria-selected="false" tabindex="-1">緊急事件</button>
       <!-- 宇宙工具／基地進度暫時隱藏（Owner 2026-07-31：「目前好像也沒什麼用」）。
            面板與資料都留著，拿掉 hidden 即可復原 —— 不刪，因為工具升級鏈是原始需求之一。 -->
     </div>
@@ -147,7 +149,7 @@
           <strong>「我練的職業」＝把該職當成已經解到最高階</strong>（本站無從得知你每個職業練到哪，
           所以由你勾選）。沒解到【高難】/【高難+】的職業，列出來的那幾階在遊戲內不會出現。
           <br>只列臨時任務（帶條件或前置的都算，不看階級）；基礎任務在任務清單分頁。
-          緊急任務不列 —— 它是伺服器推播，算不出來也偵測不到。
+          緊急任務不列 —— 它是伺服器推播，算不出來；現在改由回報，看「緊急事件」分頁。
           雙職業任務也不列 —— 它們的出現規則本站尚未解出。
         </p>
       </section>
@@ -286,6 +288,71 @@
       </div>
     </section>
 
+    <!-- ══ 分頁四：緊急事件（全站唯一有後端的一頁）══
+         其他分頁的東西是**算出來的**，對就是對；這一頁的東西是**別人回報的**，
+         沒人回報就是空的，而空的不代表沒有事件。措辭不得含糊。 -->
+    <section id="panel-emergency" role="tabpanel" aria-labelledby="tab-emergency" tabindex="0" hidden>
+      <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
+        <span class="codex-hud" aria-hidden="true"></span>
+        <h2 class="codex-h2 cos-panel__title">
+          各伺服器現況
+          <span class="codex-help-trigger" data-help="緊急事件的天氣（磁暴／流星雨／孢子霧）不在渴望灣的天氣機率表裡，時間演算法永遠擲不出來 ⇒ 只能靠回報，不能預測。｜兩種來源：**插件偵測**＝ICE 外掛讀到遊戲的天氣變成緊急天氣，等於遊戲自己說的；**玩家通報**＝有人按了按鈕，未經覆核。｜每台伺服器同時只留一個事件，重複通報會自動變成附議。｜三個人否認且沒有人附議，該筆就會下架。｜**這裡沒亮不代表沒有事件** —— 只代表那台伺服器現在沒有人回報。">
+            這些數字哪來的 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
+          </span>
+        </h2>
+        <p class="codex-body">
+          緊急事件<strong>算不出來</strong>——它的三種天氣不在渴望灣的機率表裡，時間演算法永遠擲不到。
+          所以這一頁完全靠回報：<strong>插件偵測</strong>（遊戲自己的天氣狀態）與
+          <strong>玩家通報</strong>（有人按了按鈕）。
+          <strong>沒亮不代表沒事件，只代表那台現在沒有人回報。</strong>
+        </p>
+        <ul class="cos-em" id="em-list"></ul>
+        <p class="codex-small cos-em__status" id="em-status">載入中…</p>
+      </section>
+
+      <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
+        <span class="codex-hud" aria-hidden="true"></span>
+        <h2 class="codex-h2 cos-panel__title">我要通報</h2>
+        <p class="codex-body">
+          在遊戲裡看到緊急事件了？選你的伺服器按送出，訂閱那台的人會立刻收到通知。
+          事件固定持續 <strong>20 分鐘</strong>（遊戲資料寫死的任務時限）。
+        </p>
+        <div class="cos-em__form">
+          <div class="codex-field">
+            <label class="codex-field__label" for="em-world">伺服器</label>
+            <select class="codex-select" id="em-world"></select>
+          </div>
+          <div class="codex-field">
+            <label class="codex-field__label" for="em-lead">什麼時候開始</label>
+            <select class="codex-select" id="em-lead"></select>
+          </div>
+          <button class="codex-btn codex-btn--primary" type="button" id="em-submit">送出通報</button>
+        </div>
+        <p class="codex-small cos-em__msg" id="em-msg"></p>
+      </section>
+
+      <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
+        <span class="codex-hud" aria-hidden="true"></span>
+        <h2 class="codex-h2 cos-panel__title">通知我</h2>
+        <p class="codex-body">要收哪幾台伺服器的通知：</p>
+        <div class="cos-chips" id="em-sub-worlds"></div>
+        <label class="codex-switch cos-em__switch">
+          <input type="checkbox" class="codex-switch__input" id="em-web">
+          <span class="codex-switch__track" aria-hidden="true"></span>
+          <span>網頁通知</span>
+        </label>
+        <p class="codex-small cos-em__substatus" id="em-sub-status"></p>
+        <p class="codex-small cos-em__substatus" id="em-discord-status"></p>
+        <button class="codex-btn codex-btn--primary" type="button" id="em-sub-save">儲存訂閱</button>
+        <p class="codex-small cos-em__note">
+          <strong>網頁通知只在這個分頁開著時有效</strong>（可以切到背景，但不能關掉）——
+          瀏覽器會終止沒有分頁的背景程式，「關掉還會響」是做不到的，所以本站不做那個承諾。
+          <br><strong>要關掉瀏覽器也收得到，就填 Discord webhook</strong>：那是由伺服器送的，
+          與你的電腦開不開機無關。填一次全工具箱共用。
+        </p>
+      </section>
+    </section>
+
     <!-- ══ 分頁三：宇宙工具 ══ -->
     <section id="panel-tools" role="tabpanel" aria-labelledby="tab-tools" tabindex="0" hidden>
       <p class="codex-body cos-panel__lead" id="tv-summary"></p>
@@ -326,7 +393,8 @@
     <footer class="cos-footer">
       <p class="codex-small">
         對應遊戲版本 <span id="meta-client">—</span>（資料更新於 <span id="meta-generated">—</span>）。
-        天氣為時間函數、全伺服器同步；緊急任務為伺服器端狀態，本站不提供。
+        天氣為時間函數、全伺服器同步、可推算到任意未來；緊急事件是伺服器端狀態<strong>算不出來</strong>，
+        改由插件偵測與玩家通報（見「緊急事件」分頁），覆蓋率取決於回報者，<strong>沒亮不代表沒事件</strong>。
       </p>
     </footer>
   </main>

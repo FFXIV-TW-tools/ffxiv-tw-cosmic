@@ -543,3 +543,67 @@ body {
   color: var(--color-text-muted, #c0c9da);
 }
 
+
+/* ── 緊急事件（全站唯一有後端的一頁）─────────────────────────── */
+
+/* 一台伺服器一列。沒有事件的也照列 —— 「查過了，沒有」跟「不知道」是兩回事，
+   只列有事件的會讓人以為其他台是「確定沒事」。 */
+.cos-em {
+  list-style: none;
+  margin: var(--space-3, 12px) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+}
+
+.cos-em__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  border: 1px solid var(--color-border, #2b3f56);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface, #101824);
+}
+
+.cos-em__world {
+  min-width: 5.5em;
+  font-weight: 600;
+}
+
+.cos-em__none,
+.cos-em__votes,
+.cos-em__status,
+.cos-em__substatus {
+  color: var(--color-text-muted, #c0c9da);
+}
+
+/* 倒數吃掉中間的剩餘寬，把附議數與按鈕推到右邊 */
+.cos-em__when { flex: 1 1 auto; }
+
+.cos-em__actions {
+  display: flex;
+  gap: var(--space-1, 4px);
+}
+
+.cos-em__form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3, 12px);
+  margin-bottom: var(--space-2, 8px);
+}
+
+/* 送出結果分兩種語氣：成功走一般文字色，失敗要看得出來但不必是紅底 */
+.cos-em__msg { min-height: 1.4em; }
+.cos-em__msg[data-tone="warn"] { color: var(--color-warn, #e8a45a); }
+
+.cos-em__switch { margin: var(--space-3, 12px) 0 var(--space-2, 8px); }
+
+/* 「網頁通知只在分頁開著時有效」這段是必讀的能力邊界，不能被當成次要說明縮掉 */
+.cos-em__note {
+  margin-top: var(--space-3, 12px);
+  color: var(--color-text-muted, #c0c9da);
+}
