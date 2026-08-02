@@ -1,6 +1,10 @@
 # Cloudflare Pages headers — 安全強化 + cache 控制（新工具 starter 範本）
 # 複製到新 repo 根目錄。把 換成本工具自己的 worker（沒有後端就刪掉該段）。
 # CSP 已放行 portal CDN 全 src（fat-cat / header / settings 等資產）+ CF Web Analytics。
+# connect-src 必須含 discord.com / discordapp.com：portal 設定 modal 的「🧪 測試發送」
+# 是從**本頁**直接 POST 到 Discord webhook（不經任何後端）。少了它，按鈕會回
+# 「Failed to fetch」而且看起來像 webhook 壞掉——實際是 CSP 在送出前就擋掉了。
+# 本站自己的通知由 worker 送，不需要這條；純粹是那顆共用按鈕要用（2026-08-02 使用者回報）。
 # https://developers.cloudflare.com/pages/configuration/headers/
 
 /*
@@ -9,7 +13,7 @@
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://ffxiv-tw-tools-portal.pages.dev https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://ffxiv-tw-tools-portal.pages.dev; img-src 'self' data: https://ffxiv-tw-tools-portal.pages.dev; connect-src 'self' https://ffxiv-tw-tools-settings-api.ffxiv-tw-tools.workers.dev https://ffxiv-tw-cosmic-api.ffxiv-tw-tools.workers.dev https://cloudflareinsights.com; media-src 'self' https://ffxiv-tw-tools-portal.pages.dev; font-src 'self' https://ffxiv-tw-tools-portal.pages.dev data:; frame-ancestors 'none'; base-uri 'self'; form-action 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://ffxiv-tw-tools-portal.pages.dev https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://ffxiv-tw-tools-portal.pages.dev; img-src 'self' data: https://ffxiv-tw-tools-portal.pages.dev; connect-src 'self' https://ffxiv-tw-tools-settings-api.ffxiv-tw-tools.workers.dev https://ffxiv-tw-cosmic-api.ffxiv-tw-tools.workers.dev https://discord.com https://discordapp.com https://cloudflareinsights.com; media-src 'self' https://ffxiv-tw-tools-portal.pages.dev; font-src 'self' https://ffxiv-tw-tools-portal.pages.dev data:; frame-ancestors 'none'; base-uri 'self'; form-action 'none'
 
 # 工具自家 JS / CSS — max-age=0 + must-revalidate → push 完 F5 即時更新（免 Ctrl+Shift+R）
 /*.js
