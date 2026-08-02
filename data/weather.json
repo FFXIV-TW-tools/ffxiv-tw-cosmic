@@ -1,7 +1,7 @@
 {
   "meta": {
     "clientVersion": "2026.07.22.0000.0000",
-    "generatedAt": "2026-08-01T14:52:35Z",
+    "generatedAt": "2026-08-02T19:51:06Z",
     "generator": "tools/cosmic-dump"
   },
   "_note": "渴望灣天氣＝純時間函數，全伺服器同步；緊急事件天氣不在任何 WeatherRate 內＝伺服器推播，無法離線推算。",
