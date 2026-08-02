@@ -45,11 +45,12 @@ test('常數對得上 client 產生的資料', () => {
 test('手動通報：欄位邊界', () => {
   assert.equal(L.validateManualReport({ uuid: U1, world: W, startsInMinutes: 0 }, NOW).ok, true);
   assert.equal(
-    L.validateManualReport({ uuid: U1, world: W, startsInMinutes: 15 }, NOW).ok,
+    L.validateManualReport({ uuid: U1, world: W, startsInMinutes: 5 }, NOW).ok,
     true,
-    '上界 15 要收',
+    '上界 5 要收（＝UI 給的最大選項）',
   );
-  assert.equal(L.validateManualReport({ uuid: U1, world: W, startsInMinutes: 16 }, NOW).reason, 'bad_lead');
+  // 遊戲的預兆通告只提前約 5 分鐘（實測 5:15 / 5:40），沒有任何管道能知道 6 分鐘後的事
+  assert.equal(L.validateManualReport({ uuid: U1, world: W, startsInMinutes: 6 }, NOW).reason, 'bad_lead');
   // 負數＝已經開始了幾分鐘。沒有這個，發現得晚的人只能報「現在」，倒數整段往後偏。
   assert.equal(L.validateManualReport({ uuid: U1, world: W, startsInMinutes: -5 }, NOW).startAt, NOW - 300);
   assert.equal(L.validateManualReport({ uuid: U1, world: W, startsInMinutes: -19 }, NOW).ok, true, '下界 -19 要收');
