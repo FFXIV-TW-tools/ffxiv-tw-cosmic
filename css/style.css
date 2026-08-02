@@ -607,3 +607,9 @@ body {
   margin-top: var(--space-3, 12px);
   color: var(--color-text-muted, #c0c9da);
 }
+
+/* 歷史紀錄的伺服器篩選：獨立一行，不跟表格擠 */
+.cos-em__histfilter {
+  max-width: 16em;
+  margin-bottom: var(--space-3, 12px);
+}

@@ -1,7 +1,9 @@
 /**
  * 入口：載資料 → 建分頁 → 每秒推時鐘。
  *
- * 全站零後端：三份 JSON 由 `tools/cosmic-dump` 從台服 client 產生後 commit 進 repo。
+ * 主體零後端：四份 JSON 由 `tools/cosmic-dump` 從台服 client 產生後 commit 進 repo。
+ * **唯一例外是「緊急事件」分頁**——那件事離線算不出來，只能靠回報（`worker/`）。
+ * 後端掛掉時只有那一頁降級為唯讀，其餘分頁必須照常運作。
  */
 
 import { setupTabs } from './tabs.js';
@@ -16,6 +18,7 @@ import { createJobPicker } from './job-prefs.js';
 import { createAlarm } from './alarm.js';
 import { createEmergencyView } from './emergency-view.js';
 import { createEmergencyNotify } from './emergency-notify.js';
+import { createEmergencyHistory } from './emergency-history.js';
 
 const TICK_MS = 1000;
 
@@ -55,7 +58,12 @@ async function main() {
   const { conditions, missions, jobs } = missionData;
   const windows = buildWindows(conditions, missions, forecaster);
 
-  const tabs = setupTabs(document.querySelector('#cos-tabs'), () => {});
+  // 分頁切換回呼：歷史紀錄只在真的被看到時才抓一次（它不會自己變，跟著 60 秒輪詢是白花額度）。
+  // 用可變參照是因為 tabs 必須先建（其他 view 要用 tabs.select），而歷史 view 要等 DOM 那段。
+  let onEmergencyTab = null;
+  const tabs = setupTabs(document.querySelector('#cos-tabs'), (id) => {
+    if (id === 'emergency') onEmergencyTab?.();
+  });
 
   const missionView = createMissionView(document.querySelector('#panel-missions'), {
     missions, conditions, jobs, forecaster,
@@ -81,10 +89,13 @@ async function main() {
   // 反過來會讓 view 得知道通知的存在，多一條不必要的依賴。
   const emPanel = document.querySelector('#panel-emergency');
   const emNotify = createEmergencyNotify(emPanel, { worlds: devData.worlds });
+  const emHistory = createEmergencyHistory(emPanel, { worlds: devData.worlds });
   const emView = createEmergencyView(emPanel, {
     worlds: devData.worlds,
     onState: (state) => emNotify.onState(state),
+    onChanged: () => emHistory.refresh(),
   });
+  onEmergencyTab = () => emHistory.ensureLoaded();
 
   const picker = createJobPicker(document.querySelector('#job-picker'), jobs, (ids) => {
     nowPanel.setJobs(ids);

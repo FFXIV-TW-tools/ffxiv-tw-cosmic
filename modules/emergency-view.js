@@ -15,6 +15,25 @@ import { emergencyApi } from './emergency-api.js';
 /** 後端輪詢間隔（秒）。 */
 const POLL_SECONDS = 60;
 
+/** 上次通報選的伺服器。純檢視狀態，不進跨工具設定。 */
+const LAST_WORLD_KEY = 'ffxiv-tw-cosmic:em-world';
+
+function loadLastWorld() {
+  try {
+    return localStorage.getItem(LAST_WORLD_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function saveLastWorld(w) {
+  try {
+    localStorage.setItem(LAST_WORLD_KEY, w);
+  } catch {
+    // 私密模式／配額滿：記不住而已，功能不受影響
+  }
+}
+
 const LEAD_OPTIONS = [
   [0, '已經開始'],
   [1, '1 分鐘後'],
@@ -27,7 +46,7 @@ const LEAD_OPTIONS = [
  * @param {HTMLElement} root #panel-emergency
  * @param {{worlds: string[], onState?: (state:object)=>void}} opts
  */
-export function createEmergencyView(root, { worlds, onState }) {
+export function createEmergencyView(root, { worlds, onState, onChanged }) {
   const el = {
     list: root.querySelector('#em-list'),
     status: root.querySelector('#em-status'),
@@ -43,8 +62,53 @@ export function createEmergencyView(root, { worlds, onState }) {
   let lastPoll = 0;
   let offline = false;
 
+  // **不給預設值**。`<select>` 天生會選第一個選項，也就是「伊弗利特」——
+  // 泰坦的玩家沒注意到下拉框按下去，送出的就是一筆伊弗利特的假通報，而這種
+  // 「不是惡意但是錯的」通報，社交層完全分辨不出來（只會被三個人否認掉，
+  // 代價是另一台伺服器的人先被吵一次）。所以寧可逼人選一次。
+  el.world.append(new Option('請選擇伺服器', ''));
   for (const w of worlds) el.world.append(new Option(w, w));
   for (const [v, label] of LEAD_OPTIONS) el.lead.append(new Option(label, String(v)));
+
+  el.world.addEventListener('change', () => {
+    if (el.world.value) saveLastWorld(el.world.value);
+    syncSubmitState();
+  });
+  syncSubmitState();
+  applyDefaultWorld();
+
+  function syncSubmitState() {
+    el.submit.disabled = !el.world.value;
+    el.submit.title = el.world.value ? '' : '請先選擇伺服器';
+  }
+
+  /**
+   * 預設值優先序：**這頁上次選的** → portal 跨工具的「我的伺服器」→ 不預設。
+   *
+   * 上次選的排在前面是因為它更貼近當下意圖（有人會替朋友的伺服器回報）；
+   * `character.mainWorld` 是跨工具共用的身份設定（marketboard／BIS 也在吃），
+   * 本站只讀不寫——那是使用者在 portal 設定的東西，不該被這頁的臨時選擇覆蓋。
+   */
+  async function applyDefaultWorld() {
+    const known = (w) => (worlds.includes(w) ? w : '');
+    let want = known(loadLastWorld());
+    if (!want) {
+      const s = window.FFXIVSettings;
+      if (s) {
+        // settings-client 是非同步 hydrate 的，不等它就會讀到空字串（實測踩過）
+        try {
+          if (s.ready) await s.ready;
+        } catch {
+          // 雲端拉取失敗不代表本機沒有值，繼續往下讀
+        }
+        want = known(s.get?.('character.mainWorld') ?? '');
+      }
+    }
+    if (want) {
+      el.world.value = want;
+      syncSubmitState();
+    }
+  }
 
   el.submit.addEventListener('click', submit);
 
@@ -61,10 +125,11 @@ export function createEmergencyView(root, { worlds, onState }) {
         'ok',
       );
       await poll(true);
+      onChanged?.();   // 新事件要進歷史紀錄（撤銷／結束後才會出現在那張表）
     } else {
       say(r.message, 'warn');
     }
-    el.submit.disabled = false;
+    syncSubmitState();   // 不能無條件開回來——沒選伺服器時它本來就該是關的
   }
 
   function say(text, tone) {
@@ -81,6 +146,7 @@ export function createEmergencyView(root, { worlds, onState }) {
       r.ok ? 'ok' : 'warn',
     );
     await poll(true);
+    if (r.ok) onChanged?.();   // 票數會進歷史紀錄，讓它跟著更新
   }
 
   async function poll(force = false) {
@@ -125,9 +191,11 @@ export function createEmergencyView(root, { worlds, onState }) {
       return li;
     }
 
+    // **不顯示來源**（Owner 2026-08-02）。後端仍記著 `source` 供管理端統計，但畫面上一律只講
+    // 「回報」——對看的人來說要緊的是哪一台、還有多久，資料怎麼進來的與他無關。
     const badge = document.createElement('span');
-    badge.className = `codex-badge ${ev.source === 'plugin' ? 'codex-badge--ok' : 'codex-badge--warn'}`;
-    badge.textContent = ev.source === 'plugin' ? '插件偵測' : '玩家通報';
+    badge.className = 'codex-badge codex-badge--ok';
+    badge.textContent = '已回報';
     li.append(badge);
 
     const when = document.createElement('strong');

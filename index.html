@@ -296,14 +296,13 @@
         <span class="codex-hud" aria-hidden="true"></span>
         <h2 class="codex-h2 cos-panel__title">
           各伺服器現況
-          <span class="codex-help-trigger" data-help="緊急事件的天氣（磁暴／流星雨／孢子霧）不在渴望灣的天氣機率表裡，時間演算法永遠擲不出來 ⇒ 只能靠回報，不能預測。｜兩種來源：**插件偵測**＝ICE 外掛讀到遊戲的天氣變成緊急天氣，等於遊戲自己說的；**玩家通報**＝有人按了按鈕，未經覆核。｜每台伺服器同時只留一個事件，重複通報會自動變成附議。｜三個人否認且沒有人附議，該筆就會下架。｜**這裡沒亮不代表沒有事件** —— 只代表那台伺服器現在沒有人回報。">
+          <span class="codex-help-trigger" data-help="緊急事件的天氣（磁暴／流星雨／孢子霧）不在渴望灣的天氣機率表裡，時間演算法永遠擲不出來 ⇒ 只能靠回報，不能預測。｜每台伺服器同時只留一個事件，重複回報會自動變成附議。｜三個人否認且沒有人附議，該筆就會下架。｜事件固定 20 分鐘（遊戲資料寫死的任務時限）。｜**這裡沒亮不代表沒有事件** —— 只代表那台伺服器現在沒有人回報。">
             這些數字哪來的 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
           </span>
         </h2>
         <p class="codex-body">
           緊急事件<strong>算不出來</strong>——它的三種天氣不在渴望灣的機率表裡，時間演算法永遠擲不到。
-          所以這一頁完全靠回報：<strong>插件偵測</strong>（遊戲自己的天氣狀態）與
-          <strong>玩家通報</strong>（有人按了按鈕）。
+          所以這一頁完全靠<strong>回報</strong>。
           <strong>沒亮不代表沒事件，只代表那台現在沒有人回報。</strong>
         </p>
         <ul class="cos-em" id="em-list"></ul>
@@ -329,6 +328,40 @@
           <button class="codex-btn codex-btn--primary" type="button" id="em-submit">送出通報</button>
         </div>
         <p class="codex-small cos-em__msg" id="em-msg"></p>
+      </section>
+
+      <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
+        <span class="codex-hud" aria-hidden="true"></span>
+        <h2 class="codex-h2 cos-panel__title">
+          歷史紀錄
+          <span class="codex-help-trigger" data-help="已經結束或被撤銷的回報，新到舊。｜**被撤銷的也會列出來並標明**——把它們藏起來，這份表就會變成「看起來很乾淨但被修過」的資料。｜保留 90 天；滿 7 天的紀錄會把回報者身份清掉，只留下時間與附議／否認的**數量**。｜這是本站唯一能累積的緊急事件資料，時間久了才看得出有沒有規律。**目前完全沒有規律可言，不要拿它當預測用。**">
+            這裡列什麼 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
+          </span>
+        </h2>
+        <div class="codex-field cos-em__histfilter">
+          <label class="codex-field__label" for="em-hist-world">伺服器</label>
+          <select class="codex-select" id="em-hist-world"></select>
+        </div>
+        <div class="codex-empty cos-hideable" id="em-hist-empty" hidden>
+          <div class="codex-empty__icon" aria-hidden="true">🗒</div>
+          <div>還沒有任何紀錄 — 第一筆回報之後這裡就會開始累積</div>
+        </div>
+        <div class="codex-table-wrap cos-tablewrap">
+          <table class="codex-table codex-table--fixed codex-table--zebra" id="em-hist">
+            <thead>
+              <tr>
+                <th style="width:22%">日期</th>
+                <th class="codex-table__num" style="width:16%">開始</th>
+                <th style="width:22%">伺服器</th>
+                <th class="codex-table__num" style="width:14%">附議</th>
+                <th class="codex-table__num" style="width:14%">否認</th>
+                <th style="width:12%">狀態</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="codex-small cos-em__note" id="em-hist-note"></p>
       </section>
 
       <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">

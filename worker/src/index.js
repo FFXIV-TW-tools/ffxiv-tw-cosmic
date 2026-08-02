@@ -113,6 +113,17 @@ export default {
       return json(request, await stub(env).state(now));
     }
 
+    // ── 歷史紀錄（已結束／已撤銷的事件）──
+    if (path === '/history' && request.method === 'GET') {
+      if (await rateLimited(env, request, 'GET_RATE_LIMITER')) {
+        return json(request, { error: 'rate_limited' }, 429);
+      }
+      const world = url.searchParams.get('world') || '';
+      if (world && !L.isKnownWorld(world)) return json(request, { error: 'bad_world' }, 400);
+      const limit = Number(url.searchParams.get('limit') || 50);
+      return json(request, await stub(env).history(now, { world, limit }));
+    }
+
     // ── 通報 ──
     if (path === '/report' && request.method === 'POST') {
       const pluginToken = request.headers.get('X-Plugin-Token');

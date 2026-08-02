@@ -36,7 +36,7 @@
 
 ```bash
 pnpm install
-pnpm test              # 25 個整合測試（vitest-pool-workers）
+pnpm test              # 28 個整合測試（vitest-pool-workers）
 pnpm test:logic        # 17 個純函式測試（node --test）
 pnpm cf:deploy:dry     # 0 error 才往下
 # STOP（對外發佈，由 shawn 執行）：
@@ -62,7 +62,8 @@ npx wrangler secret put PLUGIN_TOKEN    # ICE 插件回報用的共享密鑰
 | Method | Path | 說明 |
 |---|---|---|
 | `GET` | `/health` | 健康檢查（回伺服器數量，順便驗資料有載進來） |
-| `GET` | `/state` | 全 7 台現況。每台只回最新的一個 active 事件，含來源／附議／否認數 |
+| `GET` | `/state` | 全 7 台現況。每台只回最新的一個 active 事件 |
+| `GET` | `/history?world=&limit=` | 歷史紀錄：已結束／已撤銷的事件（新→舊）。**只回計數不回 UUID**；撤銷的也列出來並標明 |
 | `POST` | `/report` | 通報。**manual**：`{uuid, world, startsInMinutes}`（0–15，需白名單 Origin）。**plugin**：header `X-Plugin-Token` ＋ `{world, weatherId, missionIds[], phase}` |
 | `POST` | `/vote` | `{uuid, eventId, kind:'confirm'\|'dispute'}` |
 | `PUT` | `/sub` | `{uuid, worlds[], webhookUrl?}`；`worlds: []` ＝退訂並**實體刪列** |
@@ -90,5 +91,8 @@ npx wrangler secret put PLUGIN_TOKEN    # ICE 插件回報用的共享密鑰
   **已知上限**，不是疏漏（Owner 2026-08-02 拍板）。
 - **webhook URL 是敏感憑證**：白名單只放行 `discord.com`／`discordapp.com` 的 https（防 SSRF，
   寫入與送出前各驗一次），任何回應與紀錄都只出現遮罩值。
-- **保留期**：`events` 只留 7 天（每次寫入順手清）；`subs` 在 `worlds` 為空時實體刪列。
+- **保留期兩段**：事件列留 **90 天**（「什麼時候出過事件」是這功能唯一能累積的資料，7 天等於留不下東西）；
+  結束滿 **7 天**即**去識別**——清掉 `reporter`／`confirms`／`disputes` 的 UUID，只留
+  `nConfirm`／`nDispute` 計數（投票當下就同步維護，所以清掉陣列不失資訊）。
+  `subs` 在 `worlds` 為空時實體刪列。
 - **不存 IP／UA**（IP 只供 CF 原生限流短暫計數）。

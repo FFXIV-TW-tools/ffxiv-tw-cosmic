@@ -90,7 +90,9 @@ export function createEmergencyNotify(root, { worlds }) {
 
   async function save() {
     el.save.disabled = true;
-    const hook = window.FFXIVSettings?.get?.('discord.webhookUrl') ?? '';
+    // 同 load()：settings 還沒 hydrate 就存，會把空的 webhook 寫上去 ⇒ 訂閱成功卻收不到 Discord
+    const s = await whenSettingsReady();
+    const hook = s?.get?.('discord.webhookUrl') ?? '';
     const r = await emergencyApi.putSub([...selected], hook);
     el.status.textContent = r.ok
       ? selected.size === 0
@@ -99,6 +101,23 @@ export function createEmergencyNotify(root, { worlds }) {
       : r.message;
     el.save.disabled = false;
     renderDiscord();
+  }
+
+  /**
+   * ⚠️ 這裡**一定要等 `FFXIVSettings.ready`**。settings-client 是非同步 hydrate 的，
+   * 建構當下直接讀會拿到空字串 ⇒ 明明填過 webhook 的人看到「未設定」，而且不會再刷新
+   * （2026-08-02 正式站實測踩到：畫面說未設定，實際上值是在的）。
+   * 這種錯誤方向特別糟——它會讓人以為要去設定頁重填，或以為只能收網頁通知。
+   */
+  async function whenSettingsReady() {
+    const s = window.FFXIVSettings;
+    if (!s) return null;
+    try {
+      if (s.ready) await s.ready;
+    } catch {
+      // 雲端拉取失敗不代表本機沒有值
+    }
+    return s;
   }
 
   function renderDiscord() {
@@ -131,15 +150,35 @@ export function createEmergencyNotify(root, { worlds }) {
 
   /** 讀回既有訂閱（換裝置時把勾選狀態帶回來）。 */
   async function load() {
+    const s = await whenSettingsReady();
+    // webhook 之後被改（設定 modal 存檔、其他分頁同步）也要跟著更新，不然畫面會停在舊判斷
+    s?.onChange?.('discord.webhookUrl', renderDiscord);
+
     const r = await emergencyApi.getSub();
-    if (r.ok && Array.isArray(r.data?.worlds)) {
+    const subscribed = r.ok && Array.isArray(r.data?.worlds) && r.data.worlds.length > 0;
+    if (subscribed) {
       selected.clear();
       for (const w of r.data.worlds) selected.add(w);
-      syncChips();
-      if (r.data.broken) {
-        el.status.textContent = '⚠️ 你的 Discord webhook 連續送失敗已被暫停 — 確認網址後按「儲存訂閱」即可恢復。';
-        return;
-      }
+    } else {
+      // 還沒訂閱過 ⇒ 用跨工具的「我的伺服器」先勾起來（只是預勾，**沒有幫他存**）。
+      // 這是這頁最可能想要的預設：你要的是自己那台的通知。
+      const mine = s?.get?.('character.mainWorld') ?? '';
+      if (worlds.includes(mine)) selected.add(mine);
+    }
+    syncChips();
+
+    if (r.ok && r.data?.broken) {
+      el.status.textContent = '⚠️ 你的 Discord webhook 連續送失敗已被暫停 — 確認網址後按「儲存訂閱」即可恢復。';
+      renderDiscord();
+      return;
+    }
+    if (!subscribed) {
+      // 「勾好了」跟「訂閱生效了」是兩回事，不能讓預勾看起來像已經訂閱
+      el.status.textContent = selected.size
+        ? `尚未訂閱 — 已依你的「我的伺服器」預先勾選 ${[...selected].join('、')}，按「儲存訂閱」才會生效。`
+        : '尚未訂閱 — 勾選要收通知的伺服器後按「儲存訂閱」。';
+      renderDiscord();
+      return;
     }
     renderStatus();
     renderDiscord();
@@ -162,11 +201,12 @@ export function createEmergencyNotify(root, { worlds }) {
     const title = ev.startAt > now
       ? `⚡ ${world}：緊急事件即將開始`
       : `⚡ ${world}：緊急事件進行中`;
+    // 不揭露來源（同 Discord 訊息，Owner 2026-08-02）
     const body = [
       ev.startAt > now
         ? `約 ${Math.max(0, Math.round((ev.startAt - now) / 60))} 分鐘後開始`
         : `還剩 ${Math.max(0, Math.round((ev.endAt - now) / 60))} 分鐘`,
-      ev.source === 'plugin' ? '來源：插件偵測' : '來源：玩家通報（未經覆核）',
+      '依回報顯示，實際以遊戲內為準',
     ].join('\n');
 
     if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {

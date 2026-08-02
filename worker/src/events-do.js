@@ -45,6 +45,17 @@ export class CosmicEventsDO extends DurableObject {
       uuid TEXT PRIMARY KEY, at INTEGER NOT NULL, note TEXT NOT NULL DEFAULT ''
     )`);
     this.sql.exec('CREATE TABLE IF NOT EXISTS stats (k TEXT PRIMARY KEY, v INTEGER NOT NULL)');
+
+    // 票數獨立成欄：去識別（7 天後清掉 UUID 陣列）之後，歷史仍要看得出有幾個人證實。
+    // `CREATE TABLE IF NOT EXISTS` 不會補欄位到既有表，所以用 ALTER；已經有了就會丟錯，吞掉即可
+    // （父層鐵則例外 a：窄的、預期內的 schema 既存檢查）。
+    for (const col of ['nConfirm', 'nDispute']) {
+      try {
+        this.sql.exec(`ALTER TABLE events ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0`);
+      } catch {
+        // 欄位已存在
+      }
+    }
   }
 
   // ── 小工具 ──
@@ -56,8 +67,18 @@ export class CosmicEventsDO extends DurableObject {
     );
   }
 
-  /** 保留期清理。掛在每次寫入路徑上——不值得為它排一支 cron。 */
+  /**
+   * 保留期清理。掛在每次寫入路徑上——不值得為它排一支 cron。
+   *
+   * 兩段：**7 天後去識別**（清掉 UUID，只留 `nConfirm`／`nDispute` 計數）、**90 天後刪列**。
+   * 歷史要的是「什麼時候、哪一台、幾個人證實」，不需要知道是誰。
+   */
   _sweep(now) {
+    this.sql.exec(
+      `UPDATE events SET reporter = '', confirms = '[]', disputes = '[]'
+       WHERE endAt < ? AND (reporter != '' OR confirms != '[]' OR disputes != '[]')`,
+      now - L.DEIDENTIFY_AFTER,
+    );
     this.sql.exec('DELETE FROM events WHERE endAt < ?', now - L.RETENTION);
   }
 
@@ -115,8 +136,9 @@ export class CosmicEventsDO extends DurableObject {
       if (reporter) {
         const v = L.applyVote(existing, reporter, 'confirm');
         this.sql.exec(
-          'UPDATE events SET confirms = ?, disputes = ?, status = ? WHERE id = ?',
-          JSON.stringify(v.confirms), JSON.stringify(v.disputes), v.status, existing.id,
+          'UPDATE events SET confirms = ?, disputes = ?, status = ?, nConfirm = ?, nDispute = ? WHERE id = ?',
+          JSON.stringify(v.confirms), JSON.stringify(v.disputes), v.status,
+          v.confirms.length, v.disputes.length, existing.id,
         );
       }
       // 插件回報既有事件時，把來源升級成 plugin（可信度較高的那個要贏）
@@ -167,8 +189,9 @@ export class CosmicEventsDO extends DurableObject {
 
     const v = L.applyVote(ev, uuid, kind);
     this.sql.exec(
-      'UPDATE events SET confirms = ?, disputes = ?, status = ? WHERE id = ?',
-      JSON.stringify(v.confirms), JSON.stringify(v.disputes), v.status, eventId,
+      'UPDATE events SET confirms = ?, disputes = ?, status = ?, nConfirm = ?, nDispute = ? WHERE id = ?',
+      JSON.stringify(v.confirms), JSON.stringify(v.disputes), v.status,
+      v.confirms.length, v.disputes.length, eventId,
     );
     this._bump(kind === 'confirm' ? 'vote_confirm' : 'vote_dispute');
     if (v.changed) this._bump('event_disputed');
@@ -229,6 +252,43 @@ export class CosmicEventsDO extends DurableObject {
       };
     }
     return { now, events: byWorld };
+  }
+
+  /**
+   * 歷史紀錄：已經結束（或被撤銷）的事件，新→舊。
+   *
+   * **撤銷的也列出來並標明**——把它們藏起來，歷史就會變成一份「看起來很乾淨但被修過」的表；
+   * 誰在什麼時候撤掉了什麼，本來就是這份資料的一部分。
+   *
+   * 回的是**計數**不是 UUID 陣列：7 天後 UUID 會被清掉，計數則靠 `nConfirm`／`nDispute` 兩欄留著。
+   */
+  history(now, { world = '', limit = 50 } = {}) {
+    this._sweep(now);
+    const n = Math.max(1, Math.min(L.HISTORY_LIMIT, limit | 0));
+    const rows = world
+      ? this.sql.exec(
+        'SELECT * FROM events WHERE world = ? AND (endAt <= ? OR status != ?) ORDER BY startAt DESC LIMIT ?',
+        world, now, 'active', n,
+      ).toArray()
+      : this.sql.exec(
+        'SELECT * FROM events WHERE endAt <= ? OR status != ? ORDER BY startAt DESC LIMIT ?',
+        now, 'active', n,
+      ).toArray();
+
+    return {
+      now,
+      retentionDays: Math.round(L.RETENTION / 86400),
+      rows: rows.map((r) => ({
+        id: r.id,
+        world: r.world,
+        startAt: r.startAt,
+        endAt: r.endAt,
+        status: r.status,
+        // 舊列的 UUID 已被清空，所以一律以計數欄為準（新列在投票當下就同步維護）
+        confirms: r.nConfirm ?? 0,
+        disputes: r.nDispute ?? 0,
+      })),
+    };
   }
 
   // ── 管理 ──

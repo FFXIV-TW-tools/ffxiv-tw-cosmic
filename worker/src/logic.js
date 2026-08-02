@@ -30,8 +30,22 @@ export const MAX_LEAD_MINUTES = 15;
 /** 同一 UUID 對同一伺服器兩次「開新事件」之間的最小間隔（秒）＝事件時長再多 5 分鐘。 */
 export const REPORT_COOLDOWN = EVENT_DURATION + 300;
 
-/** 事件保留期（秒）：超過就刪，不留歷史。 */
-export const RETENTION = 7 * 24 * 3600;
+/**
+ * 事件列的保留期（秒）。**90 天**——「緊急事件實際何時發生」是這個功能唯一能累積的資料
+ * （Owner 2026-08-02：插件的用途就是累積數據量），7 天等於什麼都留不下來。
+ * 列本身很小，90 天的量級是幾百列。
+ */
+export const RETENTION = 90 * 24 * 3600;
+
+/**
+ * 去識別期（秒）。事件結束 7 天後把 `reporter`／`confirms`／`disputes` 裡的 UUID 清掉，
+ * **只留下計數**（`nConfirm`／`nDispute` 兩欄在投票當下就同步維護，所以清掉陣列不會失去資訊）。
+ * 歷史需要的是「什麼時候、哪一台、幾個人證實」，不需要知道是誰。
+ */
+export const DEIDENTIFY_AFTER = 7 * 24 * 3600;
+
+/** `/history` 一次最多回幾筆。 */
+export const HISTORY_LIMIT = 100;
 
 /** 否認達此數且完全沒有人附議 → 標 `disputed`。 */
 export const DISPUTE_THRESHOLD = 3;
@@ -201,22 +215,23 @@ export function inCooldown(lastAt, now) {
   return lastAt > 0 && now - lastAt < REPORT_COOLDOWN;
 }
 
-/** Discord 訊息內容。純字串組裝放這裡，DO 只負責送。 */
+/**
+ * Discord 訊息內容。純字串組裝放這裡，DO 只負責送。
+ *
+ * ⚠️ **不揭露 `source`**（Owner 2026-08-02：「不要說明用插件偵測，就說通知回報即可」）。
+ * `source` 仍然記在資料庫裡供管理端看 stats，但**任何使用者看得到的地方都只講「回報」**——
+ * 對收通知的人來說，他要知道的是「哪一台、還有多久」，資料怎麼進來的與他無關。
+ */
 export function discordPayload(ev, now) {
   const mins = Math.max(0, Math.round((ev.startAt - now) / 60));
   const when = ev.startAt <= now ? '已經開始' : `約 ${mins} 分鐘後開始`;
-  const src = ev.source === 'plugin' ? '插件偵測' : '玩家通報';
-  const endText = new Date(ev.endAt * 1000).toISOString().slice(11, 16);
   return {
     username: 'FFXIV 宇宙探索',
     embeds: [
       {
         title: `⚡ ${ev.world}　緊急事件${ev.startAt <= now ? '進行中' : '預告'}`,
-        description: [
-          `**${when}**，持續約 20 分鐘（預計 ${endText} UTC 結束）。`,
-          `來源：${src}${ev.source === 'manual' ? '（未經覆核）' : ''}`,
-        ].join('\n'),
-        color: ev.source === 'plugin' ? 0x00b5d8 : 0xb58900,
+        description: `**${when}**，持續約 20 分鐘。\n（依回報顯示，實際以遊戲內為準）`,
+        color: 0x00b5d8,
       },
     ],
   };

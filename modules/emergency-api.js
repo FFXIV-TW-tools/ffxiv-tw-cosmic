@@ -98,6 +98,9 @@ export const emergencyApi = {
 
   getState: () => call('/state'),
 
+  getHistory: (world = '', limit = 50) =>
+    call(`/history?limit=${limit}${world ? `&world=${encodeURIComponent(world)}` : ''}`),
+
   async report(world, startsInMinutes) {
     const uuid = await currentUuid();
     if (!uuid) return { ok: false, code: 'no_uuid', message: '尚未取得識別碼，請重新整理後再試。' };

@@ -50,6 +50,12 @@ function revoke(eventId: number) {
   });
 }
 
+/** 把某台伺服器現有的進行中事件清掉，讓案例從乾淨狀態開始（同檔測試共用一個 DO）。 */
+async function clearWorld(world: string) {
+  const st = await (await SELF.fetch('https://x/state')).json() as any;
+  if (st.events[world]) await revoke(st.events[world].id);
+}
+
 /** 攔截 fan-out 用的 fetch；回傳收到的 webhook 呼叫清單。 */
 function stubDiscord(status = 204) {
   const calls: { url: string; body: any }[] = [];
@@ -328,6 +334,48 @@ describe('fan-out', () => {
     await post('/report', { uuid: uuid(), world, startsInMinutes: 0 });
     await new Promise((r) => setTimeout(r, 50));
     expect(calls.length).toBe(n);   // 熔斷後不再送
+  });
+});
+
+describe('歷史紀錄', () => {
+  it('已結束／已撤銷的事件會列出來，進行中的不列', async () => {
+    stubDiscord();
+    const world = devStages.worlds[5];
+    await clearWorld(world);
+    const r = await post('/report', { uuid: uuid(), world, startsInMinutes: 0 });
+    const id = (await r.json() as any).eventId;
+
+    // 進行中 ⇒ 還不算歷史
+    const during = await (await SELF.fetch(`https://x/history?world=${encodeURIComponent(world)}`)).json() as any;
+    expect(during.rows.find((x: any) => x.id === id)).toBeUndefined();
+
+    await revoke(id);
+    const after = await (await SELF.fetch(`https://x/history?world=${encodeURIComponent(world)}`)).json() as any;
+    const row = after.rows.find((x: any) => x.id === id);
+    expect(row).toBeDefined();
+    expect(row.status).toBe('revoked');      // 撤銷的也要看得到，藏起來等於給一份被修過的資料
+    expect(row.world).toBe(world);
+    expect(after.retentionDays).toBe(90);
+    // 歷史只回計數，不回任何 UUID
+    expect(JSON.stringify(after)).not.toContain('aaaaaaaa-');
+  });
+
+  it('投票數會存進歷史（去識別後仍看得到數量）', async () => {
+    stubDiscord();
+    const world = devStages.worlds[4];
+    await clearWorld(world);   // 前面的 fan-out 案例在這台留了進行中事件，不清會變成附議
+    const r = await post('/report', { uuid: uuid(), world, startsInMinutes: 0 });
+    const id = (await r.json() as any).eventId;
+    await post('/vote', { uuid: uuid(), eventId: id, kind: 'confirm' });
+    await post('/vote', { uuid: uuid(), eventId: id, kind: 'confirm' });
+    await revoke(id);
+
+    const h = await (await SELF.fetch(`https://x/history?world=${encodeURIComponent(world)}`)).json() as any;
+    expect(h.rows.find((x: any) => x.id === id).confirms).toBe(2);
+  });
+
+  it('未知伺服器 → 400', async () => {
+    expect((await SELF.fetch('https://x/history?world=拉姆')).status).toBe(400);
   });
 });
 
