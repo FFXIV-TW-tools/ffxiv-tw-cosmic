@@ -41,6 +41,13 @@
 
 - [ ] **B-018** (P2, chore)【建議 中｜延遲風險 低｜執行風險 低｜副作用 無】上線後觀察通報品質，決定要不要收緊社交層防線。`GET /admin/stats` 已分桶（`report_ok_plugin`／`report_ok_manual`／`report_dup`／`vote_confirm`／`vote_dispute`／`event_disputed`／`fanout_fail`／`sub_broken`）。**要看的三件事**：① 手動通報的否認率——高就代表社交層不夠，要考慮「新 UUID 需 2 人附議」② 插件與手動對同一起事件的一致性——插件先報、手動後報＝手動可信；反過來就要查 ③ `fanout_fail`／`sub_broken` 是否集中在少數人（webhook 失效）還是普遍（我們的送法有問題）。**沒有可驗證的閘是這個功能的已知上限**（天氣閘已於 2026-08-02 被 ICE log 證偽），所以只能靠事後觀測。來源: 2026-08-02-emergency-report
 
+- [ ] **B-019** (P1, fix)【建議 高｜延遲風險 中｜執行風險 低｜副作用 動投票與通知路徑】修後閘查出的四個正確性缺陷（2026-08-03 codex 後閘，每條都已實際讀程式碼驗證）：① **通報者可替自己的事件附議** ⇒ `confirms.size === 0` 永遠不成立 ⇒ 該筆再也不可能被 3 個否認下架（`logic.js` 的 `applyVote()` 未排除 `ev.reporter`）② **warn 通知誤報「進行中」，真正開始時反而靜默**（`emergency-notify.js` 的 `fired` 以 event id 去重，而 warn→start 刻意沿用同一個 id；且 warn 時 `startAt === 0` 使文案走「進行中」分支）③ **插件 payload 的 phase 拼錯或缺值會被靜默當成 start** —— 驗證寫成「不是 end/warn 就當 start」，等於把格式錯誤升級成可信度最高的來源 ④ **插件證實既有手動事件時不校正時間**（`events-do.js` 的 `report()` 只改 `source`，`startAt`／`endAt`／`startExact` 保留手動估值，白白丟掉唯一精確的時間來源）。順帶：重複通報形成的附議也應觸發提前推播。來源: 2026-08-03 後閘 R9
+
+- [ ] **B-020** (P2, chore)【建議 中｜延遲風險 低｜執行風險 中｜副作用 動 worker 主檔】拆 `worker/src/events-do.js`（602 行）與 `worker/test/http.test.ts`（690 行）—— 兩支都是 2026-08-02 新建的，違反 AGENTS「新檔 >500 行禁止」，當時就該拆。動工前先列「職責 → 檔名」對照表給 Owner 拍板，禁機械切行。來源: 2026-08-03 後閘 R9
+
+- [ ] **B-021** (P2, test)【建議 中｜延遲風險 中｜執行風險 低｜副作用 新增測試相依】前端零自動化測試。後閘的 warn 通知缺陷（B-019 ②）正好是「後端 43 個測試全綠也抓不到」的實例 —— 那是這條最有說服力的理由。至少要蓋：後端離線降級、訂閱伺服器過濾、同事件只響一次、warn→start 通知、四個分頁都開得出來、無水平溢位。把 warn→start 當第一個回歸案例。來源: 2026-08-03 後閘 R9
+
+- [ ] **B-022** (P3, chore)【建議 低｜延遲風險 低｜執行風險 低｜副作用 無】`worker/src/index.js` 的兩個 token 用字串不等比較，非 constant-time。CF 邊緣前置、token 長度固定 ⇒ 實務可利用性極低，但修起來便宜：抽一支共用的 constant-time 驗證 helper，兩個入口共用並補錯誤 token 的測試。來源: 2026-08-03 後閘 R9
 - [x] ~~**B-006** (P3, feature)【建議 低｜延遲風險 低｜執行風險 高｜副作用 需要後端 + 插件回報】緊急任務即時偵測。~~ — ✓ **由 cycle `2026-08-02-emergency-report` 實作**（Owner 2026-08-02 改變裁示）。當時「暫不做」的理由是「不要有人主動偵測」；現在的做法**同時**接受插件自動偵測（ICE `EmergencyReporter`，Owner 本機先跑，用途是累積數據量）與玩家手動通報，兩種來源在 UI 分別標示。原條目：**離線做不到**（Weather#194–197 不在任何 WeatherRate ⇒ 只能伺服器推播），唯一路徑＝Dalamud 插件偵測後 push 到後端，網站顯示。天花板＝覆蓋率等於回報者數量，沒人在線的伺服器/實例就是黑的。架構上是後掛的一層，不影響現有靜態站。**Owner 已表示暫不做**（2026-07-31：「不要有人主動偵測」）。來源: 2026-07-31-cosmic-site
 
 - [ ] **B-007** (P3, feature)【建議 低｜延遲風險 低｜執行風險 低｜副作用 無】深連結收端：`?mission=<id>` 直開某任務、`?job=<id>` 預選職業篩選；出端＝任務需求物接 marketboard `#/item/<itemId>` 查價。未知 id 要 graceful fallback（toast + 清掉自己的參數），禁白屏。來源: `../_NEW-TOOL.md` 深連結 checklist
