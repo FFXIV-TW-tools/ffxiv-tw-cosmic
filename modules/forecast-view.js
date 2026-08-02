@@ -205,7 +205,29 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
     ];
   }
 
+  /**
+   * 時間軸的「距離現在」欄。每秒只改這幾格文字，不重建整張表。
+   *
+   * <b>為什麼值得分開</b>：表格內容只在**天氣時段跨過邊界**時才會變（每 23 分 20 秒），
+   * 但倒數每秒都要動。原本每秒重建 40 列＋每列一個天氣 `&lt;img&gt;`——量到重建含 layout
+   * 約 0.5 ms／次，不算大，但那是每秒都在做一件 23 分鐘才需要做一次的事，
+   * 而且 `&lt;img&gt;` 被重新建立會讓瀏覽器每秒重新解碼／重繪那 40 張圖。
+   */
+  let timelineCells = [];
+  let timelineKey = -1;
+
   function renderTimeline(now) {
+    const key = Math.floor(now / WEATHER_PERIOD);
+    if (key === timelineKey) {
+      for (const { cell, slot } of timelineCells) {
+        const text = now >= slot.start && now < slot.end ? '進行中' : formatDuration(slot.start - now);
+        if (cell.textContent !== text) cell.textContent = text;
+      }
+      return;
+    }
+    timelineKey = key;
+    timelineCells = [];
+
     // 只列特殊天氣（月塵／靈風）。晴朗佔 70%、且沒有任務綁它，整片列出來只是把重點稀釋掉。
     const rows = forecaster
       .forecast(now, SCAN_PERIODS)
@@ -233,14 +255,16 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
 
       const et = eorzeaClock(slot.start);
 
+      const countdown = td(isNow ? '進行中' : formatDuration(slot.start - now), 'codex-table__num');
       tr.append(
         td(dateCell, 'cos-col-date'),
         td(clockText(slot.start), 'codex-table__num'),
         td(`${String(et.hour).padStart(2, '0')}:00`, 'codex-table__num'),
         weatherCell(slot.weather),
-        td(isNow ? '進行中' : formatDuration(slot.start - now), 'codex-table__num'),
+        countdown,
       );
       tbody.append(tr);
+      timelineCells.push({ cell: countdown, slot });
     }
   }
 
