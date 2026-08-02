@@ -49,3 +49,29 @@
 
 【一般】計畫仍保留已被推翻的驗收要求，而且所有未執行步驟都標成完成。Global Constraints 第二點仍要求在 UI 顯示天氣閘及觀測「被擋筆數」，與 Goal、spec 的「完全移除天氣閘」相反；Task 1–6 又全部使用 `[x]`，不符合「實作尚未開始」的前閘狀態。應刪除殘留天氣閘要求、改為來源分桶指標，並把執行 checklist 重設為 `[ ]`，避免後續工具與 Owner 誤判已完成或已驗收。
 ```
+
+### 7ccc8b220224-1 codex sha256:2e9170931d77f25a9a5ae8028a2410f6b5f771935d5827eab6677ead04fc148e
+
+```text
+【致命】受審實作已偏離核准 spec，原驗收基準無法判定此 head 通過。依據：spec 要求 UI 分級顯示 `plugin/manual`，但 `modules/emergency-view.js` 明確隱藏來源；spec 要求手動通報立即推播、事件保留 7 天、`startsInMinutes=0–15`，實作卻在 `worker/src/logic.js` 改成延遲 30 秒、保留 90 天、範圍 −19～5，並額外加入 `warn`、history、withdraw、notify-now、adjust、purge 等未列介面。建議動作：把後續需求另立 cycle 並補新版 spec／plan 後重跑後閘，或將受審區間縮回原 cycle 的實作 commits。
+
+【致命】核心的 ICE 插件自動偵測路徑沒有出現在受審區間，Task 5 無法核實。依據：材料 3 與 commit metadata 均沒有 `XIVpluginsDev/ICE-Dev/**`、`EmergencyReporter.cs`、設定或指令修改；Task 5 Step 3 的 curl 只驗證 worker 接口，且明說遊戲內實測留待下次事件。建議動作：附上 monorepo 對應 commit range、實際 C# diff、Release build 輸出，以及至少可重現的 weather 翻轉／territory／停用狀態測試，再驗收雙來源目標。
+
+【嚴重】受審區間混入大量計畫外變更，且直接違反「本 cycle 不碰 `data/*.json`」。依據：`da5aab286124` 修改四份資料檔；`modules/mission-view.js` 排序、天氣時間軸雙欄與效能重構、分頁記憶、通知 modal 等也不在 Task 1–6；同一區間還加入整套歷史與撤回功能。建議動作：將資料重跑、一般 UX／效能改善及後續功能拆到各自 cycle；本後閘只保留能對應原 plan 的 commits。
+
+【嚴重】插件證實既有手動事件時沒有用遊戲實測時間校正事件。依據：`worker/src/events-do.js` 的 `report()` 在既有事件分支只把 `source` 改為 `plugin` 並呼叫 `_notifyNow()`，沒有把 `startAt`、`endAt`、`startExact` 更新為插件 `phase:'start'` 的伺服器時間；`manual→plugin` 整合測試也只檢查 id 與 source。建議動作：插件 start 命中 manual event 時原子更新三個時間欄位，並測試 manual 預告過早、已開始數分鐘兩種情境。
+
+【嚴重】通報者可以替自己的事件附議，從而永久繞過「3 否認、0 附議即下架」。依據：`events-do.js#vote()` 與重複 manual report 都直接呼叫 `logic.js#applyVote()`，未排除事件的 `reporter`；一旦本人加入 `confirms`，`confirms === 0` 永遠不成立。建議動作：禁止 reporter 對自己的事件 confirm，自己的重複通報應冪等；補 `/vote` 與重複 `/report` 的自我附議攻擊測試。
+
+【嚴重】warn 階段的網頁通知會誤報「進行中」，且真正開始時反而不再通知。依據：`events-do.js` 將 warn→start 升級維持同一 event id；`modules/emergency-notify.js#fire()` 對 `startAt=0` 走「進行中」分支，而 `onState()` 又只按 event id 去重，後續 start 會被 `fired.has(ev.id)` 擋掉。建議動作：為 warn 建立明確通知分支，去重鍵改為事件 id＋phase，並補 warn→start 的前端通知測試。
+
+【嚴重】插件 payload 驗證會把格式錯誤靜默解讀成合法 start。依據：`logic.js#validatePluginReport()` 對任何不是 `end/warn` 的 phase 一律改成 `start`，所以缺 phase 或 `phase:'strat'` 都會建立高可信事件；提供非陣列 `missionIds` 也會被當成未提供而放行。建議動作：phase 必須明確屬於允許 enum；`missionIds` 若存在就必須是陣列，並加入缺值、拼錯及錯型別的 400 測試。
+
+【一般】重複通報形成的附議不會依新規則提前結束 30 秒靜置期。依據：`events-do.js#report()` 的 existing 分支會寫入 confirm，但只有插件來源升級才呼叫 `_notifyNow()`；相同附議若走 `vote()` 才會立即推播。現有測試只覆蓋 `/vote` 提前送出。建議動作：排除 reporter 自我附議後，其他 UUID 的重複 `/report` 也應呼叫 `_notifyNow()`，並補對應 alarm／fan-out 測試。
+
+【一般】計畫宣告的結構契約沒有全部落實。依據：Global Constraints 要求所有新檔少於 500 行，但 `worker/src/events-do.js` 為 602 行、`worker/test/http.test.ts` 為 690 行；Task 3 宣告 view 回傳 `{render,setWorld}`，實作只回 `{render}`；Task 4 宣告 notify 回傳 `{sync,status,onState}`，實作只回 `{onState}`。建議動作：拆分 DO／測試職責，並實作宣告介面或先修訂 plan 後再標 done。
+
+【一般】ADMIN_TOKEN 與 PLUGIN_TOKEN 使用直接字串比較，不符合 Worker 的 secret 驗證安全慣例。依據：`worker/src/index.js` 使用 `pluginToken !== env.PLUGIN_TOKEN` 與 `auth !== Bearer ...`；Cloudflare 明確建議固定長度雜湊後使用 `crypto.subtle.timingSafeEqual()`。[Cloudflare Workers Best Practices](https://developers.cloudflare.com/workers/best-practices/workers-best-practices/) 建議動作：集中成 constant-time token 驗證 helper，兩個入口共用並補錯誤 token 測試。
+
+【一般】Task 3／4 的瀏覽器端驗收仍只有勾選敘述，未被可執行測試證明。依據：`worker/test/http.test.ts` 只跑 Worker/DO；沒有測試覆蓋後端離線降級、訂閱伺服器過濾、同事件只響一次、warn→start、四分頁與水平溢位，且上述 warn 通知缺陷正好逃過全綠測試。建議動作：加入瀏覽器整合測試，或附上具時間與版本的人工驗收紀錄；未補前不得把 Task 3 Step 4、Task 4 Step 3 視為已證明。
+```

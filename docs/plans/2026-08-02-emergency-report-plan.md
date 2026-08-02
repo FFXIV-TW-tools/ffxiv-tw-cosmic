@@ -442,3 +442,380 @@ codex: codex.EXE exec -m gpt-5.6-sol -c model_reasoning_effort=high -c project_d
 
 **本輪另外抓到一個真的程式缺陷**（測試寫出來才發現，不在 12 條之內）：
 插件路徑的重複通報回 `200`、手動路徑回 `409`，與 README 不一致 ⇒ 已統一為 `409`。
+
+---
+
+## 外審 triage（後閘）
+
+<!-- external-gate:begin v=4 phase=post cycle=2026-08-02-emergency-report fp=sha256:7ccc8b22022466af385c0e752f061c098b2037b52ffe94f49ba7cfc3e7d0ec44 -->
+<!-- external-gate:meta
+{
+  "v": 4,
+  "phase": "post",
+  "cycle": "2026-08-02-emergency-report",
+  "override": null,
+  "overrideActual": null,
+  "materialSha256": "f305178bdf3df38cc24c283b2adca563671082e927930c2cc111febe9cf46668",
+  "diffBase": "8f5f7d7^",
+  "diffSha256": "6d8337f1d6b560e5a93ec86179508aad8ecb6eb9c828073add91fd1f9f504dcc",
+  "specSha256": "0d884a1855e60c83e7aa8cf824188b66f46e04c7f7958ee884da6556183185aa",
+  "reviewedTree": "6826f27d79f2b1e5364a9da2fa22630c0f0de8aa",
+  "remediation": null,
+  "round": null,
+  "sourceFp": null,
+  "baseSha": "1da8e64b36410086af765a2bd940ea7d02df2b85",
+  "reviewHeadSha": "6826f27d79f2b1e5364a9da2fa22630c0f0de8aa",
+  "rangeCommits": [
+    {
+      "sha": "6826f27d79f2b1e5364a9da2fa22630c0f0de8aa",
+      "subject": "perf(cosmic): 時間軸只在天氣時段變動時重建，平時只更新倒數格",
+      "files": [
+        "modules/forecast-view.js"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "da5aab28612480878471bd1edb49fff9b7ce1e0b",
+      "subject": "data(cosmic): 重跑產生器 — 伺服器順序改為官方排列",
+      "files": [
+        "data/cosmic-tools.json",
+        "data/dev-stages.json",
+        "data/missions.json",
+        "data/weather.json"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "5e0a3f2cc6c42a992c55a8b74653b783cca663f2",
+      "subject": "feat(cosmic): 天氣預報改兩欄、任務清單按可做性排序、說明文字精簡",
+      "files": [
+        "css/style.css",
+        "index.html",
+        "modules/forecast-view.js",
+        "modules/mission-view.js"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "257a6d524c6d3467b2bc88ea2745cd99b166f54b",
+      "subject": "feat(cosmic): 各伺服器現況補「上次結束時間」，通知設定改為彈窗",
+      "files": [
+        "css/style.css",
+        "index.html",
+        "modules/emergency-notify.js",
+        "modules/emergency-view.js",
+        "worker/src/events-do.js"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "5326899bf3453cbeebffdec34752649f9dccea95",
+      "subject": "feat(cosmic): 天氣四格升為全頁共用、緊急事件排第一，相對時間一律附時鐘",
+      "files": [
+        "css/style.css",
+        "index.html",
+        "modules/emergency-view.js",
+        "modules/forecast-view.js",
+        "modules/now-panel.js"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "d1ce7efb2fa8a3ce08a81d060060044aa1c618a2",
+      "subject": "fix(cosmic): 通報時間選單改用「再 N 分鐘／剩餘時間 N 分鐘」，否認進度上檯面",
+      "files": [
+        "modules/emergency-view.js",
+        "worker/src/events-do.js"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "e64414b5a53088678e23cc73ab1118a435ec52b0",
+      "subject": "docs(cosmic): 補 8/3 靜置期段落，修正「後端上限仍是 15」",
+      "files": [
+        "AGENTS.md",
+        "CHANGELOG.md"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "1ed5640261a9822e83f805860ab89454973ebcea",
+      "subject": "fix(cosmic): 通報提前量上限 15 → 5 分鐘",
+      "files": [
+        "worker/src/logic.js",
+        "worker/test/logic.test.mjs"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "6049f9c90ff80905f0a83080c5a0951971013c53",
+      "subject": "feat(cosmic): 靜置期可提前結束 — 附議或通報者確認即刻推播",
+      "files": [
+        "modules/emergency-api.js",
+        "modules/emergency-view.js",
+        "worker/src/events-do.js",
+        "worker/src/index.js",
+        "worker/test/http.test.ts"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "5c41f0352b191447bda7f08e6e68947fe66664b8",
+      "subject": "feat(cosmic): 手動通報靜置 30 秒才推播，誤按可在此期間撤回",
+      "files": [
+        "modules/emergency-view.js",
+        "worker/src/events-do.js",
+        "worker/src/logic.js",
+        "worker/test/http.test.ts"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "ca05bf508c5e4295d9dc74504e1134981ec2c43a",
+      "subject": "fix(cosmic): CSP connect-src 放行 discord.com — 設定的「測試發送」被擋",
+      "files": [
+        "_headers"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "da0e6e09127e3c07c469a81ff4eea942c46389b0",
+      "subject": "feat(cosmic): /admin/purge 清掉已撤銷／已撤回的事件",
+      "files": [
+        "AGENTS.md",
+        "CHANGELOG.md",
+        "worker/README.md",
+        "worker/src/events-do.js",
+        "worker/src/index.js",
+        "worker/test/http.test.ts"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "7e742b3d191aafb507ad1105a82644c4da0193dc",
+      "subject": "docs(cosmic): 更正預告關鍵字的記述（爆發的預兆 → 觀測到）",
+      "files": [
+        "CHANGELOG.md"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "bf580f284785f507a6e7d8b12aeb1e927ca725da",
+      "subject": "feat(cosmic): 記住看的是哪一個分頁，F5 不再跳回第一頁",
+      "files": [
+        "CHANGELOG.md",
+        "modules/app.js"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "6a98b317cd08e3a698bff5c0c6f2ca9e82f709ae",
+      "subject": "fix(cosmic): footer 也不提插件",
+      "files": [
+        "index.html"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "dc1c91a12621dc60f82b5d911f8e8ca96c6ae838",
+      "subject": "feat(cosmic): 可通報「已開始 N 分鐘」＋ /admin/adjust 校正時間",
+      "files": [
+        "AGENTS.md",
+        "CHANGELOG.md",
+        "modules/emergency-view.js",
+        "worker/README.md",
+        "worker/src/events-do.js",
+        "worker/src/index.js",
+        "worker/src/logic.js",
+        "worker/test/http.test.ts",
+        "worker/test/logic.test.mjs"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "12d2a72b995bf4f779b9aa45f0350afa02249926",
+      "subject": "feat(cosmic): 緊急事件預告 → 進行中兩段式",
+      "files": [
+        "AGENTS.md",
+        "CHANGELOG.md",
+        "index.html",
+        "modules/emergency-history.js",
+        "modules/emergency-view.js",
+        "worker/README.md",
+        "worker/src/events-do.js",
+        "worker/src/logic.js",
+        "worker/test/http.test.ts",
+        "worker/test/logic.test.mjs"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "03db2fc90ec2c627d4791cbd98fbd6c88d96f87f",
+      "subject": "feat(cosmic): 通報者可撤回自己按錯的那一筆",
+      "files": [
+        "AGENTS.md",
+        "CHANGELOG.md",
+        "modules/emergency-api.js",
+        "modules/emergency-history.js",
+        "modules/emergency-view.js",
+        "worker/README.md",
+        "worker/src/events-do.js",
+        "worker/src/index.js",
+        "worker/src/logic.js",
+        "worker/test/http.test.ts",
+        "worker/test/logic.test.mjs"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "d0deb32c607d8565e8813b5a4bb0c01b24ad6efc",
+      "subject": "feat(cosmic): 緊急事件歷史紀錄 ＋ 不揭露回報來源 ＋ 預設伺服器修正",
+      "files": [
+        "AGENTS.md",
+        "CHANGELOG.md",
+        "css/style.css",
+        "index.html",
+        "modules/app.js",
+        "modules/emergency-api.js",
+        "modules/emergency-history.js",
+        "modules/emergency-notify.js",
+        "modules/emergency-view.js",
+        "worker/README.md",
+        "worker/src/events-do.js",
+        "worker/src/index.js",
+        "worker/src/logic.js",
+        "worker/test/http.test.ts"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "ef7aee123157b617f11d691265cbd9df8d83e9b7",
+      "subject": "fix(cosmic): 第 2 輪外審 triage — 插件重複通報統一回 409、補 6 個整合測試",
+      "files": [
+        "AGENTS.md",
+        "docs/plans/2026-08-02-emergency-report-plan.md",
+        "docs/plans/2026-08-02-emergency-report-plan.reviews.md",
+        "docs/specs/2026-08-02-emergency-report-design.md",
+        "worker/README.md",
+        "worker/src/index.js",
+        "worker/test/http.test.ts"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "06e629f370577e6a86e0011666fdae2eca1cc9e3",
+      "subject": "fix(cosmic): 緊急任務誤稱修正 ＋ 鐵則與部署面更新",
+      "files": [
+        "AGENTS.md",
+        "CHANGELOG.md",
+        "deploy-deny.txt",
+        "docs/BACKLOG.md",
+        "docs/specs/2026-07-31-cosmic-site-design.md",
+        "modules/forecast-view.js"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "e3953c71c785c5f924d75855a90115646db335f1",
+      "subject": "feat(cosmic): 緊急事件分頁 — 現況、通報、附議與訂閱通知",
+      "files": [
+        "_headers",
+        "css/style.css",
+        "index.html",
+        "modules/app.js",
+        "modules/emergency-api.js",
+        "modules/emergency-notify.js",
+        "modules/emergency-view.js"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "8f5f7d7a8823f2ca8f1f317d055cad692bcc4696",
+      "subject": "feat(cosmic): 緊急事件通報後端 — worker DO、路由與測試",
+      "files": [
+        ".gitignore",
+        "worker/README.md",
+        "worker/package.json",
+        "worker/pnpm-lock.yaml",
+        "worker/src/events-do.js",
+        "worker/src/index.js",
+        "worker/src/logic.js",
+        "worker/test/http.test.ts",
+        "worker/test/logic.test.mjs",
+        "worker/vitest.config.ts",
+        "worker/wrangler.toml"
+      ],
+      "omittedCount": 0
+    }
+  ],
+  "outputsFile": "docs/plans/2026-08-02-emergency-report-plan.reviews.md",
+  "reviewers": [
+    {
+      "cli": "codex",
+      "model": "gpt-5.6-sol",
+      "argv": [
+        "codex.EXE",
+        "exec",
+        "-m",
+        "gpt-5.6-sol",
+        "-c",
+        "model_reasoning_effort=high",
+        "-c",
+        "project_doc_max_bytes=0",
+        "--skip-git-repo-check",
+        "--sandbox",
+        "read-only",
+        "--cd",
+        "<tmp>"
+      ],
+      "startedAt": "2026-08-02T20:06:58.708Z",
+      "finishedAt": "2026-08-02T20:10:44.315Z",
+      "exitCode": 0,
+      "outputBytes": 5495,
+      "outputSha256": "2e9170931d77f25a9a5ae8028a2410f6b5f771935d5827eab6677ead04fc148e"
+    }
+  ]
+}
+-->
+
+
+| # | CLI/模型 | 開始 (UTC) | 耗時 | exit | 輸出 bytes | sha256 |
+|---|---|---|---|---|---|---|
+| 1 | codex/gpt-5.6-sol | 2026-08-02T20:06:58.708Z | 226s | 0 | 5495 | `2e9170931d77…` |
+
+命令逐字：
+```text
+codex: codex.EXE exec -m gpt-5.6-sol -c model_reasoning_effort=high -c project_doc_max_bytes=0 --skip-git-repo-check --sandbox read-only --cd <tmp>
+```
+
+- 1. codex 原文見 `docs/plans/2026-08-02-emergency-report-plan.reviews.md` §7ccc8b220224-1（sha256:2e9170931d77…）
+<!-- external-gate:end -->
+
+### triage 結論（後閘，2026-08-03）
+
+> **受審區間刻意設得比本 cycle 大**（`8f5f7d7^..HEAD`，23 筆）——因此有數條 finding 是
+> 「區間選擇」的產物而非實作缺陷。已分開標示，不混為一談。
+> 標 ✅ 的都**實際讀過對應程式碼確認**，不是照單全收。
+
+| # | finding | 判定 | 理由 |
+|---|---|---|---|
+| 1 | 【致命】實作偏離核准 spec（延遲推播／保留 90 天／lead −19～5／warn·history·withdraw 等未列介面）| ❌ 駁回定性＋✅ 採納流程債 | 這些全部是 cycle 收官**之後** Owner 逐項下的新需求，各自有 commit 與理由。駁回「偏離 spec」的定性；採納「後續需求沒補 spec 就掛在同一個 cycle 底下」——那是真的流程債。 |
+| 2 | 【致命】ICE 插件路徑不在受審區間，Task 5 無法核實 | ✅ 採納（已知） | 事實正確：`XIVpluginsDev/ICE-Dev` 是獨立 repo（monorepo gitignored fork），本 repo 的 diff 看不到它。遊戲內實測本來就還沒做，本檔一直寫著未驗。確認「後閘無法替它背書」。 |
+| 3 | 【嚴重】混入計畫外變更，違反「本 cycle 不碰 `data/*.json`」| ❌ 駁回後半 | `da5aab2` 動 `data/*.json` 是 Owner 裁定的伺服器順序，且**是跑 `tools/cosmic-dump` 產生的**——AGENTS §1 要求的正是「由產生器產生、不手改」，沒有違反。UI／排序／效能那批確實計畫外，同 #1。 |
+| 4 | 【嚴重】插件證實既有手動事件時沒有校正時間 | ✅ 採納（已驗證） | 讀 `events-do.js#report()` 確認：既有事件分支只改 `source` 並呼叫 `_notifyNow()`，`startAt`／`endAt`／`startExact` 全部保留手動估值。插件的時間才是精確的 ⇒ 白白丟掉唯一可信的時間來源。 |
+| 5 | 【嚴重】通報者可替自己的事件附議，永久繞過否認門檻 | ✅ 採納（已驗證） | 讀 `logic.js#applyVote()` 確認未排除 `ev.reporter`。本人一 confirm，`confirms.size === 0` 永遠不成立 ⇒ 該筆**再也不可能被 3 個否認下架**。反惡意機制的直接繞道。 |
+| 6 | 【嚴重】warn 通知誤報「進行中」，真正開始時反而不通知 | ✅ 採納（已驗證） | 兩半都成立：`emergency-notify.js` 的 `fired` 以 **event id** 去重，而 warn→start 刻意沿用同一 id ⇒ start 被擋掉；且 warn 時 `startAt === 0`，`ev.startAt > now` 為 false ⇒ 走「進行中」文案。預告被說成進行中，真開始時靜默。 |
+| 7 | 【嚴重】插件 payload 驗證把格式錯誤靜默當成合法 start | ✅ 採納（已驗證） | `logic.js` 是 `['end','warn'].includes(body.phase) ? body.phase : 'start'` ⇒ 缺 phase、拼錯（`strat`）全部變成高可信度的 start。**靜默地把錯誤升級成最可信的來源**，正是本 repo 反覆吃虧的形狀。 |
+| 8 | 【一般】重複 `/report` 形成的附議不觸發提前推播 | ✅ 採納（低） | 屬實但影響小：最多讓通知晚 30 秒。與 #5 一起改比較省事（都要動 `report()` 的 existing 分支）。 |
+| 9 | 【一般】`events-do.js` 602 行、`http.test.ts` 690 行超過 500 行門檻 | ✅ 採納 | 屬實。AGENTS 檔案大小鐵則：新檔 >500 行禁止，這兩支是本 cycle 新建的，當時就該拆。拆分方案要先列「職責 → 檔名」給 Owner 拍板。 |
+| 10 | 【一般】token 用 `!==` 比較，非 constant-time | ❓ 待釐清 | 屬實，但威脅模型要先講清楚：CF 邊緣前置、token 長度固定、比較在 worker 內。可利用性極低，修起來也便宜。不急。 |
+| 11 | 【一般】Task 3／4 的瀏覽器驗收只有勾選、沒有可執行測試 | ✅ 採納 | 屬實，而且 #6 正好是「全綠測試抓不到」的實例——那是最有說服力的證據。前端零自動化測試是真缺口。 |
+
+**動作**（不在本 cycle 內做，各自開條目）：
+
+- `B-019` 修 #4 #5 #6 #7 #8 —— 前四個是線上服務的正確性缺陷，優先。
+- `B-020` 拆 `events-do.js` 與 `http.test.ts`（#9）。
+- `B-021` 前端自動化測試（#11），把 #6 當第一個回歸案例。
+- `B-022` token constant-time 比較（#10）。
+- **流程債（#1）**：8/2 收官後的需求（靜置期、提前結束、lead 上限、UI 批次、lastEnded、
+  通知彈窗）應補一份接續 cycle 的 spec／plan，不再掛本 cycle。本檔維持 `done` 不動。
