@@ -61,22 +61,33 @@ function saveLastWorld(w) {
 }
 
 /**
- * 「什麼時候開始」的選項。
+ * 「什麼時候開始」的選項，**分成兩組**：已經開始的、還沒開始的。
  *
- * **負數＝已經開始了幾分鐘**：發現得晚的人不該被迫報「現在開始」，那會讓倒數整段往後偏
- * （2026-08-02 實測：真實 17:53 開始、17:57 才通報，結束時間顯示晚 4 分鐘且無法修正）。
+ * <b>分組是必要的，不是排版</b>（2026-08-03 Owner 兩次指「不該有 10 分鐘跟 15 分鐘」）：
+ * 原本的字面是「15 分鐘前開始」，掃過去會讀成「提前 15 分鐘」——把「已經開始了多久」
+ * 誤讀成預告量。已開始那組改用**剩餘時間**（Owner 定的說法），兩組各自只有一種讀法：
+ * 「再 N 分鐘開始」是未來、「剩餘時間 N 分鐘」是進行中，沒有共用的數字可以混淆。
  *
- * 往後只給到 5 分鐘：Owner 實測遊戲的預兆通告最多提前約 5 分半，留「10 分鐘後」等於
- * 邀請人填一個不存在的值。**但後端上限仍是 15**——UI 引導可以，硬退件不行。
+ * 負數那組（＝已經開始了幾分鐘）**必須保留**：發現得晚的人不該被迫報「現在開始」，
+ * 那會讓倒數整段往後偏（2026-08-02 實測：真實 17:53 開始、17:57 才通報，
+ * 結束時間顯示晚 4 分鐘，而當下沒有任何辦法修正）。
+ *
+ * 往後只到 5 分鐘：遊戲的預兆通告只提前約 5 分鐘（實測 5:15／5:40），
+ * 而玩家唯一的資訊來源就是它 ⇒ 沒有管道能知道更久之後的事。後端上限同為 5。
  */
-const LEAD_OPTIONS = [
-  [-15, '15 分鐘前開始'],
-  [-10, '10 分鐘前開始'],
-  [-5, '5 分鐘前開始'],
-  [0, '剛剛開始'],
-  [1, '1 分鐘後'],
-  [3, '3 分鐘後'],
-  [5, '5 分鐘後'],
+/**
+ * 事件長度（分鐘）。client 寫死的任務時限（`timeLimit=1200`），後端同一個常數。
+ * 這裡只用來把「已經開始了幾分鐘」換算成畫面上顯示的**剩餘時間**。
+ */
+const EVENT_MINUTES = 20;
+
+const LEAD_GROUPS = [
+  ['還沒開始', [5, 3, 1].map((m) => [m, `再 ${m} 分鐘開始`])],
+  // 已經開始的一律講**剩餘時間**，不講「已經過了多久」——玩家看得到的是倒數，
+  // 而換算由程式做（`剩餘 = 20 + lead`），標籤與數值不可能對不起來。
+  ['已經開始了', [0, -5, -10, -15].map((m) => [
+    m, m === 0 ? '剛剛開始' : `剩餘時間 ${EVENT_MINUTES + m} 分鐘`,
+  ])],
 ];
 
 /**
@@ -105,7 +116,16 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
   // 代價是另一台伺服器的人先被吵一次）。所以寧可逼人選一次。
   el.world.append(new Option('請選擇伺服器', ''));
   for (const w of worlds) el.world.append(new Option(w, w));
-  for (const [v, label] of LEAD_OPTIONS) el.lead.append(new Option(label, String(v)));
+  for (const [groupLabel, options] of LEAD_GROUPS) {
+    const group = document.createElement('optgroup');
+    group.label = groupLabel;
+    for (const [v, label] of options) group.append(new Option(label, String(v)));
+    el.lead.append(group);
+  }
+  // 預設「剛剛開始」。不設的話瀏覽器選清單第一個＝「已開始 15 分鐘」——**最極端的選項當預設**，
+  // 沒注意到就會把時間軸整整推移 15 分鐘。與 2026-08-02 那個「伺服器預設選到第一台造成誤報」
+  // 同一種錯：下拉選單的第一項不是中性值。
+  el.lead.value = '0';
 
   el.world.addEventListener('change', () => {
     if (el.world.value) saveLastWorld(el.world.value);
@@ -275,7 +295,14 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
 
     const votes = document.createElement('span');
     votes.className = 'codex-small cos-em__votes';
-    votes.textContent = `附議 ${ev.confirms}　否認 ${ev.disputes}`;
+    // 「幾個否認會下架」原本只寫在問號 tooltip 裡，等於沒人看得到。改成直接顯示進度：
+    // 只在**真的會下架**的情況顯示（有否認且完全沒有附議——有人附議就不會下架了）。
+    // 門檻取自後端回的 disputeThreshold，前端不自己寫 3。
+    const threshold = state?.disputeThreshold ?? 0;
+    const nearDrop = threshold > 0 && ev.disputes > 0 && ev.confirms === 0;
+    votes.textContent = nearDrop
+      ? `附議 ${ev.confirms}　否認 ${ev.disputes}／${threshold} 就下架`
+      : `附議 ${ev.confirms}　否認 ${ev.disputes}`;
     li.append(votes);
 
     const actions = document.createElement('span');

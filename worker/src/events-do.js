@@ -396,7 +396,9 @@ export class CosmicEventsDO extends DurableObject {
         pendingNotify: (r.notifyAt ?? 0) > 0,
       };
     }
-    return { now, events: byWorld };
+    // 前端要在事件列上顯示「否認 2／3 就下架」。門檻是後端的判斷依據，
+    // 前端自己寫一份 3 就是兩份真相——哪天改門檻，畫面會安靜地說錯話。
+    return { now, events: byWorld, disputeThreshold: L.DISPUTE_THRESHOLD };
   }
 
   /**
