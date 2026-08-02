@@ -171,6 +171,19 @@ test('同一人改投＝換邊，不是兩票', () => {
   assert.deepEqual(ev.disputes, [U1]);
 });
 
+test('撤回：本人、進行中、無人附議三個條件缺一不可', () => {
+  const base = { status: 'active', endAt: NOW + 600, reporter: U1, confirms: [], disputes: [] };
+  assert.equal(L.canWithdraw(base, U1, NOW).ok, true);
+  assert.equal(L.canWithdraw(base, U2, NOW).reason, 'not_reporter', '別人不能撤別人的');
+  assert.equal(L.canWithdraw({ ...base, confirms: [U2] }, U1, NOW).reason, 'has_confirms',
+    '有人附議就不給撤——那不是誤按，而且會變成先亂報再撤掉的騷擾循環');
+  assert.equal(L.canWithdraw({ ...base, status: 'revoked' }, U1, NOW).reason, 'not_active');
+  assert.equal(L.canWithdraw(base, U1, NOW + 600).reason, 'not_active', '已結束不能撤');
+  assert.equal(L.canWithdraw({ ...base, reporter: '' }, U1, NOW).reason, 'not_reporter',
+    '去識別後的舊事件沒有 reporter，任何人都不該撤得動');
+  assert.equal(L.canWithdraw(null, U1, NOW).reason, 'not_active');
+});
+
 test('fanoutTargets：只挑訂了該伺服器、有 webhook、未熔斷的', () => {
   const hook = 'https://discord.com/api/webhooks/1/a';
   const subs = [
@@ -190,14 +203,20 @@ test('冷卻只擋開新事件', () => {
   assert.equal(L.inCooldown(NOW - L.REPORT_COOLDOWN, NOW), false, '剛好到期＝放行');
 });
 
-test('Discord 訊息：來源與時間措辭', () => {
+test('Discord 訊息：講時間，不揭露來源', () => {
   const base = { world: W, startAt: NOW + 300, endAt: NOW + 300 + L.EVENT_DURATION };
   const manual = L.discordPayload({ ...base, source: 'manual' }, NOW);
   assert.match(manual.embeds[0].description, /約 5 分鐘後開始/);
-  assert.match(manual.embeds[0].description, /玩家通報（未經覆核）/);
 
-  const plugin = L.discordPayload({ ...base, startAt: NOW, source: 'plugin' }, NOW);
-  assert.match(plugin.embeds[0].description, /已經開始/);
-  assert.match(plugin.embeds[0].description, /插件偵測/);
-  assert.ok(!plugin.embeds[0].description.includes('未經覆核'));
+  const started = L.discordPayload({ ...base, startAt: NOW, source: 'plugin' }, NOW);
+  assert.match(started.embeds[0].description, /已經開始/);
+
+  // Owner 2026-08-02：對外一律只講「回報」。兩種來源的訊息必須逐字相同，
+  // 否則收訊息的人還是能從措辭反推來源。
+  const a = L.discordPayload({ ...base, source: 'manual' }, NOW);
+  const b = L.discordPayload({ ...base, source: 'plugin' }, NOW);
+  assert.deepEqual(a, b, '兩種來源的 Discord 訊息必須完全一樣');
+  for (const word of ['插件', '偵測', 'plugin', '玩家通報', '未經覆核']) {
+    assert.ok(!JSON.stringify(a).includes(word), `訊息不得出現「${word}」`);
+  }
 });

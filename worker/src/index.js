@@ -176,6 +176,24 @@ export default {
       return json(request, r, r.ok ? 200 : 404);
     }
 
+    // ── 撤回自己的通報（誤按用）──
+    if (path === '/withdraw' && request.method === 'POST') {
+      if (!originAllowed(request)) return json(request, { error: 'origin' }, 403);
+      if (await rateLimited(env, request, 'VOTE_RATE_LIMITER')) {
+        return json(request, { error: 'rate_limited' }, 429);
+      }
+      const { body, err } = await readJson(request);
+      if (err) return json(request, { error: err[1] }, err[0]);
+      const v = L.validateWithdraw(body);
+      if (!v.ok) return json(request, { error: v.reason }, 400);
+      const s = stub(env);
+      if (await s.isBlocked(v.uuid)) return json(request, { error: 'blocked' }, 403);
+      const r = await s.withdraw(v, now);
+      if (r.ok) return json(request, r);
+      // 不是本人／已有人附議 → 403（權限問題）；事件不存在或已結束 → 404
+      return json(request, r, r.reason === 'not_found' || r.reason === 'not_active' ? 404 : 403);
+    }
+
     // ── 訂閱 ──
     if (path === '/sub') {
       if (!originAllowed(request)) return json(request, { error: 'origin' }, 403);

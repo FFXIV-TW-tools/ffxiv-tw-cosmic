@@ -27,6 +27,9 @@ const MESSAGES = {
   bad_uuid: '識別碼異常 — 到工具箱設定重新產生一次即可。',
   bad_webhook: 'Discord webhook 網址不對（只接受 discord.com 的 webhook 連結）。',
   not_found: '找不到這筆通報，可能已經過期或被撤銷。',
+  not_reporter: '這筆不是你送的，不能撤回 — 如果你認為是誤報，請按「查無此事」。',
+  has_confirms: '已經有人附議了，不能撤回 — 別人也看到了就不算誤按。',
+  not_active: '這筆已經結束了，撤回沒有作用。',
   no_active_event: '這台伺服器目前沒有進行中的事件。',
   not_configured: '後端尚未完成設定，請稍後再試。',
 };
@@ -105,6 +108,12 @@ export const emergencyApi = {
     const uuid = await currentUuid();
     if (!uuid) return { ok: false, code: 'no_uuid', message: '尚未取得識別碼，請重新整理後再試。' };
     return call('/report', { method: 'POST', body: { uuid, world, startsInMinutes } });
+  },
+
+  async withdraw(eventId) {
+    const uuid = await currentUuid();
+    if (!uuid) return { ok: false, code: 'no_uuid', message: '尚未取得識別碼，請重新整理後再試。' };
+    return call('/withdraw', { method: 'POST', body: { uuid, eventId } });
   },
 
   async vote(eventId, kind) {

@@ -36,7 +36,7 @@
 
 ```bash
 pnpm install
-pnpm test              # 28 個整合測試（vitest-pool-workers）
+pnpm test              # 31 個整合測試（vitest-pool-workers）
 pnpm test:logic        # 17 個純函式測試（node --test）
 pnpm cf:deploy:dry     # 0 error 才往下
 # STOP（對外發佈，由 shawn 執行）：
@@ -66,6 +66,7 @@ npx wrangler secret put PLUGIN_TOKEN    # ICE 插件回報用的共享密鑰
 | `GET` | `/history?world=&limit=` | 歷史紀錄：已結束／已撤銷的事件（新→舊）。**只回計數不回 UUID**；撤銷的也列出來並標明 |
 | `POST` | `/report` | 通報。**manual**：`{uuid, world, startsInMinutes}`（0–15，需白名單 Origin）。**plugin**：header `X-Plugin-Token` ＋ `{world, weatherId, missionIds[], phase}` |
 | `POST` | `/vote` | `{uuid, eventId, kind:'confirm'\|'dispute'}` |
+| `POST` | `/withdraw` | `{uuid, eventId}` — **通報者撤回自己那一筆**（誤按用）。三個條件缺一不可：是本人、還在進行中、**還沒有人附議**。已送出的通知收不回來 |
 | `PUT` | `/sub` | `{uuid, worlds[], webhookUrl?}`；`worlds: []` ＝退訂並**實體刪列** |
 | `GET` | `/sub?uuid=` | 讀回自己的訂閱，**webhook 只回遮罩值** |
 | `POST` | `/admin/revoke` | `{eventId}` — 撤銷。⚠ 已推播的 Discord 訊息收不回來 |

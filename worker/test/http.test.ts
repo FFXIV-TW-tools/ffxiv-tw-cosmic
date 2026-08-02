@@ -337,6 +337,43 @@ describe('fan-out', () => {
   });
 });
 
+describe('撤回自己的通報', () => {
+  it('本人可撤回，之後不再出現在 /state、歷史標 withdrawn', async () => {
+    stubDiscord();
+    const world = devStages.worlds[6];
+    await clearWorld(world);
+    const u = uuid();
+    const id = (await (await post('/report', { uuid: u, world, startsInMinutes: 0 })).json() as any).eventId;
+
+    const r = await post('/withdraw', { uuid: u, eventId: id });
+    expect(r.status).toBe(200);
+    const st = await (await SELF.fetch('https://x/state')).json() as any;
+    expect(st.events[world]).toBeUndefined();
+    const h = await (await SELF.fetch(`https://x/history?world=${encodeURIComponent(world)}`)).json() as any;
+    expect(h.rows.find((x: any) => x.id === id).status).toBe('withdrawn');
+  });
+
+  it('別人不能撤 → 403；已有人附議 → 403', async () => {
+    stubDiscord();
+    const world = devStages.worlds[3];
+    await clearWorld(world);
+    const u = uuid();
+    const id = (await (await post('/report', { uuid: u, world, startsInMinutes: 0 })).json() as any).eventId;
+
+    expect((await post('/withdraw', { uuid: uuid(), eventId: id })).status).toBe(403);
+
+    await post('/vote', { uuid: uuid(), eventId: id, kind: 'confirm' });
+    const r = await post('/withdraw', { uuid: u, eventId: id });
+    expect(r.status).toBe(403);
+    expect((await r.json() as any).reason).toBe('has_confirms');
+    await revoke(id);
+  });
+
+  it('不存在的事件 → 404', async () => {
+    expect((await post('/withdraw', { uuid: uuid(), eventId: 999999 })).status).toBe(404);
+  });
+});
+
 describe('歷史紀錄', () => {
   it('已結束／已撤銷的事件會列出來，進行中的不列', async () => {
     stubDiscord();

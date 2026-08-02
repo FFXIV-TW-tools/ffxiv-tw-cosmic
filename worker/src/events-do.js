@@ -198,6 +198,26 @@ export class CosmicEventsDO extends DurableObject {
     return { ok: true, status: v.status, confirms: v.confirms.length, disputes: v.disputes.length };
   }
 
+  /**
+   * 通報者撤回自己那一筆（誤按用）。判斷全在 `logic.canWithdraw`。
+   *
+   * 狀態刻意用 `withdrawn` 而不是沿用管理端的 `revoked`——歷史表要分得出
+   * 「本人自己收回」與「管理端下架」，那是兩件性質完全不同的事。
+   */
+  withdraw({ uuid, eventId }, now) {
+    this._sweep(now);
+    const rows = this.sql.exec('SELECT * FROM events WHERE id = ?', eventId).toArray();
+    if (!rows.length) return { ok: false, reason: 'not_found' };
+    const ev = { ...this._rowToEvent(rows[0]), reporter: rows[0].reporter };
+
+    const verdict = L.canWithdraw(ev, uuid, now);
+    if (!verdict.ok) return { ok: false, reason: verdict.reason };
+
+    this.sql.exec("UPDATE events SET status = 'withdrawn' WHERE id = ?", eventId);
+    this._bump('event_withdrawn');
+    return { ok: true, note: '已從網站下架；先前送出的通知無法收回' };
+  }
+
   // ── 訂閱 ──
 
   putSub({ uuid, worlds, webhookUrl }, now) {

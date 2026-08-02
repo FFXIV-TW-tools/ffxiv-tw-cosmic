@@ -17,6 +17,7 @@ import { clockText, dateText } from './eorzea-time.js';
 
 const STATUS_LABEL = {
   ended: ['已結束', ''],
+  withdrawn: ['已取消', 'codex-badge--warn'],
   disputed: ['存疑', 'codex-badge--warn'],
   revoked: ['已撤銷', 'codex-badge--danger'],
 };

@@ -143,6 +143,34 @@ export function validatePluginReport(body, now) {
   return { ok: true, world: body.world, phase, startAt: now };
 }
 
+/**
+ * 通報者能不能撤回自己那一筆。
+ *
+ * 三個條件缺一不可：
+ * ① **是本人**（`reporter` 相符）——這是「取消我按錯的那一筆」，不是替別人做決定。
+ * ② **還在進行中**——已經結束的事件撤回沒有意義，而且它已經是歷史的一部分。
+ * ③ **還沒有人附議**——有人附議代表別人也看到了，那就不是誤按。
+ *    這一條同時擋掉「先亂報、再撤掉」的反覆騷擾循環：附議一出現，撤回權就消失，
+ *    只能走否認流程（那會留下痕跡）。
+ *
+ * ⚠️ 撤回**不會收回已經送出去的 Discord／網頁通知**——那些是即時推播，發出去就追不回來。
+ * UI 必須講明白，不能讓人以為按了取消就當作沒發生過。
+ */
+export function canWithdraw(ev, uuid, now) {
+  if (!ev || ev.status !== 'active') return { ok: false, reason: 'not_active' };
+  if (now >= ev.endAt) return { ok: false, reason: 'not_active' };
+  if (!ev.reporter || ev.reporter !== uuid) return { ok: false, reason: 'not_reporter' };
+  if ((ev.confirms ?? []).length > 0) return { ok: false, reason: 'has_confirms' };
+  return { ok: true };
+}
+
+export function validateWithdraw(body) {
+  if (!body || typeof body !== 'object') return { ok: false, reason: 'bad_body' };
+  if (!isUuid(body.uuid)) return { ok: false, reason: 'bad_uuid' };
+  if (!Number.isInteger(body.eventId) || body.eventId <= 0) return { ok: false, reason: 'bad_event' };
+  return { ok: true, uuid: body.uuid, eventId: body.eventId };
+}
+
 export function validateVote(body) {
   if (!body || typeof body !== 'object') return { ok: false, reason: 'bad_body' };
   if (!isUuid(body.uuid)) return { ok: false, reason: 'bad_uuid' };

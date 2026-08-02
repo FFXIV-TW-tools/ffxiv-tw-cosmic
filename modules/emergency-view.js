@@ -18,6 +18,32 @@ const POLL_SECONDS = 60;
 /** 上次通報選的伺服器。純檢視狀態，不進跨工具設定。 */
 const LAST_WORLD_KEY = 'ffxiv-tw-cosmic:em-world';
 
+/**
+ * 自己送出過的 eventId。用來決定要不要顯示「取消」按鈕——
+ * `/state` 刻意不回 `reporter`（那是別人的識別碼，沒有理由發給所有人），
+ * 所以「這筆是不是我按的」由本機記著就好。**權限判定仍在後端**，這裡只是顯示層。
+ */
+const MINE_KEY = 'ffxiv-tw-cosmic:em-mine';
+const MINE_CAP = 20;
+
+function loadMine() {
+  try {
+    const v = JSON.parse(localStorage.getItem(MINE_KEY) ?? '[]');
+    return Array.isArray(v) ? v.filter(Number.isInteger) : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberMine(id) {
+  try {
+    const list = [...new Set([id, ...loadMine()])].slice(0, MINE_CAP);
+    localStorage.setItem(MINE_KEY, JSON.stringify(list));
+  } catch {
+    // 記不住只會少一顆取消鈕，功能不受影響
+  }
+}
+
 function loadLastWorld() {
   try {
     return localStorage.getItem(LAST_WORLD_KEY) ?? '';
@@ -118,10 +144,11 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
     const lead = Number(el.lead.value);
     const r = await emergencyApi.report(world, lead);
     if (r.ok) {
+      if (!r.duplicate && Number.isInteger(r.data?.eventId)) rememberMine(r.data.eventId);
       say(
         r.duplicate
           ? `${world} 已經有進行中的事件了 — 你這筆算成附議。`
-          : `已通報 ${world}，訂閱這台的人會收到通知。感謝。`,
+          : `已通報 ${world}，訂閱這台的人會收到通知。按錯了可以在上面那列按「取消」。`,
         'ok',
       );
       await poll(true);
@@ -147,6 +174,14 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
     );
     await poll(true);
     if (r.ok) onChanged?.();   // 票數會進歷史紀錄，讓它跟著更新
+  }
+
+  async function withdraw(eventId) {
+    const r = await emergencyApi.withdraw(eventId);
+    // 通知已經送出去了，這件事必須講——不能讓人以為按了取消就當作沒發生過
+    say(r.ok ? '已取消 — 但先前送出的通知無法收回。' : r.message, r.ok ? 'ok' : 'warn');
+    await poll(true);
+    if (r.ok) onChanged?.();
   }
 
   async function poll(force = false) {
@@ -212,10 +247,20 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
 
     const actions = document.createElement('span');
     actions.className = 'cos-em__actions';
-    actions.append(
-      voteBtn('我也看到了', 'confirm', ev.id),
-      voteBtn('查無此事', 'dispute', ev.id),
-    );
+    if (loadMine().includes(ev.id)) {
+      // 自己按的：給一顆明確的取消，不必去麻煩三個陌生人來否認
+      const cancel = document.createElement('button');
+      cancel.type = 'button';
+      cancel.className = 'codex-btn codex-btn--ghost codex-small';
+      cancel.textContent = '取消（我按錯了）';
+      cancel.addEventListener('click', () => withdraw(ev.id));
+      actions.append(cancel);
+    } else {
+      actions.append(
+        voteBtn('我也看到了', 'confirm', ev.id),
+        voteBtn('查無此事', 'dispute', ev.id),
+      );
+    }
     li.append(actions);
     return li;
   }
