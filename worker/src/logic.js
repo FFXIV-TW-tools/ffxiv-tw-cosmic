@@ -44,6 +44,15 @@ export const RETENTION = 90 * 24 * 3600;
  */
 export const DEIDENTIFY_AFTER = 7 * 24 * 3600;
 
+/**
+ * 只收到「預告」還沒看到天氣翻轉時，這筆事件多久後自動失效（秒）。
+ *
+ * 2026-08-02 實測一筆：預告 17:23:00 → 實際開始 17:28:40，提前量 **5 分 40 秒**。
+ * **一個樣本不足以當定律**（這輪已經被同型錯誤咬過一次：天氣閘），所以這裡取一個寬鬆的
+ * 上界純粹當「沒等到開始就清掉」的兜底，**不拿它當倒數顯示**。
+ */
+export const WARN_TTL = 15 * 60;
+
 /** `/history` 一次最多回幾筆。 */
 export const HISTORY_LIMIT = 100;
 
@@ -131,8 +140,12 @@ export function validateManualReport(body, now) {
 export function validatePluginReport(body, now) {
   if (!body || typeof body !== 'object') return { ok: false, reason: 'bad_body' };
   if (!isKnownWorld(body.world)) return { ok: false, reason: 'bad_world' };
-  const phase = body.phase === 'end' ? 'end' : 'start';
-  if (!EMERGENCY_WEATHER.includes(body.weatherId)) return { ok: false, reason: 'bad_weather' };
+  const phase = ['end', 'warn'].includes(body.phase) ? body.phase : 'start';
+  // `warn` 來自**聊天欄的預告訊息**，那一刻天氣還沒翻轉 ⇒ 不可能有緊急天氣 id，
+  // 硬要求它就等於永遠收不到預告。start/end 仍然要求，因為那兩個確實是看著天氣送的。
+  if (phase !== 'warn' && !EMERGENCY_WEATHER.includes(body.weatherId)) {
+    return { ok: false, reason: 'bad_weather' };
+  }
   const ids = Array.isArray(body.missionIds) ? body.missionIds : [];
   if (ids.length > 0) {
     const hasCritical = ids.some(
@@ -251,6 +264,21 @@ export function inCooldown(lastAt, now) {
  * 對收通知的人來說，他要知道的是「哪一台、還有多久」，資料怎麼進來的與他無關。
  */
 export function discordPayload(ev, now) {
+  // 只收到預告、還不知道何時開始（`startAt === 0`）——**不編造倒數**。
+  // 目前只有一個提前量樣本（5 分 40 秒），寫一個看起來精確的數字，
+  // 下一次不準的時候就沒有人會再相信這一頁。
+  if (!ev.startAt) {
+    return {
+      username: 'FFXIV 宇宙探索',
+      embeds: [
+        {
+          title: `⚡ ${ev.world}　緊急事件預告`,
+          description: '遊戲內已出現預兆通告，**再過幾分鐘就會開始**。\n實際開始時會再通知一次。',
+          color: 0xb58900,
+        },
+      ],
+    };
+  }
   const mins = Math.max(0, Math.round((ev.startAt - now) / 60));
   const when = ev.startAt <= now ? '已經開始' : `約 ${mins} 分鐘後開始`;
   return {

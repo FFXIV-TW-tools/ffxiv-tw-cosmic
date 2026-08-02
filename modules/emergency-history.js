@@ -62,17 +62,21 @@ export function createEmergencyHistory(root, { worlds }) {
       const tr = document.createElement('tr');
       // `active` 在這張表裡不該出現（後端只回已結束／已撤銷的），真的出現就照實寫，不掩飾
       const [label, cls] = STATUS_LABEL[displayStatus(r, data.now)] ?? ['進行中', 'codex-badge--warn'];
+      // 只收到預告、沒等到開始的那種：時間欄用預告時刻，並在狀態標明
+      const t = r.startAt || r.warnedAt;
       const cells = [
-        dateText(r.startAt),
-        clockText(r.startAt),
+        dateText(t),
+        clockText(t),
         r.world,
+        // 提前量：預告→實際開始。累積幾筆之後這才是有依據的數字。
+        r.leadSeconds ? `${Math.round(r.leadSeconds / 60)} 分` : '—',
         String(r.confirms),
         String(r.disputes),
         null,   // 狀態用 badge，下面單獨組
       ];
       cells.forEach((text, i) => {
         const td = document.createElement('td');
-        if (i === 1 || i === 3 || i === 4) td.className = 'codex-table__num';
+        if (i === 1 || i === 3 || i === 4 || i === 5) td.className = 'codex-table__num';
         if (text !== null) td.textContent = text;
         tr.append(td);
       });

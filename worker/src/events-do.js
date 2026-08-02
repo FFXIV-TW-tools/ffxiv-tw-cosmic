@@ -49,7 +49,7 @@ export class CosmicEventsDO extends DurableObject {
     // 票數獨立成欄：去識別（7 天後清掉 UUID 陣列）之後，歷史仍要看得出有幾個人證實。
     // `CREATE TABLE IF NOT EXISTS` 不會補欄位到既有表，所以用 ALTER；已經有了就會丟錯，吞掉即可
     // （父層鐵則例外 a：窄的、預期內的 schema 既存檢查）。
-    for (const col of ['nConfirm', 'nDispute']) {
+    for (const col of ['nConfirm', 'nDispute', 'warnedAt']) {
       try {
         this.sql.exec(`ALTER TABLE events ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0`);
       } catch {
@@ -90,6 +90,7 @@ export class CosmicEventsDO extends DurableObject {
       startAt: r.startAt,
       endAt: r.endAt,
       startExact: r.startExact === 1,
+      warnedAt: r.warnedAt ?? 0,
       createdAt: r.createdAt,
       confirms: JSON.parse(r.confirms),
       disputes: JSON.parse(r.disputes),
@@ -122,12 +123,42 @@ export class CosmicEventsDO extends DurableObject {
     const { source, world, reporter = '' } = input;
     const existing = this._activeEvent(world, now);
 
+    // ── 預告（聊天欄的預兆通告）──
+    // 這一刻天氣還沒翻轉，**不知道確切何時開始**。所以 startAt 留 0（＝未知），
+    // endAt 先給一個寬鬆的兜底期限，等真的開始再改寫成精確值。
+    // 刻意不猜倒數：只有一個提前量樣本，寫個看起來精確的數字只會在下次不準時失去信任。
+    if (input.phase === 'warn') {
+      if (existing) return { ok: true, eventId: existing.id, duplicate: true };
+      this.sql.exec(
+        `INSERT INTO events (world, source, startAt, endAt, startExact, createdAt, reporter, warnedAt)
+         VALUES (?, ?, 0, ?, 0, ?, '', ?)`,
+        world, source, now + L.WARN_TTL, now, now,
+      );
+      const wid = this.sql.exec('SELECT last_insert_rowid() AS id').toArray()[0].id;
+      this._bump('warn_ok');
+      this.ctx.waitUntil(this._fanout(this._activeEvent(world, now), now));
+      return { ok: true, eventId: wid, duplicate: false };
+    }
+
     // 插件回報「事件結束」：把 endAt 收到現在。這是本站唯一能拿到**實際時長**的管道
     // （Owner 2026-08-02：插件的功用是累積數據量），所以即使 UI 用不到也要收。
     if (input.phase === 'end') {
       if (!existing) return { ok: false, reason: 'no_active_event' };
       this.sql.exec('UPDATE events SET endAt = ? WHERE id = ?', now, existing.id);
       this._bump('event_end_plugin');
+      return { ok: true, eventId: existing.id, duplicate: false };
+    }
+
+    // 先前只收到預告、現在天氣真的翻轉了 ⇒ **就地把同一筆升級成「進行中」**，
+    // 不開新事件（開新的會讓同一起事件在歷史裡變成兩筆，提前量就算不出來了）。
+    // 這是唯一會對同一筆事件推播第二次的情況，而且是刻意的：預告與開始是兩則不同的資訊。
+    if (existing && source === 'plugin' && input.phase === 'start' && !existing.startAt) {
+      this.sql.exec(
+        'UPDATE events SET startAt = ?, endAt = ?, startExact = 1 WHERE id = ?',
+        now, now + L.EVENT_DURATION, existing.id,
+      );
+      this._bump('warn_to_start');
+      this.ctx.waitUntil(this._fanout(this._activeEvent(world, now), now));
       return { ok: true, eventId: existing.id, duplicate: false };
     }
 
@@ -267,6 +298,7 @@ export class CosmicEventsDO extends DurableObject {
         startAt: ev.startAt,
         endAt: ev.endAt,
         startExact: ev.startExact,
+        warnedAt: ev.warnedAt,
         confirms: ev.confirms.length,
         disputes: ev.disputes.length,
       };
@@ -305,6 +337,10 @@ export class CosmicEventsDO extends DurableObject {
         endAt: r.endAt,
         status: r.status,
         // 舊列的 UUID 已被清空，所以一律以計數欄為準（新列在投票當下就同步維護）
+        warnedAt: r.warnedAt ?? 0,
+        // 提前量＝預告到實際開始的秒數。累積幾筆之後這才是有依據的數字，
+        // 而不是拿單一觀察去猜（本 repo 已為此吃過一次虧）。
+        leadSeconds: (r.warnedAt && r.startAt) ? r.startAt - r.warnedAt : null,
         confirms: r.nConfirm ?? 0,
         disputes: r.nDispute ?? 0,
       })),

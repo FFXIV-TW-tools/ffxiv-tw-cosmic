@@ -20,6 +20,9 @@
 - **單一 DO 實例**（`idFromName('v1')`）裝全部 7 台伺服器。不分片：量體是「每台每小時最多幾筆」，
   而 fan-out 必須跨伺服器讀訂閱表。
 - **不排 alarm**：事件過期用 lazy 判定（`now >= endAt`），沒有任何事需要在結束那一刻發生。
+- **三個相位**：`warn`（遊戲內出現預兆通告，此時**還不知道何時開始** ⇒ `startAt=0`）→
+  `start`（天氣真的翻轉，**就地把同一筆升級**、不開新事件，否則提前量就算不出來）→
+  `end`（天氣轉回去，收 `endAt`）。`warn` 不要求 `weatherId`——那一刻天氣還沒變。
 - **不做 outbox、不重試 webhook**：事件只有 20 分鐘，遲到的通知比沒有更糟。失敗只累計
   `failCount`，連續 4 次標 `broken` 停送（防 runaway 燒額度），使用者重存訂閱即解除。
 
@@ -36,8 +39,8 @@
 
 ```bash
 pnpm install
-pnpm test              # 31 個整合測試（vitest-pool-workers）
-pnpm test:logic        # 17 個純函式測試（node --test）
+pnpm test              # 35 個整合測試（vitest-pool-workers）
+pnpm test:logic        # 20 個純函式測試（node --test）
 pnpm cf:deploy:dry     # 0 error 才往下
 # STOP（對外發佈，由 shawn 執行）：
 pnpm cf:deploy
@@ -64,7 +67,7 @@ npx wrangler secret put PLUGIN_TOKEN    # ICE 插件回報用的共享密鑰
 | `GET` | `/health` | 健康檢查（回伺服器數量，順便驗資料有載進來） |
 | `GET` | `/state` | 全 7 台現況。每台只回最新的一個 active 事件 |
 | `GET` | `/history?world=&limit=` | 歷史紀錄：已結束／已撤銷的事件（新→舊）。**只回計數不回 UUID**；撤銷的也列出來並標明 |
-| `POST` | `/report` | 通報。**manual**：`{uuid, world, startsInMinutes}`（0–15，需白名單 Origin）。**plugin**：header `X-Plugin-Token` ＋ `{world, weatherId, missionIds[], phase}` |
+| `POST` | `/report` | 通報。**manual**：`{uuid, world, startsInMinutes}`（0–15，需白名單 Origin）。**plugin**：header `X-Plugin-Token` ＋ `{world, weatherId, missionIds[], phase:'warn'\|'start'\|'end'}` |
 | `POST` | `/vote` | `{uuid, eventId, kind:'confirm'\|'dispute'}` |
 | `POST` | `/withdraw` | `{uuid, eventId}` — **通報者撤回自己那一筆**（誤按用）。三個條件缺一不可：是本人、還在進行中、**還沒有人附議**。已送出的通知收不回來 |
 | `PUT` | `/sub` | `{uuid, worlds[], webhookUrl?}`；`worlds: []` ＝退訂並**實體刪列** |

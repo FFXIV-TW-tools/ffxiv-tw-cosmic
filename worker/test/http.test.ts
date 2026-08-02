@@ -337,6 +337,69 @@ describe('fan-out', () => {
   });
 });
 
+describe('預告（warn）→ 進行中', () => {
+  const plug = { 'X-Plugin-Token': 'plugin-secret' };
+
+  it('warn 建立「未知開始時間」的事件（startAt=0），天氣翻轉後就地升級成同一筆', async () => {
+    const calls = stubDiscord();
+    const world = devStages.worlds[1];
+    await clearWorld(world);
+
+    const w = await post('/report', { world, phase: 'warn' }, plug);
+    expect(w.status).toBe(200);
+    const id = (await w.json() as any).eventId;
+
+    const s1 = await (await SELF.fetch('https://x/state')).json() as any;
+    expect(s1.events[world].startAt).toBe(0);        // 不假裝知道何時開始
+    expect(s1.events[world].warnedAt).toBeGreaterThan(0);
+    await vi.waitFor(() => expect(calls.length).toBeGreaterThanOrEqual(0));
+
+    // 天氣真的翻轉 ⇒ 同一筆升級，不開新事件
+    const st = await post('/report', { world, weatherId: 196, phase: 'start' }, plug);
+    expect(st.status).toBe(200);
+    expect((await st.json() as any).eventId).toBe(id);
+
+    const s2 = await (await SELF.fetch('https://x/state')).json() as any;
+    expect(s2.events[world].id).toBe(id);
+    expect(s2.events[world].startAt).toBeGreaterThan(0);
+    expect(s2.events[world].startExact).toBe(true);
+    await revoke(id);
+  });
+
+  it('warn 不要求 weatherId（那一刻天氣還沒翻轉）', async () => {
+    stubDiscord();
+    const world = devStages.worlds[2];
+    await clearWorld(world);
+    const r = await post('/report', { world, phase: 'warn' }, plug);
+    expect(r.status).toBe(200);
+    await revoke((await r.json() as any).eventId);
+  });
+
+  it('已經有事件時再收到 warn → 409，不開第二筆', async () => {
+    stubDiscord();
+    const world = devStages.worlds[0];
+    await clearWorld(world);
+    const first = (await (await post('/report', { world, phase: 'warn' }, plug)).json() as any).eventId;
+    const again = await post('/report', { world, phase: 'warn' }, plug);
+    expect(again.status).toBe(409);
+    expect((await again.json() as any).eventId).toBe(first);
+    await revoke(first);
+  });
+
+  it('歷史紀錄帶出提前量（預告→實際開始）', async () => {
+    stubDiscord();
+    const world = devStages.worlds[4];
+    await clearWorld(world);
+    const id = (await (await post('/report', { world, phase: 'warn' }, plug)).json() as any).eventId;
+    await post('/report', { world, weatherId: 196, phase: 'start' }, plug);
+    await revoke(id);
+    const h = await (await SELF.fetch(`https://x/history?world=${encodeURIComponent(world)}`)).json() as any;
+    const row = h.rows.find((x: any) => x.id === id);
+    expect(row.warnedAt).toBeGreaterThan(0);
+    expect(row.leadSeconds).not.toBeNull();
+  });
+});
+
 describe('撤回自己的通報', () => {
   it('本人可撤回，之後不再出現在 /state、歷史標 withdrawn', async () => {
     stubDiscord();

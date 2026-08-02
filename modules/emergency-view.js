@@ -228,16 +228,29 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
 
     // **不顯示來源**（Owner 2026-08-02）。後端仍記著 `source` 供管理端統計，但畫面上一律只講
     // 「回報」——對看的人來說要緊的是哪一台、還有多久，資料怎麼進來的與他無關。
+    // startAt === 0 ＝只收到遊戲內的預兆通告，**還不知道確切何時開始**
+    const warnOnly = !ev.startAt;
+
     const badge = document.createElement('span');
-    badge.className = 'codex-badge codex-badge--ok';
-    badge.textContent = '已回報';
+    badge.className = `codex-badge ${warnOnly ? 'codex-badge--warn' : 'codex-badge--ok'}`;
+    badge.textContent = warnOnly ? '預告' : '已回報';
     li.append(badge);
 
     const when = document.createElement('strong');
     when.className = 'cos-em__when';
-    when.textContent = ev.startAt > now
-      ? `${formatDuration(ev.startAt - now)}後開始`
-      : `進行中 · 剩 ${formatDuration(ev.endAt - now)}`;
+    if (warnOnly) {
+      // **不編造倒數**：目前只有一個提前量樣本，寫個看起來精確的數字，
+      // 下一次不準的時候就沒有人會再相信這一頁。
+      when.textContent = '即將開始';
+      const note = document.createElement('span');
+      note.className = 'codex-small cos-em__none';
+      note.textContent = `（${clockText(ev.warnedAt || now)} 出現預兆通告）`;
+      when.append(note);
+    } else {
+      when.textContent = ev.startAt > now
+        ? `${formatDuration(ev.startAt - now)}後開始`
+        : `進行中 · 剩 ${formatDuration(ev.endAt - now)}`;
+    }
     li.append(when);
 
     const votes = document.createElement('span');

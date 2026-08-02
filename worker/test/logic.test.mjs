@@ -84,6 +84,21 @@ test('插件通報：證據自洽（missionIds 選填）', () => {
   assert.equal(L.validatePluginReport({ ...good, phase: 'end', missionIds: [] }, NOW).ok, true);
 });
 
+test('warn 相位不要求 weatherId（預告時天氣還沒翻轉）', () => {
+  assert.equal(L.validatePluginReport({ world: W, phase: 'warn' }, NOW).ok, true);
+  assert.equal(L.validatePluginReport({ world: W, phase: 'warn' }, NOW).phase, 'warn');
+  // start/end 仍然要求——那兩個確實是看著天氣送的
+  assert.equal(L.validatePluginReport({ world: W, phase: 'start' }, NOW).reason, 'bad_weather');
+});
+
+test('Discord：只收到預告時不編造倒數', () => {
+  const warn = L.discordPayload({ world: W, startAt: 0, endAt: NOW + 900, source: 'plugin' }, NOW);
+  const d = warn.embeds[0].description;
+  assert.match(d, /再過幾分鐘/);
+  assert.ok(!/\d+ 分鐘後開始/.test(d), '不得出現看起來精確的倒數');
+  assert.match(warn.embeds[0].title, /預告/);
+});
+
 test('webhook 白名單擋掉近似域名與明文', () => {
   assert.equal(L.isAllowedWebhook('https://discord.com/api/webhooks/1/abc'), true);
   assert.equal(L.isAllowedWebhook('https://discordapp.com/api/webhooks/1/abc'), true);

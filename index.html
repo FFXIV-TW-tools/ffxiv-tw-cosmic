@@ -296,7 +296,7 @@
         <span class="codex-hud" aria-hidden="true"></span>
         <h2 class="codex-h2 cos-panel__title">
           各伺服器現況
-          <span class="codex-help-trigger" data-help="緊急事件的天氣（磁暴／流星雨／孢子霧）不在渴望灣的天氣機率表裡，時間演算法永遠擲不出來 ⇒ 只能靠回報，不能預測。｜每台伺服器同時只留一個事件，重複回報會自動變成附議。｜三個人否認且沒有人附議，該筆就會下架。｜事件固定 20 分鐘（遊戲資料寫死的任務時限）。｜**這裡沒亮不代表沒有事件** —— 只代表那台伺服器現在沒有人回報。">
+          <span class="codex-help-trigger" data-help="緊急事件的天氣（磁暴／流星雨／孢子霧）不在渴望灣的天氣機率表裡，時間演算法永遠擲不出來 ⇒ 只能靠回報，不能預測。｜每台伺服器同時只留一個事件，重複回報會自動變成附議。｜三個人否認且沒有人附議，該筆就會下架。｜事件固定 20 分鐘（遊戲資料寫死的任務時限）。｜標「**預告**」的是遊戲內已經出現預兆通告、但天氣還沒真的翻轉——**刻意不顯示倒數**，因為提前量目前只量到一筆（約 5 分半），拿單一觀察當倒數不誠實。｜**這裡沒亮不代表沒有事件** —— 只代表那台伺服器現在沒有人回報。">
             這些數字哪來的 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
           </span>
         </h2>
@@ -350,12 +350,13 @@
           <table class="codex-table codex-table--fixed codex-table--zebra" id="em-hist">
             <thead>
               <tr>
-                <th style="width:22%">日期</th>
-                <th class="codex-table__num" style="width:16%">開始</th>
-                <th style="width:22%">伺服器</th>
-                <th class="codex-table__num" style="width:14%">附議</th>
-                <th class="codex-table__num" style="width:14%">否認</th>
-                <th style="width:12%">狀態</th>
+                <th style="width:16%">日期</th>
+                <th class="codex-table__num" style="width:12%">開始</th>
+                <th style="width:18%">伺服器</th>
+                <th class="codex-table__num" style="width:14%">預告提前<span class="codex-small cos-th-note">預兆通告→實際開始</span></th>
+                <th class="codex-table__num" style="width:12%">附議</th>
+                <th class="codex-table__num" style="width:12%">否認</th>
+                <th style="width:16%">狀態</th>
               </tr>
             </thead>
             <tbody></tbody>
