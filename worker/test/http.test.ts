@@ -5,7 +5,7 @@
 //
 // **絕不打真 Discord**：所有 webhook 送出都由 `vi.stubGlobal('fetch', …)` 攔下。
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { SELF, env } from 'cloudflare:test';
+import { SELF, env, runInDurableObject, runDurableObjectAlarm } from 'cloudflare:test';
 import devStages from '../../data/dev-stages.json';
 
 const ALLOWED = 'https://ffxiv-tw-cosmic.pages.dev';
@@ -69,6 +69,26 @@ function stubDiscord(status = 204) {
     return real(input, init);
   });
   return calls;
+}
+
+const PLUG = { 'X-Plugin-Token': 'plugin-secret' };
+
+/** 插件通報一筆——**不受 30 秒靜置影響**，用在只關心 fan-out 本身的案例。 */
+function pluginReport(world: string) {
+  return post('/report', { world, weatherId: 196, missionIds: [518], phase: 'start' }, PLUG);
+}
+
+const doStub = () => env.COSMIC_EVENTS.get(env.COSMIC_EVENTS.idFromName('v1'));
+
+/**
+ * 把待推播時間拉到過去再觸發 alarm ＝「30 秒過去了」。
+ * 直接等 30 秒會讓測試變成計時器測試；這裡測的是**到期後會做什麼**。
+ */
+async function fireNotifyNow() {
+  await runInDurableObject(doStub(), (inst: any) => {
+    inst.sql.exec('UPDATE events SET notifyAt = 1 WHERE notifyAt > 0');
+  });
+  await runDurableObjectAlarm(doStub());
 }
 
 beforeEach(() => {
@@ -306,7 +326,8 @@ describe('fan-out', () => {
     await put('/sub', { uuid: uuid(), worlds: [world], webhookUrl: HOOK });
     await put('/sub', { uuid: uuid(), worlds: [devStages.worlds[5]], webhookUrl: HOOK });
 
-    await post('/report', { uuid: uuid(), world, startsInMinutes: 0 });
+    // 用插件通報：這個案例測的是「只送給訂了這台的人」，不該被手動通報的靜置期干擾
+    await pluginReport(world);
     await vi.waitFor(() => expect(calls.length).toBe(1));
     expect(calls[0].body.embeds[0].title).toContain(world);
   });
@@ -319,7 +340,7 @@ describe('fan-out', () => {
 
     for (let i = 0; i < 5; i++) {
       // 每輪先撤銷上一個事件，才能再開一個新的（同伺服器同時只有一個 active）
-      const r = await post('/report', { uuid: uuid(), world, startsInMinutes: 0 });
+      const r = await pluginReport(world);
       const body = await r.json() as any;
       await SELF.fetch('https://x/admin/revoke', {
         method: 'POST',
@@ -331,9 +352,65 @@ describe('fan-out', () => {
     const got = await (await SELF.fetch(`https://x/sub?uuid=${u}`, { headers: { Origin: ALLOWED } })).json() as any;
     expect(got.broken).toBe(true);
     const n = calls.length;
-    await post('/report', { uuid: uuid(), world, startsInMinutes: 0 });
+    await pluginReport(world);
     await new Promise((r) => setTimeout(r, 50));
     expect(calls.length).toBe(n);   // 熔斷後不再送
+  });
+});
+
+describe('手動通報靜置 30 秒才推播', () => {
+  // DO 狀態同檔共用：別的案例留下的訂閱者也會收到自己那台的推播。
+  // 所以一律只數「標題裡是本案例那台伺服器」的那幾條，不數總量。
+  const sentFor = (calls: { body: any }[], world: string) =>
+    calls.filter((c) => String(c.body.embeds[0].title).includes(world)).length;
+
+  it('按下去當下不推播，事件本身立刻就在 /state 上', async () => {
+    const calls = stubDiscord();
+    const world = devStages.worlds[3];
+    await clearWorld(world);
+    await put('/sub', { uuid: uuid(), worlds: [world], webhookUrl: HOOK });
+
+    const r = await post('/report', { uuid: uuid(), world, startsInMinutes: 0 });
+    const { eventId } = await r.json() as any;
+    await new Promise((res) => setTimeout(res, 50));
+    expect(sentFor(calls, world)).toBe(0);            // 還在靜置期
+
+    const st = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    expect(st.events[world].id).toBe(eventId);        // 但網站上看得到——延遲的只有推播
+
+    await fireNotifyNow();
+    expect(sentFor(calls, world)).toBe(1);
+    await revoke(eventId);
+  });
+
+  it('靜置期內撤回 → 一則通知都不會送出，而且回傳的話術要如實說出這件事', async () => {
+    const calls = stubDiscord();
+    const world = devStages.worlds[4];
+    await clearWorld(world);
+    await put('/sub', { uuid: uuid(), worlds: [world], webhookUrl: HOOK });
+
+    const u = uuid();
+    const { eventId } = await (await post('/report', { uuid: u, world, startsInMinutes: 0 })).json() as any;
+    const w = await post('/withdraw', { uuid: u, eventId });
+    expect(w.status).toBe(200);
+    expect((await w.json() as any).note).toContain('沒有人會收到');
+
+    await fireNotifyNow();
+    expect(sentFor(calls, world)).toBe(0);   // 這一條就是整個機制存在的理由
+  });
+
+  it('插件在靜置期內證實同一台 → 立刻送，不再等', async () => {
+    const calls = stubDiscord();
+    const world = devStages.worlds[5];
+    await clearWorld(world);
+    await put('/sub', { uuid: uuid(), worlds: [world], webhookUrl: HOOK });
+
+    const { eventId } = await (await post('/report', { uuid: uuid(), world, startsInMinutes: 0 })).json() as any;
+    expect(sentFor(calls, world)).toBe(0);
+
+    await pluginReport(world);      // 遊戲天氣證實了它
+    await vi.waitFor(() => expect(sentFor(calls, world)).toBeGreaterThanOrEqual(1));
+    await revoke(eventId);
   });
 });
 

@@ -65,6 +65,27 @@ export const DEIDENTIFY_AFTER = 7 * 24 * 3600;
  */
 export const WARN_TTL = 15 * 60;
 
+/**
+ * **手動通報**要靜置幾秒才推播（秒）。插件通報不適用——見 {@link notifyDelayFor}。
+ *
+ * 誤按的人需要時間注意到並按「取消（我按錯了）」。20 秒太緊（要注意到＋找到按鈕），
+ * 30 秒對事件本身幾乎無成本：事件 20 分鐘，這是 2.5%；預告類通報本來就有數分鐘提前量。
+ *
+ * 附帶效果剛好對上撤回規則：撤回在「已經有人附議」之後就不允許，而附議來自看到通知的人
+ * ⇒ 推播延後 30 秒等於保證這段窗口內撤回一定暢通。
+ */
+export const MANUAL_NOTIFY_DELAY = 30;
+
+/**
+ * 這一筆通報要延遲幾秒才推播。
+ *
+ * 插件回報的是**遊戲天氣本身**（`ActiveWeather ∈ 194–197`），不存在誤按這回事；
+ * 延遲它等於把它唯一的優勢——天氣翻轉當下就送——丟掉。兩種來源不混為一談（AGENTS §4）。
+ */
+export function notifyDelayFor(source) {
+  return source === 'plugin' ? 0 : MANUAL_NOTIFY_DELAY;
+}
+
 /** `/history` 一次最多回幾筆。 */
 export const HISTORY_LIMIT = 100;
 

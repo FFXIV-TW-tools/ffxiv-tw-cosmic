@@ -49,7 +49,8 @@ export class CosmicEventsDO extends DurableObject {
     // 票數獨立成欄：去識別（7 天後清掉 UUID 陣列）之後，歷史仍要看得出有幾個人證實。
     // `CREATE TABLE IF NOT EXISTS` 不會補欄位到既有表，所以用 ALTER；已經有了就會丟錯，吞掉即可
     // （父層鐵則例外 a：窄的、預期內的 schema 既存檢查）。
-    for (const col of ['nConfirm', 'nDispute', 'warnedAt']) {
+    // `notifyAt`：待推播的時間戳；0 ＝ 沒有待推播的東西（已送出或不需延遲）。
+    for (const col of ['nConfirm', 'nDispute', 'warnedAt', 'notifyAt']) {
       try {
         this.sql.exec(`ALTER TABLE events ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0`);
       } catch {
@@ -80,6 +81,58 @@ export class CosmicEventsDO extends DurableObject {
       now - L.DEIDENTIFY_AFTER,
     );
     this.sql.exec('DELETE FROM events WHERE endAt < ?', now - L.RETENTION);
+  }
+
+  /**
+   * 把 alarm 排到「最早那一筆待推播」的時間。
+   *
+   * 單一 DO 只有一個 alarm 槽 ⇒ 不能一筆一個，必須取最小值；`alarm()` 送完後會再排一次，
+   * 剩下的自然接上。沒有待推播就不排（也不清既有的——`alarm()` 空跑一次無害，
+   * 而清掉它需要知道沒有別人在等，多一個會錯的條件）。
+   */
+  async _scheduleNotify() {
+    const rows = this.sql
+      .exec("SELECT MIN(notifyAt) AS t FROM events WHERE notifyAt > 0 AND status = 'active'")
+      .toArray();
+    const t = rows.length ? rows[0].t : null;
+    if (t) await this.ctx.storage.setAlarm(t * 1000);
+  }
+
+  /**
+   * 靜置期滿 → 推播。
+   *
+   * **這裡是整個延遲機制唯一有價值的一行**：送之前重讀狀態，已撤回／已撤銷的就跳過。
+   * 誤按的通報在這一刻被攔下來，訂閱者從頭到尾不會知道有這回事。
+   *
+   * 用 DO alarm 而不是在 `waitUntil` 裡睡 30 秒：DO 隨時可能被回收，睡到一半通知就消失，
+   * **而且沒有任何訊號**——沒有錯誤、沒有警告，只是通知沒來。alarm 由平台保證會被叫到。
+   */
+  async alarm() {
+    const now = Math.floor(Date.now() / 1000);
+    const due = this.sql
+      .exec('SELECT * FROM events WHERE notifyAt > 0 AND notifyAt <= ?', now)
+      .toArray();
+    for (const r of due) {
+      // 先清 notifyAt：無論送不送得出去都只嘗試一次，避免 alarm 重試變成重複推播
+      this.sql.exec('UPDATE events SET notifyAt = 0 WHERE id = ?', r.id);
+      const ev = this._rowToEvent(r);
+      if (ev.status !== 'active' || ev.endAt <= now) {
+        this._bump('notify_skipped');   // 靜置期內被撤回／撤銷，這正是延遲的目的
+        continue;
+      }
+      this._bump('notify_delayed_sent');
+      await this._fanout({ ...ev, notifyAt: 0 }, now);
+    }
+    await this._scheduleNotify();
+  }
+
+  /** 待推播的那一筆現在就送（插件回報把它證實了 ⇒ 不必再等）。 */
+  _notifyNow(id, now) {
+    const rows = this.sql.exec('SELECT * FROM events WHERE id = ? AND notifyAt > 0', id).toArray();
+    if (!rows.length) return;
+    this.sql.exec('UPDATE events SET notifyAt = 0 WHERE id = ?', id);
+    this._bump('notify_promoted');
+    this.ctx.waitUntil(this._fanout(this._rowToEvent(rows[0]), now));
   }
 
   _rowToEvent(r) {
@@ -175,6 +228,8 @@ export class CosmicEventsDO extends DurableObject {
       // 插件回報既有事件時，把來源升級成 plugin（可信度較高的那個要贏）
       if (source === 'plugin' && existing.source !== 'plugin') {
         this.sql.exec("UPDATE events SET source = 'plugin' WHERE id = ?", existing.id);
+        // 遊戲天氣證實了這筆手動通報 ⇒ 沒有再靜置的理由，立刻送
+        this._notifyNow(existing.id, now);
       }
       this._bump('report_dup');
       return { ok: true, eventId: existing.id, duplicate: true };
@@ -194,18 +249,24 @@ export class CosmicEventsDO extends DurableObject {
     }
 
     const startAt = input.startAt;
+    const delay = L.notifyDelayFor(source);
     this.sql.exec(
-      `INSERT INTO events (world, source, startAt, endAt, startExact, createdAt, reporter)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO events (world, source, startAt, endAt, startExact, createdAt, reporter, notifyAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       world, source, startAt, startAt + L.EVENT_DURATION,
-      source === 'plugin' ? 1 : 0, now, reporter,
+      source === 'plugin' ? 1 : 0, now, reporter, delay ? now + delay : 0,
     );
     const id = this.sql.exec('SELECT last_insert_rowid() AS id').toArray()[0].id;
     this._bump(source === 'plugin' ? 'report_ok_plugin' : 'report_ok_manual');
 
-    const ev = this._activeEvent(world, now);
-    // fan-out 不擋回應：通報者按下去就該立刻得到結果，Discord 送得如何是我們的事。
-    this.ctx.waitUntil(this._fanout(ev, now));
+    if (delay) {
+      // 手動通報靜置 30 秒再推播，讓誤按的人來得及撤回（見 logic.MANUAL_NOTIFY_DELAY）。
+      // 事件本身**立刻**就在網站上看得到——延遲的只有推播，不是狀態。
+      this.ctx.waitUntil(this._scheduleNotify());
+    } else {
+      // fan-out 不擋回應：通報者按下去就該立刻得到結果，Discord 送得如何是我們的事。
+      this.ctx.waitUntil(this._fanout(this._activeEvent(world, now), now));
+    }
     return { ok: true, eventId: id, duplicate: false };
   }
 
@@ -244,9 +305,16 @@ export class CosmicEventsDO extends DurableObject {
     const verdict = L.canWithdraw(ev, uuid, now);
     if (!verdict.ok) return { ok: false, reason: verdict.reason };
 
-    this.sql.exec("UPDATE events SET status = 'withdrawn' WHERE id = ?", eventId);
-    this._bump('event_withdrawn');
-    return { ok: true, note: '已從網站下架；先前送出的通知無法收回' };
+    // 還在靜置期內＝推播根本還沒送出去，這是延遲機制存在的理由，要如實告訴撤回的人
+    const stillPending = rows[0].notifyAt > 0;
+    this.sql.exec("UPDATE events SET status = 'withdrawn', notifyAt = 0 WHERE id = ?", eventId);
+    this._bump(stillPending ? 'event_withdrawn_before_notify' : 'event_withdrawn');
+    return {
+      ok: true,
+      note: stillPending
+        ? '已取消，通知還沒送出去 — 沒有人會收到'
+        : '已從網站下架；先前送出的通知無法收回',
+    };
   }
 
   // ── 訂閱 ──
@@ -352,7 +420,7 @@ export class CosmicEventsDO extends DurableObject {
   revoke(eventId, now) {
     const rows = this.sql.exec('SELECT id FROM events WHERE id = ?', eventId).toArray();
     if (!rows.length) return { ok: false, reason: 'not_found' };
-    this.sql.exec("UPDATE events SET status = 'revoked' WHERE id = ?", eventId);
+    this.sql.exec("UPDATE events SET status = 'revoked', notifyAt = 0 WHERE id = ?", eventId);
     this._bump('event_revoked');
     return { ok: true, note: '已推播的 Discord 訊息無法收回，撤銷只影響網站顯示與後續推播', now };
   }

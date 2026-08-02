@@ -159,7 +159,9 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
       say(
         r.duplicate
           ? `${world} 已經有人回報了 — 已幫你附議 +1。`
-          : `已通報 ${world}，訂閱這台的人會收到通知。按錯了可以在上面那列按「取消」。`,
+          // 通知靜置 30 秒才送（後端 logic.MANUAL_NOTIFY_DELAY）——那段時間按取消，
+          // **沒有任何人會收到**。這句話是那個機制對使用者唯一看得見的地方，要講明確。
+          : `已通報 ${world}。通知會在 30 秒後送出 — 按錯了現在按「取消」，就不會有人收到。`,
         'ok',
       );
       await poll(true);
@@ -189,8 +191,9 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
 
   async function withdraw(eventId) {
     const r = await emergencyApi.withdraw(eventId);
-    // 通知已經送出去了，這件事必須講——不能讓人以為按了取消就當作沒發生過
-    say(r.ok ? '已取消 — 但先前送出的通知無法收回。' : r.message, r.ok ? 'ok' : 'warn');
+    // 後端知道通知到底送出去了沒（靜置期內撤回＝根本沒送），直接用它回的那句話。
+    // 自己在前端猜會猜錯：靜置期是伺服器時鐘算的，而且插件證實會提前送出。
+    say(r.ok ? (r.data?.note || '已取消。') : r.message, r.ok ? 'ok' : 'warn');
     await poll(true);
     if (r.ok) onChanged?.();
   }
