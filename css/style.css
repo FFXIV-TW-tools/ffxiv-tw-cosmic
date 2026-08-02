@@ -522,9 +522,10 @@ body {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3, 12px);
+  gap: var(--space-2, 8px) var(--space-3, 12px);
   margin-bottom: var(--space-3, 12px);
-  padding: var(--space-3, 12px);
+  /* 上下 padding 收成 8px：這是一條開關，不是內容區塊 */
+  padding: var(--space-2, 8px) var(--space-3, 12px);
   border: 1px solid var(--color-border, #2b3f56);
   border-radius: var(--radius-md, 8px);
   background: var(--color-surface, #101824);
@@ -536,9 +537,16 @@ body {
   gap: var(--space-2, 8px);
 }
 
-/* 狀態行吃整列剩餘寬：它要講「分頁需保持開啟」這種必讀資訊，不能被擠掉 */
+/* 「提前」不防換行會被壓成直排（實測兩字各佔一列）——欄位窄時 label 是第一個被犧牲的 */
+.cos-alarm__lead .codex-field__label {
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* 狀態行跟著開關同一列。原本寫 `flex: 1 1 100%` 強制換行，於是這條開關永遠佔兩列高、
+   而第二列只有「關閉中」三個字（Owner 2026-08-03 截圖）。真的放不下時 flex-wrap 會自己換。 */
 .cos-alarm__status {
-  flex: 1 1 100%;
+  flex: 0 1 auto;
   margin: 0;
   color: var(--color-text-muted, #c0c9da);
 }
@@ -566,6 +574,13 @@ body {
   border: 1px solid var(--color-border, #2b3f56);
   border-radius: var(--radius-md, 8px);
   background: var(--color-surface, #101824);
+}
+
+/* 沒有事件的那幾台降一階：資訊要留著（「查過了，沒有」≠「不知道」），
+   但不該和真的有事件的列爭同樣的視覺重量 */
+.cos-em__row--idle {
+  padding-block: var(--space-1, 4px);
+  opacity: 0.72;
 }
 
 .cos-em__world {

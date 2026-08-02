@@ -83,28 +83,30 @@
       <div>載入中…</div>
     </div>
 
+    <!-- ══ 全頁共用：現在天氣／ET／靈風視窗四格 ══
+         原本在「臨時任務」分頁裡，但它是**每一個分頁的前提**（任務條件、天氣預報、
+         緊急事件的背景天氣都要看它），切到別頁就消失等於每次都要切回去看一眼。
+         挪到分頁列之上＝任何分頁都看得到，且只有一份 DOM（Owner 2026-08-03）。 -->
+    <div class="cos-stats" id="fc-now"></div>
+
+    <!-- 這句講的就是「上面那個天氣可能被緊急事件蓋掉」，必須緊貼四格，不能留在原分頁 -->
+    <p class="codex-small cos-np__caveat cos-hideable" id="np-caveat" hidden></p>
+
     <div class="codex-tabs" id="cos-tabs" role="tablist" aria-label="宇宙探索分頁">
+      <button class="codex-tab" role="tab" data-tab="emergency" id="tab-emergency"
+              aria-controls="panel-emergency" aria-selected="true">緊急事件</button>
       <button class="codex-tab" role="tab" data-tab="forecast" id="tab-forecast"
-              aria-controls="panel-forecast" aria-selected="true">臨時任務</button>
+              aria-controls="panel-forecast" aria-selected="false" tabindex="-1">臨時任務</button>
       <button class="codex-tab" role="tab" data-tab="weather" id="tab-weather"
               aria-controls="panel-weather" aria-selected="false" tabindex="-1">天氣預報</button>
       <button class="codex-tab" role="tab" data-tab="missions" id="tab-missions"
               aria-controls="panel-missions" aria-selected="false" tabindex="-1">任務清單</button>
-      <button class="codex-tab" role="tab" data-tab="emergency" id="tab-emergency"
-              aria-controls="panel-emergency" aria-selected="false" tabindex="-1">緊急事件</button>
       <!-- 宇宙工具／基地進度暫時隱藏（Owner 2026-07-31：「目前好像也沒什麼用」）。
            面板與資料都留著，拿掉 hidden 即可復原 —— 不刪，因為工具升級鏈是原始需求之一。 -->
     </div>
 
-    <!-- ══ 分頁一：臨時任務（現在天氣三格是它的前提，所以留在同一頁）══ -->
-    <section id="panel-forecast" role="tabpanel" aria-labelledby="tab-forecast" tabindex="0">
-      <div class="cos-stats" id="fc-now"></div>
-
-      <!-- 緊急事件告誡緊貼在天氣三格底下 —— 它講的就是「上面那個天氣可能被蓋掉」，
-           擺在任務清單尾巴等於跟它要修飾的東西隔了一整個區塊（Owner 2026-07-31）。
-           只在特殊天氣（靈風／月塵）進行中才顯示；文案由 JS 填入。 -->
-      <p class="codex-small cos-np__caveat cos-hideable" id="np-caveat" hidden></p>
-
+    <!-- ══ 臨時任務（現在天氣四格已上移為全頁共用，見分頁列之前）══ -->
+    <section id="panel-forecast" role="tabpanel" aria-labelledby="tab-forecast" tabindex="0" hidden>
       <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel" id="jb-panel">
         <span class="codex-hud" aria-hidden="true"></span>
         <h2 class="codex-h2 cos-panel__title">
@@ -291,7 +293,7 @@
     <!-- ══ 分頁四：緊急事件（全站唯一有後端的一頁）══
          其他分頁的東西是**算出來的**，對就是對；這一頁的東西是**別人回報的**，
          沒人回報就是空的，而空的不代表沒有事件。措辭不得含糊。 -->
-    <section id="panel-emergency" role="tabpanel" aria-labelledby="tab-emergency" tabindex="0" hidden>
+    <section id="panel-emergency" role="tabpanel" aria-labelledby="tab-emergency" tabindex="0">
       <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
         <span class="codex-hud" aria-hidden="true"></span>
         <h2 class="codex-h2 cos-panel__title">

@@ -68,7 +68,10 @@ export function createNowPanel(root, { windows, missions, conditions, jobs, fore
   const nowList = root.querySelector('#np-now');
   const nextHead = root.querySelector('#np-next-head');
   const nextList = root.querySelector('#np-next');
-  const caveat = root.querySelector('#np-caveat');
+  // 這句已隨「現在天氣四格」上移到分頁列之上（全頁共用），不再在本面板範圍內
+  // ⇒ 必須從 document 找。用 root 找會拿到 null，而下游直接設 `.hidden` ⇒
+  // 整個 tick() 每輪都拋例外，連帶讓緊急事件列永遠停在「載入中…」（2026-08-03 實測）。
+  const caveat = document.querySelector('#np-caveat');
   const scope = root.querySelector('#np-scope');
 
   let jobFilter = [];

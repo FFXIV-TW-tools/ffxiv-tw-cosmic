@@ -110,11 +110,17 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
      * 只寫「接著是晴朗」對使用者毫無用處。
      */
     const next = forecaster.weatherAt(now + remain);
-    // 註記是純文字（textContent），圖示放不進去；卡片主值那行已經有圖了，這裡寫名字就夠
-    const nextText = `還剩 ${formatDuration(remain)} → 接著是 ${next.name}`;
-    const note = current.name === PLAIN_WEATHER && next.name === PLAIN_WEATHER
-      ? `${nextText}（${nextSpecialNote(now)}）`
-      : nextText;
+    // 相對時間一律補上**現實時鐘**（Owner 2026-08-03：「不然要一直數」）——
+    // 「還剩 12 分」要心算才知道是幾點，「還剩 12 分（14:35）」不用。
+    // 註記改成節點陣列，才能把遊戲自己的天氣圖示放進「接著是」（原本是純文字塞不進圖）。
+    const note = [
+      document.createTextNode(`還剩 ${formatDuration(remain)}（${clockText(now + remain)}）→ 接著是 `),
+      weatherIcon(next, 16),
+      document.createTextNode(` ${next.name}`),
+    ];
+    if (current.name === PLAIN_WEATHER && next.name === PLAIN_WEATHER) {
+      note.push(document.createTextNode('（'), ...nextSpecialNote(now), document.createTextNode('）'));
+    }
     el.now.innerHTML = '';
     el.now.append(
       block('目前天氣', [weatherIcon(current, 28), document.createTextNode(` ${current.name}`)], note),
@@ -141,7 +147,10 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
     const next = forecaster.nextWeather(now, windy.id);
     const d = block(
       '靈風視窗',
-      isNow ? `還剩 ${formatDuration(WEATHER_PERIOD - (now % WEATHER_PERIOD))}` : (next ? `${formatDuration(next.start - now)}後` : '—'),
+      // 同上：相對時間一律附現實時鐘（進行中報「到幾點結束」，還沒到報「幾點開始」）
+      isNow
+        ? `還剩 ${formatDuration(WEATHER_PERIOD - (now % WEATHER_PERIOD))}（到 ${clockText(now + WEATHER_PERIOD - (now % WEATHER_PERIOD))}）`
+        : (next ? `${formatDuration(next.start - now)}後（${clockText(next.start)}）` : '—'),
       `${count} 個天氣限定臨時任務的必要條件（佔 ${windy.rate}% 時段）`,
     );
     d.classList.add('codex-tint-panel', 'codex-tint-panel--highlight', 'codex-tint-panel--bar');
@@ -156,8 +165,8 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
     const next = nextMechAt(now);
     return block(
       '機甲行動',
-      `${formatDuration(next - now)}後`,
-      `下次 ${clockText(next)}　·　每小時 :16 / :36 / :56（現實時間）`,
+      `${formatDuration(next - now)}後（${clockText(next)}）`,
+      '每小時 :16 / :36 / :56（現實時間）',
     );
   }
 
@@ -174,18 +183,25 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
     else v.textContent = value;
     const n = document.createElement('span');
     n.className = 'codex-small cos-stat__note';
-    n.textContent = note;
+    // note 同 value：可以是字串或節點陣列（天氣註記要放遊戲圖示）
+    if (Array.isArray(note)) n.append(...note.filter(Boolean));
+    else n.textContent = note;
     d.append(l, v, n);
     return d;
   }
 
-  /** 距離下一個非「晴朗」時段的說明文字。 */
+  /** 距離下一個非「晴朗」時段——回節點陣列（要放天氣圖示），不是字串。 */
   function nextSpecialNote(now) {
     const upcoming = forecaster
       .forecast(now, SCAN_PERIODS)
       .find((slot) => slot.weather.name !== PLAIN_WEATHER && slot.start > now);
-    if (!upcoming) return '掃描範圍內沒有特殊天氣';
-    return `${upcoming.weather.name} ${formatDuration(upcoming.start - now)}後`;
+    if (!upcoming) return [document.createTextNode('掃描範圍內沒有特殊天氣')];
+    return [
+      weatherIcon(upcoming.weather, 16),
+      document.createTextNode(
+        ` ${upcoming.weather.name} ${formatDuration(upcoming.start - now)}後（${clockText(upcoming.start)}）`,
+      ),
+    ];
   }
 
   function renderTimeline(now) {

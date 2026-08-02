@@ -253,12 +253,20 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
     const li = document.createElement('li');
     li.className = 'cos-em__row';
 
+    // 狀態點：一眼掃出哪幾台有事，不必逐列讀字（進行中會擴散、預告是靜態警示色）
+    const dot = document.createElement('span');
+    dot.className = 'codex-status-dot';
+    dot.setAttribute('aria-hidden', 'true');
+    li.append(dot);
+
     const name = document.createElement('span');
     name.className = 'cos-em__world';
     name.textContent = world;
     li.append(name);
 
     if (!ev) {
+      li.classList.add('cos-em__row--idle');
+      dot.classList.add('codex-status-dot--muted');
       const none = document.createElement('span');
       none.className = 'codex-small cos-em__none';
       none.textContent = '目前沒有人回報';
@@ -270,6 +278,13 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
     // 「回報」——對看的人來說要緊的是哪一台、還有多久，資料怎麼進來的與他無關。
     // startAt === 0 ＝只收到遊戲內的預兆通告，**還不知道確切何時開始**
     const warnOnly = !ev.startAt;
+
+    // 有事件的列用共用的左緣色條面板拉出層次：一眼看得出哪幾台要動身，
+    // 而不是七列長得一模一樣、要逐列讀字（`--bar` 的色由消費端 `--tint` 給）。
+    li.classList.add('codex-tint-panel', 'codex-tint-panel--bar');
+    li.style.setProperty('--tint', warnOnly ? 'var(--color-warn, #e8a45a)' : 'var(--color-accent, #4fd1e8)');
+    dot.classList.add(warnOnly ? 'codex-status-dot--warn' : 'codex-status-dot--live');
+    if (!warnOnly) dot.classList.add('codex-status-dot--scan');
 
     const badge = document.createElement('span');
     badge.className = `codex-badge ${warnOnly ? 'codex-badge--warn' : 'codex-badge--ok'}`;
@@ -287,9 +302,10 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
       note.textContent = `（${clockText(ev.warnedAt || now)} 出現預兆通告）`;
       when.append(note);
     } else {
+      // 相對時間一律附現實時鐘（Owner 2026-08-03）：要不要現在動身是看幾點，不是看還剩幾分
       when.textContent = ev.startAt > now
-        ? `${formatDuration(ev.startAt - now)}後開始`
-        : `進行中 · 剩 ${formatDuration(ev.endAt - now)}`;
+        ? `${formatDuration(ev.startAt - now)}後開始（${clockText(ev.startAt)}）`
+        : `進行中 · 剩 ${formatDuration(ev.endAt - now)}（到 ${clockText(ev.endAt)}）`;
     }
     li.append(when);
 
