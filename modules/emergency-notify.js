@@ -46,7 +46,41 @@ export function createEmergencyNotify(root, { worlds }) {
     save: root.querySelector('#em-sub-save'),
     status: root.querySelector('#em-sub-status'),
     discord: root.querySelector('#em-discord-status'),
+    overlay: root.querySelector('#em-notify-overlay'),
+    open: root.querySelector('#em-notify-open'),
+    close: root.querySelector('#em-notify-close'),
+    cancel: root.querySelector('#em-notify-cancel'),
   };
+
+  /**
+   * 設定改成彈窗（Owner 2026-08-03：原本是整頁最後一張卡，要捲過三張才看得到）。
+   * a11y 契約照設計系統 §.codex-modal：ESC／點遮罩關閉、開窗鎖焦點、關窗由 release 還焦。
+   * `trapFocus` 回傳的是 **release 函式本身**（不是 `{release}` 物件——設計系統註明踩過）。
+   */
+  let releaseTrap = null;
+
+  function openModal() {
+    el.overlay.hidden = false;
+    document.body.style.overflow = 'hidden';   // 開窗鎖背景捲動
+    releaseTrap = window.FFXIVA11y?.trapFocus?.(el.overlay) ?? null;
+  }
+
+  function closeModal() {
+    el.overlay.hidden = true;
+    document.body.style.overflow = '';
+    releaseTrap?.();      // 解除鎖焦點並把焦點還給開窗的那顆按鈕
+    releaseTrap = null;
+  }
+
+  el.open?.addEventListener('click', openModal);
+  el.close?.addEventListener('click', closeModal);
+  el.cancel?.addEventListener('click', closeModal);
+  el.overlay?.addEventListener('click', (e) => {
+    if (e.target === el.overlay) closeModal();   // 只認遮罩本身，點內容不關
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !el.overlay.hidden) closeModal();
+  });
 
   const selected = new Set();
   const fired = new Set();

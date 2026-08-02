@@ -398,7 +398,34 @@ export class CosmicEventsDO extends DurableObject {
     }
     // 前端要在事件列上顯示「否認 2／3 就下架」。門檻是後端的判斷依據，
     // 前端自己寫一份 3 就是兩份真相——哪天改門檻，畫面會安靜地說錯話。
-    return { now, events: byWorld, disputeThreshold: L.DISPUTE_THRESHOLD };
+    return {
+      now,
+      events: byWorld,
+      disputeThreshold: L.DISPUTE_THRESHOLD,
+      lastEnded: this._lastEnded(now),
+    };
+  }
+
+  /**
+   * 每台伺服器**上一次事件結束的時間**（Owner 2026-08-03：想看間隔，實測約 4 小時以上）。
+   *
+   * <b>只算真的發生過的</b>：`status='active'` 且已經過了 `endAt`。撤回／撤銷／被否認的
+   * 不是事件，拿它們當「上次」會讓間隔看起來比實際短——而這一欄的用途正是估間隔。
+   * （過期不會改 status，是 lazy 判定，所以真實跑完的事件狀態仍是 active。）
+   *
+   * <b>不放進 `/history` 讓前端自己算</b>：那支預設只回 50 筆，久沒事件的伺服器會直接落到
+   * 範圍外，前端算出來的「上次」會是**靜默的錯**（看起來有值、其實漏掉更早的那筆）。
+   */
+  _lastEnded(now) {
+    const rows = this.sql
+      .exec(
+        "SELECT world, MAX(endAt) AS t FROM events WHERE status = 'active' AND endAt <= ? GROUP BY world",
+        now,
+      )
+      .toArray();
+    const out = {};
+    for (const r of rows) out[r.world] = r.t;
+    return out;
   }
 
   /**

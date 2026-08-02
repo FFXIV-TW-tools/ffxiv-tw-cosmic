@@ -248,6 +248,22 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
     el.status.textContent = fetchedAt ? `更新於 ${clockText(fetchedAt)}` : '載入中…';
   }
 
+  /**
+   * 「上次 03:24 結束 · 4 小時前」——Owner 2026-08-03 想看間隔（實測約 4 小時以上）。
+   *
+   * **只在真的有紀錄時才出現**，沒有就整個不放。寫「無紀錄」會讓人以為那台從來沒出過事件，
+   * 但真相是本站只從 8/2 才開始收，而且覆蓋率＝回報者人數（AGENTS §4 的天花板）。
+   * 資料由後端 `/state.lastEnded` 給，前端不從歷史表推——那支只回 50 筆，久沒事件的會被漏掉。
+   */
+  function lastEndedEl(world, now) {
+    const t = state?.lastEnded?.[world];
+    if (!t) return document.createTextNode('');
+    const span = document.createElement('span');
+    span.className = 'codex-small cos-em__last';
+    span.textContent = `上次 ${clockText(t)} 結束 · ${formatDuration(now - t)}前`;
+    return span;
+  }
+
   /** 一台伺服器一列。沒有事件的也要列出來——「查過了，沒有」跟「不知道」是兩回事。 */
   function row(world, ev, now) {
     const li = document.createElement('li');
@@ -270,7 +286,7 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
       const none = document.createElement('span');
       none.className = 'codex-small cos-em__none';
       none.textContent = '目前沒有人回報';
-      li.append(none);
+      li.append(none, lastEndedEl(world, now));
       return li;
     }
 

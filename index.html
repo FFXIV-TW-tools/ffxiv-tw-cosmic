@@ -296,12 +296,17 @@
     <section id="panel-emergency" role="tabpanel" aria-labelledby="tab-emergency" tabindex="0">
       <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
         <span class="codex-hud" aria-hidden="true"></span>
+        <!-- 標題與動作同一列。通知設定原本是整頁最後一張卡，要捲過三張才看得到
+             ＝ 沒有人會發現可以訂閱（Owner 2026-08-03）。 -->
+        <div class="cos-panel__head">
         <h2 class="codex-h2 cos-panel__title">
           各伺服器現況
           <span class="codex-help-trigger" data-help="緊急事件的天氣（磁暴／流星雨／孢子霧）不在渴望灣的天氣機率表裡，時間演算法永遠擲不出來 ⇒ 只能靠回報，不能預測。｜每台伺服器同時只留一個事件，重複回報會自動變成附議。｜三個人否認且沒有人附議，該筆就會下架。｜事件固定 20 分鐘（遊戲資料寫死的任務時限）。｜標「**預告**」的是遊戲內已經出現預兆通告、但天氣還沒真的翻轉——**刻意不顯示倒數**，因為提前量目前只量到一筆（約 5 分半），拿單一觀察當倒數不誠實。｜**這裡沒亮不代表沒有事件** —— 只代表那台伺服器現在沒有人回報。">
             這些數字哪來的 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
           </span>
         </h2>
+          <button class="codex-btn codex-btn--ghost" type="button" id="em-notify-open">🔔 通知設定</button>
+        </div>
         <p class="codex-body">
           緊急事件<strong>算不出來</strong>——它的三種天氣不在渴望灣的機率表裡，時間演算法永遠擲不到。
           所以這一頁完全靠<strong>回報</strong>。
@@ -367,26 +372,38 @@
         <p class="codex-small cos-em__note" id="em-hist-note"></p>
       </section>
 
-      <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
-        <span class="codex-hud" aria-hidden="true"></span>
-        <h2 class="codex-h2 cos-panel__title">通知我</h2>
-        <p class="codex-body">要收哪幾台伺服器的通知：</p>
-        <div class="cos-chips" id="em-sub-worlds"></div>
-        <label class="codex-switch cos-em__switch">
-          <input type="checkbox" class="codex-switch__input" id="em-web">
-          <span class="codex-switch__track" aria-hidden="true"></span>
-          <span>網頁通知</span>
-        </label>
-        <p class="codex-small cos-em__substatus" id="em-sub-status"></p>
-        <p class="codex-small cos-em__substatus" id="em-discord-status"></p>
-        <button class="codex-btn codex-btn--primary" type="button" id="em-sub-save">儲存訂閱</button>
-        <p class="codex-small cos-em__note">
-          <strong>網頁通知只在這個分頁開著時有效</strong>（可以切到背景，但不能關掉）——
-          瀏覽器會終止沒有分頁的背景程式，「關掉還會響」是做不到的，所以本站不做那個承諾。
-          <br><strong>要關掉瀏覽器也收得到，就填 Discord webhook</strong>：那是由伺服器送的，
-          與你的電腦開不開機無關。填一次全工具箱共用。
-        </p>
-      </section>
+      <!-- 通知設定：從第四張卡改成彈窗（入口在「各伺服器現況」標題列右側）。
+           a11y 契約照設計系統 §.codex-modal：role/aria-modal/aria-labelledby 同層、
+           ESC 與點遮罩關閉、開窗 trapFocus、關窗由 release 還焦。 -->
+      <div class="codex-modal-overlay" id="em-notify-overlay" hidden>
+        <div class="codex-modal" role="dialog" aria-modal="true" aria-labelledby="em-notify-title">
+          <div class="codex-modal__header">
+            <h3 class="codex-h3" id="em-notify-title">通知設定</h3>
+            <button class="codex-modal__close" type="button" aria-label="關閉" id="em-notify-close">×</button>
+          </div>
+          <div class="codex-modal__body">
+            <p class="codex-body">要收哪幾台伺服器的通知：</p>
+            <div class="cos-chips" id="em-sub-worlds"></div>
+            <label class="codex-switch cos-em__switch">
+              <input type="checkbox" class="codex-switch__input" id="em-web">
+              <span class="codex-switch__track" aria-hidden="true"></span>
+              <span>網頁通知</span>
+            </label>
+            <p class="codex-small cos-em__substatus" id="em-sub-status"></p>
+            <p class="codex-small cos-em__substatus" id="em-discord-status"></p>
+            <p class="codex-small cos-em__note">
+              <strong>網頁通知只在這個分頁開著時有效</strong>（可以切到背景，但不能關掉）——
+              瀏覽器會終止沒有分頁的背景程式，「關掉還會響」是做不到的，所以本站不做那個承諾。
+              <br><strong>要關掉瀏覽器也收得到，就填 Discord webhook</strong>：那是由伺服器送的，
+              與你的電腦開不開機無關。填一次全工具箱共用。
+            </p>
+          </div>
+          <div class="codex-modal__footer">
+            <button class="codex-btn codex-btn--ghost" type="button" id="em-notify-cancel">關閉</button>
+            <button class="codex-btn codex-btn--primary" type="button" id="em-sub-save">儲存訂閱</button>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- ══ 分頁三：宇宙工具 ══ -->

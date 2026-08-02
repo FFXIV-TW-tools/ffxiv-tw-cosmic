@@ -67,6 +67,25 @@ body {
 
 .cos-panel { margin-top: var(--space-4, 16px); }
 .cos-panel__title { margin: 0 0 var(--space-3, 12px); }
+
+/* 標題與該面板的動作鈕同一列。用 flex 而不是 float／絕對定位：
+   `.codex-tablet` 四角有 `.codex-hud` 的 bracket 裝飾，絕對定位很容易壓到它。 */
+.cos-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3, 12px);
+  margin-bottom: var(--space-3, 12px);
+}
+.cos-panel__head .cos-panel__title { margin-bottom: 0; }
+
+/* 「上次 03:24 結束 · 4 小時前」靠右，與倒數／票數分開，掃視時各在固定位置 */
+.cos-em__last {
+  margin-left: auto;
+  color: var(--color-text-muted, #c0c9da);
+  white-space: nowrap;
+}
 .cos-panel__lead { margin: 0 0 var(--space-4, 16px); }
 .cos-panel p { margin: 0 0 var(--space-2, 8px); }
 .cos-panel p:last-child { margin-bottom: 0; }
