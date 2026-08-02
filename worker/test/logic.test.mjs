@@ -50,7 +50,13 @@ test('手動通報：欄位邊界', () => {
     '上界 15 要收',
   );
   assert.equal(L.validateManualReport({ uuid: U1, world: W, startsInMinutes: 16 }, NOW).reason, 'bad_lead');
-  assert.equal(L.validateManualReport({ uuid: U1, world: W, startsInMinutes: -1 }, NOW).reason, 'bad_lead');
+  // 負數＝已經開始了幾分鐘。沒有這個，發現得晚的人只能報「現在」，倒數整段往後偏。
+  assert.equal(L.validateManualReport({ uuid: U1, world: W, startsInMinutes: -5 }, NOW).startAt, NOW - 300);
+  assert.equal(L.validateManualReport({ uuid: U1, world: W, startsInMinutes: -19 }, NOW).ok, true, '下界 -19 要收');
+  assert.equal(
+    L.validateManualReport({ uuid: U1, world: W, startsInMinutes: -20 }, NOW).reason, 'bad_lead',
+    '再往前就超過 20 分鐘的事件長度，那筆早就結束了',
+  );
   assert.equal(L.validateManualReport({ uuid: U1, world: W, startsInMinutes: 1.5 }, NOW).reason, 'bad_lead');
   assert.equal(L.validateManualReport({ uuid: U1, world: '拉姆', startsInMinutes: 0 }, NOW).reason, 'bad_world');
   assert.equal(L.validateManualReport({ uuid: 'nope', world: W, startsInMinutes: 0 }, NOW).reason, 'bad_uuid');

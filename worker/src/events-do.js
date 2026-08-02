@@ -357,6 +357,27 @@ export class CosmicEventsDO extends DurableObject {
     return { ok: true, note: '已推播的 Discord 訊息無法收回，撤銷只影響網站顯示與後續推播', now };
   }
 
+  /**
+   * 校正事件的開始時間（管理端）。
+   *
+   * **為什麼需要**：通報時間只可能是「送出的那一刻」，發現得晚就整段偏。插件在事件進行到
+   * 一半才啟用時也一樣（它只知道自己何時第一次看到，不知道實際何時開始）。
+   * 2026-08-02 實測：真實 17:52 開始、18:02 才被回報，倒數整整偏 10 分鐘且當下無法修正。
+   *
+   * `endAt` 一律跟著重算成 `startAt + 20 分鐘`——事件長度是 client 寫死的常數，不是可調的東西。
+   * `startExact` 改為 0：這是人工校正的估計值，不該冒充精確。
+   */
+  adjustStart(eventId, startAt, now) {
+    const rows = this.sql.exec('SELECT id FROM events WHERE id = ?', eventId).toArray();
+    if (!rows.length) return { ok: false, reason: 'not_found' };
+    this.sql.exec(
+      'UPDATE events SET startAt = ?, endAt = ?, startExact = 0 WHERE id = ?',
+      startAt, startAt + L.EVENT_DURATION, eventId,
+    );
+    this._bump('event_adjusted');
+    return { ok: true, startAt, endAt: startAt + L.EVENT_DURATION, now };
+  }
+
   block(uuid, note, now) {
     this.sql.exec(
       'INSERT INTO blocked (uuid, at, note) VALUES (?, ?, ?) ON CONFLICT(uuid) DO UPDATE SET at = ?, note = ?',

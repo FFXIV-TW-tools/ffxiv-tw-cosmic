@@ -24,8 +24,20 @@ export const EMERGENCY_WEATHER = [194, 195, 196, 197];
 export const CRITICAL_MISSION_MIN = 512;
 export const CRITICAL_MISSION_MAX = 544;
 
-/** 手動通報允許的「還有幾分鐘開始」上限。超過這個數字的預告，人也記不準。 */
+/**
+ * 手動通報的「還有幾分鐘開始」允許範圍（分鐘）。
+ *
+ * **負數＝已經開始了幾分鐘**。沒有這個的話，發現得晚的人只能報「現在開始」，
+ * 倒數就整段往後偏——2026-08-02 實測踩到：真實 17:53 開始，17:57 才被通報，
+ * 結束時間顯示晚了 4 分鐘，而當下沒有任何辦法修正。
+ *
+ * 下界 −19：再往前就超過 20 分鐘的事件長度，那筆事件早就結束了，收它沒有意義。
+ * 上界 15：**刻意比 UI 給的選項寬**。Owner 實測預告最多約 5 分半，但那是**單一觀察**——
+ * 用它當硬上限就是這輪已經吃過虧的同型錯誤（天氣閘）。UI 只給到 5 分鐘引導使用者，
+ * 後端寬鬆收下，萬一某次預告真的更長也不會被靜默退件。
+ */
 export const MAX_LEAD_MINUTES = 15;
+export const MIN_LEAD_MINUTES = -19;
 
 /** 同一 UUID 對同一伺服器兩次「開新事件」之間的最小間隔（秒）＝事件時長再多 5 分鐘。 */
 export const REPORT_COOLDOWN = EVENT_DURATION + 300;
@@ -121,7 +133,7 @@ export function validateManualReport(body, now) {
   if (!isUuid(body.uuid)) return { ok: false, reason: 'bad_uuid' };
   if (!isKnownWorld(body.world)) return { ok: false, reason: 'bad_world' };
   const lead = body.startsInMinutes;
-  if (!Number.isInteger(lead) || lead < 0 || lead > MAX_LEAD_MINUTES) {
+  if (!Number.isInteger(lead) || lead < MIN_LEAD_MINUTES || lead > MAX_LEAD_MINUTES) {
     return { ok: false, reason: 'bad_lead' };
   }
   return { ok: true, world: body.world, startAt: now + lead * 60 };

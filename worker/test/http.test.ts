@@ -514,6 +514,36 @@ describe('管理', () => {
     expect(got.worlds).toEqual([]);
   });
 
+  it('adjust 校正開始時間，endAt 跟著重算', async () => {
+    stubDiscord();
+    const world = devStages.worlds[3];
+    await clearWorld(world);
+    const id = (await (await post('/report', { uuid: uuid(), world, startsInMinutes: 0 })).json() as any).eventId;
+    const before = await (await SELF.fetch('https://x/state')).json() as any;
+    const target = before.events[world].startAt - 600;   // 往前推 10 分鐘
+
+    const res = await SELF.fetch('https://x/admin/adjust', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer admin-secret', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventId: id, startAt: target }),
+    });
+    expect(res.status).toBe(200);
+    const after = await (await SELF.fetch('https://x/state')).json() as any;
+    expect(after.events[world].startAt).toBe(target);
+    expect(after.events[world].endAt).toBe(target + 1200);
+    expect(after.events[world].startExact).toBe(false);   // 人工估的，不冒充精確
+    await revoke(id);
+  });
+
+  it('adjust 拒絕離譜的時間戳', async () => {
+    const res = await SELF.fetch('https://x/admin/adjust', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer admin-secret', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventId: 1, startAt: 0 }),
+    });
+    expect(res.status).toBe(400);
+  });
+
   it('stats 有分來源的桶', async () => {
     const res = await SELF.fetch('https://x/admin/stats', { headers: { Authorization: 'Bearer admin-secret' } });
     const s = await res.json() as any;

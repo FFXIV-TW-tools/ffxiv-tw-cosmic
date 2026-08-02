@@ -235,6 +235,15 @@ export default {
         const r = await s.revoke(body.eventId, now);
         return json(request, r, r.ok ? 200 : 404);
       }
+      if (path === '/admin/adjust') {
+        if (!Number.isInteger(body?.eventId)) return json(request, { error: 'bad_event' }, 400);
+        // 只接受合理範圍內的時間戳，避免手滑把事件丟到 1970 或 2286
+        if (!Number.isInteger(body?.startAt) || Math.abs(body.startAt - now) > 86400) {
+          return json(request, { error: 'bad_start' }, 400);
+        }
+        const r = await s.adjustStart(body.eventId, body.startAt, now);
+        return json(request, r, r.ok ? 200 : 404);
+      }
       if (path === '/admin/block') {
         if (!L.isUuid(body?.uuid)) return json(request, { error: 'bad_uuid' }, 400);
         return json(request, await s.block(body.uuid, String(body.note ?? ''), now));
