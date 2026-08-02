@@ -75,6 +75,7 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
   const el = {
     now: document.querySelector('#fc-now'),
     timeline: document.querySelector('#fc-timeline'),
+    timeline2: document.querySelector('#fc-timeline-2'),
     zone: document.querySelector('#fc-zone'),
   };
 
@@ -210,11 +211,18 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
       .forecast(now, SCAN_PERIODS)
       .filter((slot) => slot.weather.name !== PLAIN_WEATHER)
       .slice(0, SPECIAL_ROWS);
-    const tbody = el.timeline.querySelector('tbody');
-    tbody.innerHTML = '';
+    // 兩欄並排。**左欄放前半、右欄放後半**（不是奇偶交錯）——時間軸是連續的，
+    // 交錯排會讓「往下讀」變成「左右跳著讀」，比原本更難用。
+    const half = Math.ceil(rows.length / 2);
+    const bodies = [el.timeline.querySelector('tbody'), el.timeline2?.querySelector('tbody')];
+    for (const b of bodies) if (b) b.innerHTML = '';
     let lastDate = '';
 
-    for (const slot of rows) {
+    for (const [i, slot] of rows.entries()) {
+      // 換欄時把日期重印一次：右欄第一列若沿用「與上一列同日就留白」的規則，
+      // 會出現一個沒有日期的開頭（左欄的最後一列在另一個欄位，讀者看不到那個脈絡）
+      const tbody = (i >= half && bodies[1]) ? bodies[1] : bodies[0];
+      if (i === half) lastDate = '';
       const tr = document.createElement('tr');
       const isNow = now >= slot.start && now < slot.end;
       if (isNow) tr.classList.add('is-current');

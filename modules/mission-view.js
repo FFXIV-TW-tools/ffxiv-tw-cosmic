@@ -215,8 +215,31 @@ export function createMissionView(root, { missions, conditions, jobs, forecaster
       : { state: 'open', label: '不限時', tone: 'neutral' };
   }
 
+  /**
+   * 排序權重：**現在就能做的排前面**（Owner 2026-08-03）。
+   *
+   * 原本完全沒有排序，順序就是資料檔的任務 id 順序＝毫無意義；再加上只畫前 200 筆，
+   * 使用者看到的是「id 最小的 200 個」而不是「最該看的 200 個」——**篩選出來的東西
+   * 有一半根本沒被畫出來**，而畫面上只寫「還有 N 筆」，看不出漏掉的是哪些。
+   *
+   * 三段：能做的 → 條件沒到但會出現的 → 卡前置／條件未定的。
+   * 同段內用宇宙點數由高到低（那是玩家實際在最佳化的數字）。
+   */
+  const AVAIL_ORDER = { open: 0, closed: 1, unknown: 2 };
+
+  function rankOf(m) {
+    const a = availability(m);
+    // 同為 open 時「不限時」排在「會出現」之前：前者現在就能接，後者要等條件
+    const sub = a.state === 'open' && (m.conds ?? []).length > 0 ? 1 : 0;
+    return AVAIL_ORDER[a.state] * 2 + sub;
+  }
+
   function render() {
-    const rows = missions.filter(matches);
+    const rows = missions.filter(matches).sort((a, b) => {
+      const d = rankOf(a) - rankOf(b);
+      if (d) return d;
+      return (b.reward?.cosmo ?? 0) - (a.reward?.cosmo ?? 0);
+    });
     el.count.textContent = `${rows.length} / ${missions.length}`;
     el.tbody.innerHTML = '';
     el.empty.hidden = rows.length > 0;

@@ -642,6 +642,15 @@ body {
   color: var(--color-text-muted, #c0c9da);
 }
 
+/* 特殊天氣預報：兩欄並排。單欄時 20 段各佔滿寬，右邊六成是空白而表格拉了 20 列高。
+   `auto-fit` + `minmax` 讓窄螢幕自己落回單欄，不必寫斷點。 */
+.cos-timeline-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: var(--space-3, 12px);
+  align-items: start;
+}
+
 /* 歷史紀錄的伺服器篩選：獨立一行，不跟表格擠 */
 .cos-em__histfilter {
   max-width: 16em;

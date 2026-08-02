@@ -71,11 +71,8 @@
     <!-- BETA 告示。刻意不寫資料來源（Owner 2026-08-01）——使用者要知道的是
          「哪些可以信、哪些還不能」，來源與他無關。 -->
     <p class="codex-body cos-betanote">
-      <strong>⚠️ BETA — 部分資料仍待驗證。</strong>
-      <strong>天氣預報、ET 時段、任務分類與獎勵</strong>已對照遊戲內確認；
-      但<strong>「條件成立後任務會不會出現在你的任務板上」還有幾層規則尚未釐清</strong>
-      ——已知的有各職業的階級門與前置任務鏈。
-      看到與遊戲不符的地方請回報，那對釐清規則很有幫助。
+      <strong>⚠️ BETA</strong> — 天氣、ET 時段、任務分類與獎勵已對照遊戲確認；
+      「條件成立後任務會不會真的出現」還有規則未釐清（階級門、前置鏈）。看到不符請回報。
     </p>
 
     <div class="codex-empty cos-hideable" id="app-status" hidden>
@@ -148,11 +145,8 @@
         <ul class="cos-np" id="np-next"></ul>
 
         <p class="codex-small cos-np__note">
-          <strong>「我練的職業」＝把該職當成已經解到最高階</strong>（本站無從得知你每個職業練到哪，
-          所以由你勾選）。沒解到【高難】/【高難+】的職業，列出來的那幾階在遊戲內不會出現。
-          <br>只列臨時任務（帶條件或前置的都算，不看階級）；基礎任務在任務清單分頁。
-          緊急任務不列 —— 它是伺服器推播，算不出來；現在改由回報，看「緊急事件」分頁。
-          雙職業任務也不列 —— 它們的出現規則本站尚未解出。
+          <strong>「我練的職業」＝把該職當成已解到最高階</strong>（本站查不到你練到哪，所以由你勾）。
+          <br>只列臨時任務；基礎任務在「任務清單」、緊急任務在「緊急事件」分頁。雙職業任務規則未解出，不列。
         </p>
       </section>
 
@@ -168,19 +162,37 @@
             怎麼算的 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
           </span>
         </h2>
-        <div class="codex-table-wrap cos-tablewrap">
-          <table class="codex-table codex-table--fixed codex-table--zebra codex-table--sticky" id="fc-timeline">
-            <thead>
-              <tr>
-                <th style="width:14%">日期</th>
-                <th class="codex-table__num" style="width:20%">本地時間</th>
-                <th class="codex-table__num" style="width:14%">ET</th>
-                <th style="width:29%">天氣</th>
-                <th class="codex-table__num" style="width:23%">距離現在</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
+        <!-- 兩欄並排：20 段各佔整個容器寬時，右邊六成完全是空白，而表格卻拉了 20 列高
+             （Owner 2026-08-03：「有夠浪費空間」）。窄螢幕由 grid 自動落回單欄。 -->
+        <div class="cos-timeline-cols">
+          <div class="codex-table-wrap cos-tablewrap">
+            <table class="codex-table codex-table--fixed codex-table--zebra codex-table--sticky" id="fc-timeline">
+              <thead>
+                <tr>
+                  <th style="width:14%">日期</th>
+                  <th class="codex-table__num" style="width:20%">本地時間</th>
+                  <th class="codex-table__num" style="width:14%">ET</th>
+                  <th style="width:29%">天氣</th>
+                  <th class="codex-table__num" style="width:23%">距離現在</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="codex-table-wrap cos-tablewrap">
+            <table class="codex-table codex-table--fixed codex-table--zebra codex-table--sticky" id="fc-timeline-2">
+              <thead>
+                <tr>
+                  <th style="width:14%">日期</th>
+                  <th class="codex-table__num" style="width:20%">本地時間</th>
+                  <th class="codex-table__num" style="width:14%">ET</th>
+                  <th style="width:29%">天氣</th>
+                  <th class="codex-table__num" style="width:23%">距離現在</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -188,9 +200,7 @@
         <span class="codex-hud" aria-hidden="true"></span>
         <h2 class="codex-h2 cos-panel__title">哪些全服一樣、哪些每台不一樣</h2>
         <p class="codex-body">
-          <strong>全服完全一樣（可證明）</strong>：天氣。演算法的輸入<strong>只有 unix 時間</strong>，
-          沒有任何伺服器參數 —— 伊弗利特與利維坦在同一秒看到的天氣必然相同。
-          本站的天氣時間軸與條件倒數因此不需要選伺服器。
+          <strong>全服一樣</strong>：天氣。演算法只吃 unix 時間、沒有伺服器參數，所以本站的天氣與倒數不必選伺服器。
         </p>
         <p class="codex-body">
           <strong>每台伺服器各自不同</strong>：
@@ -204,13 +214,10 @@
             有時段或天候條件的那批不受影響，條件到了就會出現。</li>
         </ul>
         <p class="codex-body">
-          緊急事件那三種天氣<strong>不在渴望灣的天氣機率表裡</strong>，時間演算法<strong>永遠不會</strong>
-          擲出它們。所以本站只做算得準的部分，並標出必要條件視窗（靈風時段）。
+          緊急事件的三種天氣不在機率表裡，演算法永遠擲不到 —— 所以本站只做算得準的部分。
         </p>
         <p class="codex-body cos-caveat">
-          ⚠️ <strong>尚未確認</strong>：開發階段會不會影響「哪些任務出得來」。
-          遊戲內確實有這道門（提示寫著「探索進度不足，任務尚未觸發」），但本站尚未釐清它的規則，
-          因此不計算這道門。
+          ⚠️ <strong>尚未確認</strong>：開發階段會不會影響哪些任務出得來。遊戲內有這道門，規則未解出，本站不計算。
         </p>
       </section>
     </section>
@@ -308,9 +315,8 @@
           <button class="codex-btn codex-btn--ghost" type="button" id="em-notify-open">🔔 通知設定</button>
         </div>
         <p class="codex-body">
-          緊急事件<strong>算不出來</strong>——它的三種天氣不在渴望灣的機率表裡，時間演算法永遠擲不到。
-          所以這一頁完全靠<strong>回報</strong>。
-          <strong>沒亮不代表沒事件，只代表那台現在沒有人回報。</strong>
+          緊急事件算不出來，這一頁完全靠回報。
+          <strong>沒亮不代表沒事件</strong> —— 只代表那台現在沒有人回報。
         </p>
         <ul class="cos-em" id="em-list"></ul>
         <p class="codex-small cos-em__status" id="em-status">載入中…</p>
@@ -320,8 +326,7 @@
         <span class="codex-hud" aria-hidden="true"></span>
         <h2 class="codex-h2 cos-panel__title">我要通報</h2>
         <p class="codex-body">
-          在遊戲裡看到緊急事件了？選你的伺服器按送出，訂閱那台的人會立刻收到通知。
-          事件固定持續 <strong>20 分鐘</strong>（遊戲資料寫死的任務時限）。
+          看到緊急事件了？選伺服器送出，訂閱那台的人會收到通知。事件固定 <strong>20 分鐘</strong>。
         </p>
         <div class="cos-em__form">
           <div class="codex-field">
