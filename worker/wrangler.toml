@@ -1,0 +1,38 @@
+name = "ffxiv-tw-cosmic-api"
+main = "src/index.js"
+compatibility_date = "2026-05-01"
+
+# ── Durable Object：全站唯一實例（idFromName('v1')）──
+# 不分片：量體是「每台伺服器每小時最多幾筆」，而 fan-out 必須跨伺服器讀訂閱表。
+[[durable_objects.bindings]]
+name = "COSMIC_EVENTS"
+class_name = "CosmicEventsDO"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["CosmicEventsDO"]
+
+# ── Rate limit（CF 原生 binding、per-colo in-memory、零 KV 寫入、fail-open）──
+# namespace_id 是帳號內唯一的數字 handle（非機密）；period 只接受 10 或 60。
+# 1001–1003 已被 portal settings worker 佔用，這裡從 1101 起跳。
+[[ratelimits]]
+name = "REPORT_RATE_LIMITER"
+namespace_id = "1101"
+simple = { limit = 2, period = 60 }     # 正常人不會一分鐘通報兩次以上
+
+[[ratelimits]]
+name = "VOTE_RATE_LIMITER"
+namespace_id = "1102"
+simple = { limit = 5, period = 60 }     # 附議／退訂等低頻寫入
+
+[[ratelimits]]
+name = "GET_RATE_LIMITER"
+namespace_id = "1103"
+simple = { limit = 120, period = 60 }   # 讀路徑：分頁 60 秒輪詢一次，寬上限只擋掃描式濫用
+
+[observability]
+enabled = false   # 沿用 portal 慣例省 events 額度；要 debug 時臨時打回 true
+
+# 本機 dev port — 避開 marketboard 的 8787 與 portal settings 的 8788
+[dev]
+port = 8789

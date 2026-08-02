@@ -1,0 +1,27 @@
+{
+  "name": "ffxiv-tw-cosmic-api",
+  "version": "1.0.0",
+  "description": "緊急事件通報後端 — 單一 Durable Object（SQLite）＋ Discord fan-out。",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "cf:deploy": "wrangler deploy",
+    "cf:deploy:dry": "wrangler deploy --dry-run --outdir dist",
+    "dev": "wrangler dev",
+    "test": "vitest run",
+    "test:logic": "node --test test/logic.test.mjs",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.18.8",
+    "@cloudflare/workers-types": "^5.20260727.1",
+    "vitest": "^4.1.0",
+    "wrangler": "^4.114.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "workerd"
+    ]
+  }
+}
