@@ -123,15 +123,28 @@ stats(k TEXT PK, v INT)     -- 分桶：report_ok_plugin / report_ok_manual / re
 |---|---|---|
 | `GET` | `/health` | 健康檢查 |
 | `GET` | `/state` | 全 7 伺服器現況 |
-| `POST` | `/report` | 通報。manual：`{uuid, world, startsInMinutes}`（0–15）。plugin：`{token, world, weatherId, missionIds[], phase:'start'\|'end'}` |
+| `POST` | `/report` | 通報。manual：`{uuid, world, startsInMinutes}`（0–15）。plugin：header `X-Plugin-Token` ＋ `{world, weatherId, missionIds[]（選填）, phase}` |
 | `POST` | `/vote` | 附議／否認：`{uuid, eventId, kind:'confirm'\|'dispute'}` |
 | `PUT` | `/sub` | 訂閱：`{uuid, worlds[], webhookUrl?}`；`worlds` 空陣列＝退訂並刪列 |
 | `GET` | `/sub?uuid=` | 讀回自己的訂閱（webhook 遮罩） |
 | `POST` | `/admin/revoke` `/admin/block` `/admin/stats` | `Authorization: Bearer <ADMIN_TOKEN>`；缺／錯 → 401 |
 
-錯誤碼：`401` admin token 不符／`403` origin 不合、UUID 已封鎖／`415` content-type 不合／
-`400` 欄位不合或插件證據不自洽／`409 already_active`（已有進行中事件，已轉為附議）／
-`429` rate limit／`503` 未設定 secret。
+錯誤碼：`401` token 不符／`403` origin 不合、UUID 已封鎖／`404` 事件不存在／`415` content-type 不合／
+`400` 欄位不合或插件證據不自洽／**`409`**（該伺服器已有進行中事件——本筆自動轉為附議，
+或插件的 `end` 找不到對象；**兩條路徑同碼**）／`413` body > 8KB／`429` 限流或冷卻中／
+`503` 未設定 secret。
+
+**時間一律用伺服器時鐘**：request 沒有 `now` 欄位，body 裡送 `now` 會被完全忽略
+（否則冷卻、過期、保留期全部可由呼叫端繞過）。整合測試釘住這條。
+
+**`startsInMinutes > 0`（尚未開始）的語意**：一樣占用該伺服器的唯一 active 槽（所以第二筆通報
+轉附議）、Discord **立刻**送出並寫明「約 N 分鐘後開始」、UI 顯示倒數而非「進行中」。
+不另外排「開始時再送一次」——同一件事通知兩次是噪音。
+
+**`phase:'end'` 的語意**：關掉該伺服器當前的 active 事件（**含 manual 來源的**——插件看到的是
+遊戲真實天氣，比人的宣稱可信）。找不到 active 事件就什麼都不做（`409 no_active_event`）。
+已知殘留風險：一筆遲到的 `end` 可能把「剛開始的下一起事件」提前關掉；插件只在天氣翻轉當下
+送、離開地圖只重置狀態不送 `end`，所以窗口很窄，且後果僅止於畫面提早收掉（通知早已送出）。
 
 ## 通知
 

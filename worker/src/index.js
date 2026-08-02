@@ -128,7 +128,9 @@ export default {
           { source: 'plugin', world: v.world, startAt: v.startAt, phase: v.phase },
           now,
         );
-        return json(request, r, r.ok ? 200 : 409);
+        // 與手動路徑同一套語意：409＝已有進行中事件（本筆只把來源升級成 plugin，不開新的）
+        // 或 end 找不到對象。兩條路徑回不同碼會讓 README 與客戶端各信一半。
+        return json(request, r, r.ok && !r.duplicate ? 200 : 409);
       }
 
       if (!originAllowed(request)) return json(request, { error: 'origin' }, 403);

@@ -14,7 +14,8 @@ date: 2026-08-02
 
 **Global Constraints:**
 - 資料檔 `data/*.json` 一律由 `tools/cosmic-dump` 產生，本 cycle **不碰**（AGENTS §1）。
-- 未定性的東西一律標明（AGENTS §2）：天氣閘的假設要在 UI 與 spec 明講，且被擋筆數要可觀測。
+- 未定性的東西一律標明（AGENTS §2）：**天氣閘已被證偽故整個不做**；改以 `stats` 對 plugin／manual
+  兩種來源分桶，讓通報品質可事後觀測（B-018）。
 - 新檔一律 < 500 行、單一職責（monorepo AGENTS 檔案大小鐵則）。
 - 私有 class 一律 `cos-` 前綴、不覆寫 `.codex-*`、金色高亮全頁仍只有一處（AGENTS §5）。
 - 對外邊界 fail-closed：新增的可發佈檔案必須進 `deploy-allow.txt`，`worker/` 必須進
@@ -40,7 +41,8 @@ date: 2026-08-02
 - [x] **Step 1: 寫 `logic.js`**——全部純函式、零 I/O、零 CF API。
       `EVENT_DURATION = 1200`（＝33 個 critical 任務的 `timeLimit`，有 client 依據，註解寫明來源）。
       `EMERGENCY_WEATHER = [194,195,196,197]`。`validatePluginReport` 要做**證據自洽檢查**：
-      `weatherId ∈ EMERGENCY_WEATHER` 且 `missionIds` 至少一個落在 critical id 範圍。
+      `weatherId` 必須是緊急天氣（自相矛盾的 payload 不收）；`missionIds` **選填**（任務板沒開就
+      讀不到），有給才檢查至少一個落在 critical id 範圍。token 走 header `X-Plugin-Token` 不放 body。
       `applyVote` 實作 `disputes ≥ 3 && confirms === 0 → disputed` 的狀態轉移。
       `isAllowedWebhook` 只放行 `discord.com`／`discordapp.com`（SSRF，照抄 sub-timer 語意）。
 - [x] **Step 2: 寫測試**（`node --test`，本 task 不需 CF runtime）。狀態轉移矩陣逐格釘住：
@@ -73,13 +75,15 @@ date: 2026-08-02
       `worlds` 為空的訂閱**實體刪列**。lazy 過期，不排 alarm。
 - [x] **Step 2: `index.js`**——origin 白名單（照抄 portal `ORIGIN_PATTERNS`）、CORS、
       `Content-Type`／body ≤ 8KB 閘、rate limit binding、`Authorization: Bearer` 解析（admin）、
-      錯誤碼對照（spec 錯誤碼段）、`/state` 走 `caches.default` 15 秒 edge cache。
+      錯誤碼對照（spec 錯誤碼段）、`/state` **不加 edge cache**（算過額度不划算，換來的是
+      「撤銷後仍顯示進行中」這類 staleness；濫用防線是 rate limiter）。
       插件路徑改吃 `PLUGIN_TOKEN`（header `X-Plugin-Token`），**不套 origin 白名單**（插件沒有 Origin）。
 - [x] **Step 3: `wrangler.toml`**——DO binding ＋ migration ＋ 三個 ratelimit binding
       （`REPORT_RATE_LIMITER` 2/60s、`VOTE_RATE_LIMITER` 5/60s、`GET_RATE_LIMITER` 120/60s）、
       `observability = false`（沿用 portal 慣例省額度）、`[dev] port = 8789`（避開 8787／8788）。
 - [x] **Step 4: 整合測試 `http.test.ts`**（`@cloudflare/vitest-pool-workers`，portal／sub-timer 已有前例）。
-      **時間注入**：測試呼叫端一律傳明確的 `now`（本 cycle 已無天氣閘，驗收不再依賴牆鐘）。
+      **時間**：正式路由只用伺服器時鐘，另測「body 裡的 `now` 被完全忽略」；純函式層的 `now`
+      由測試注入，那是 `logic.js` 的參數、不是 HTTP 欄位。
       覆蓋：origin 被拒→403／content-type→415／body 超限→413／manual 重複通報→409 且轉附議／
       plugin 證據不自洽→400／plugin token 錯→401／被封鎖 UUID→403／admin 撤銷後 `/state` 不再列／
       webhook SSRF 變形被拒／fan-out 連續失敗 4 次標 `broken`／`GET /sub` 只回遮罩 webhook／
@@ -153,7 +157,8 @@ date: 2026-08-02
 - Modify: `XIVpluginsDev/ICE-Dev/ICE/ICE.cs`（Tick 接線）、該插件的設定與 `/ice` 指令說明
 
 **Interfaces:**
-- Consumes: Task 2 的 `POST /report`（plugin 形狀：`{token, world, weatherId, missionIds[], phase}`）。
+- Consumes: Task 2 的 `POST /report`（plugin 形狀：header `X-Plugin-Token` ＋
+  `{world, weatherId, missionIds[]（選填）, phase}`）。
 - Produces: 無（終端）。
 
 **Blocked by:** Task 2（消費其 HTTP 介面）
@@ -322,3 +327,118 @@ codex: codex.EXE exec -m gpt-5.6-sol -c model_reasoning_effort=high -c project_d
    但**批評本身正確且已被實證**：它擔心的「單一累計值看不出誤擋」正是此假設的失敗形態，
    而我們用 ICE log 在寫任何程式碼之前就把假設證偽了。改以 `stats` 對
    plugin／manual 兩種來源分桶（通報量、附議率、否認率），開成 B-018 追蹤。
+
+---
+
+## 外審 triage（前閘・第 2 輪）
+
+<!-- external-gate:begin v=4 phase=pre cycle=2026-08-02-emergency-report fp=sha256:d2b53e48099084dc1cb3c0f3926402660e68a77b96696a113e1bebe4435de0a5 -->
+<!-- external-gate:meta
+{
+  "v": 4,
+  "phase": "pre",
+  "cycle": "2026-08-02-emergency-report",
+  "override": null,
+  "overrideActual": null,
+  "materialSha256": "0bbbed636086a8e5b934d4c323a8d499aa9864b3c0b7ea913a6439846684c4f9",
+  "diffBase": null,
+  "diffSha256": null,
+  "specSha256": "28a01ce2d923cf48000de9399786813260cc7bf8e496538ed9968e57de73038c",
+  "reviewedTree": "1da8e64b36410086af765a2bd940ea7d02df2b85",
+  "remediation": null,
+  "round": 2,
+  "sourceFp": "0dfee55d27bb1d88ec41d800536afd9152e83f550fb08851e6832936a87656b2",
+  "baseSha": null,
+  "reviewHeadSha": null,
+  "rangeCommits": null,
+  "outputsFile": "docs/plans/2026-08-02-emergency-report-plan.reviews.md",
+  "reviewers": [
+    {
+      "cli": "codex",
+      "model": "gpt-5.6-sol",
+      "argv": [
+        "codex.EXE",
+        "exec",
+        "-m",
+        "gpt-5.6-sol",
+        "-c",
+        "model_reasoning_effort=high",
+        "-c",
+        "project_doc_max_bytes=0",
+        "--skip-git-repo-check",
+        "--sandbox",
+        "read-only",
+        "--cd",
+        "<tmp>"
+      ],
+      "startedAt": "2026-08-02T07:58:30.491Z",
+      "finishedAt": "2026-08-02T08:01:09.943Z",
+      "exitCode": 0,
+      "outputBytes": 5980,
+      "outputSha256": "2d4da115afc5a9219fc839c04509bf3a5ca195ce890a35329c76a4e0d6469b8f"
+    }
+  ]
+}
+-->
+
+
+| # | CLI/模型 | 開始 (UTC) | 耗時 | exit | 輸出 bytes | sha256 |
+|---|---|---|---|---|---|---|
+| 1 | codex/gpt-5.6-sol | 2026-08-02T07:58:30.491Z | 159s | 0 | 5980 | `2d4da115afc5…` |
+
+命令逐字：
+```text
+codex: codex.EXE exec -m gpt-5.6-sol -c model_reasoning_effort=high -c project_doc_max_bytes=0 --skip-git-repo-check --sandbox read-only --cd <tmp>
+```
+
+- 1. codex 原文見 `docs/plans/2026-08-02-emergency-report-plan.reviews.md` §d2b53e480990-1（sha256:2d4da115afc5…）
+<!-- external-gate:end -->
+
+### triage 結論（執行者填，不由工具產生）
+
+- <逐條 finding 標 ✅採納／❌駁回（附技術理由）／❓待釐清>
+
+### triage 結論（round 2 前閘，post-hoc）
+
+> **本輪的性質**：round 1 之後設計被 Owner 裁示與 ICE log 實證改掉（天氣閘整個移除、
+> 改雙來源），依 R9 必須重綁材料，但重綁要求 spec/plan 已在 git ⇒ 先落地再審，
+> 因此這一輪實際上是 **post-hoc**。**12 條逐條對照實際程式碼**後：兩條「致命」與
+> 多數「嚴重」是**計畫文字沒跟上 Build 期決定**（程式碼本身正確且一致），
+> 一條是事實錯誤，兩條是真缺口（已補測試與一處程式碼修正）。
+
+1. **【致命】插件契約互相衝突（`missionIds` 必填 vs 選填、token 在 body vs header）** —
+   ✅ **採納（文件缺陷）**。程式碼從頭到尾一致：token 在 header、`missionIds` 選填。
+   錯的是 plan Task 1／Task 5 與 spec 介面表沒跟上 Build 期的更正。三處文字已改。
+2. **【致命】測試用的 `now` 會讓公開客戶端控制安全時鐘** — ✅ **採納（但程式碼原本就安全）**。
+   `index.js` 只用 `Date.now()`，從不讀 body 的 `now`；那句話講的是 `logic.js` 的參數。
+   **已補整合測試**「body 裡的 `now` 被完全忽略」把它釘死，並改寫 plan 措辭。
+3. **【嚴重】單一 `source` 無法表達「玩家先報、插件後證實」** — ✅ **已實作，補測試**。
+   `events-do.js` 的 `report()` 在插件命中既有事件時把 `source` 升級為 `plugin`；
+   插件沒有 UUID 故不偽造成附議。已補整合測試 manual→plugin 升級。
+4. **【嚴重】`phase:'end'` 沒有狀態轉移定義** — ✅ **採納（補定義＋測試）**。
+   spec 補明：`end` 關掉該伺服器當前 active 事件（含 manual 來源——插件看到的是遊戲真實天氣）；
+   找不到就什麼都不做。**殘留風險據實寫入 spec**（遲到的 `end` 可能提早關掉下一起事件；
+   窗口窄、後果僅止於畫面提早收掉）。已補「無 active 事件時 end 不做事」測試。
+5. **【嚴重】前端沒有 UUID 取得方案** — ✅ **已實作，文件補**。
+   `emergency-api.js` 的 `currentUuid()` 走 portal 跨工具 `FFXIVSettings.getUuid()`，
+   不自建、不進 URL。
+6. **【嚴重】`PUT /sub` 沒有 rate limit** — ❌ **駁回：事實錯誤**。
+   `index.js` 的 `/sub` PUT 走 `VOTE_RATE_LIMITER`（5/60s）。plan 只列了三個 binding 名稱，
+   審者由此推論成「沒保護」。**訂閱數上限與過期清理的部分另行採納**為 B-018 的觀測項——
+   現階段沒有真實流量，先設一個猜的上限只是另一個沒有依據的數字。
+7. **【嚴重】25 分鐘冷卻沒有落入步驟或驗收** — ✅ **已實作，補整合測試**。
+   `inCooldown` ＋ DO 內查該 UUID 上一筆；已補「撤銷後同人仍被冷卻擋、別人不受影響」測試。
+8. **【嚴重】投票唯一性與改票規則未定義** — ✅ **已實作且已測**。
+   `applyVote` 以 Set 處理、改票原子換邊；純函式測試已涵蓋重複投票與改票。
+9. **【嚴重】`startsInMinutes > 0` 的語意未定義** — ✅ **採納（補文件）**。
+   行為早已實作（占用 active 槽、Discord 立刻送並寫明幾分鐘後、UI 顯示倒數），spec 補明。
+10. **【嚴重】Task 2 仍要求 edge cache，與 spec 更正矛盾** — ✅ **採納（文件）**。程式碼沒有快取，
+    plan 文字已刪。
+11. **【嚴重】preflight／admin 無 Origin 的驗收缺口** — ✅ **採納，補測試**。
+    `/admin/*` 本來就不套 origin 白名單（已補測試證明無 Origin＋正確 token 可用）；
+    另補 OPTIONS preflight 允許／拒絕兩個案例。
+12. **【一般】殘留天氣閘要求；checklist 全 `[x]`** — ✅ **前者採納**（Global Constraints 已改寫）；
+    後者**說明而非修正**：本輪是 post-hoc，Build 確實已完成，`[x]` 反映事實。
+
+**本輪另外抓到一個真的程式缺陷**（測試寫出來才發現，不在 12 條之內）：
+插件路徑的重複通報回 `200`、手動路徑回 `409`，與 README 不一致 ⇒ 已統一為 `409`。

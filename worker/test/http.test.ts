@@ -41,6 +41,15 @@ function put(path: string, body: unknown) {
   });
 }
 
+/** 撤銷某筆事件。DO 狀態在同一檔的測試之間共用，所以每個案例要收拾自己的事件。 */
+function revoke(eventId: number) {
+  return SELF.fetch('https://x/admin/revoke', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer admin-secret', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ eventId }),
+  });
+}
+
 /** 攔截 fan-out 用的 fetch；回傳收到的 webhook 呼叫清單。 */
 function stubDiscord(status = 204) {
   const calls: { url: string; body: any }[] = [];
@@ -92,6 +101,35 @@ describe('邊界', () => {
     await send();
     await send();
     expect((await send()).status).toBe(429);
+  });
+
+  // 外審 round-2 finding 2：如果路由吃 body 裡的 now，任何人都能繞過冷卻與過期判定。
+  // 正式路徑只用伺服器時鐘——這條把它釘死，別讓誰哪天「為了好測」把它接出來。
+  it('body 裡的 now 被完全忽略（安全時鐘不可由外部控制）', async () => {
+    stubDiscord();
+    const world = devStages.worlds[3];
+    const r = await post('/report', { uuid: uuid(), world, startsInMinutes: 0, now: 1 });
+    expect(r.status).toBe(200);
+    const st = await (await SELF.fetch('https://x/state')).json() as any;
+    // 若 now 被採用，startAt 會是 1（1970），倒數與過期判定全毀
+    expect(st.events[world].startAt).toBeGreaterThan(1_700_000_000);
+    await revoke(st.events[world].id);
+  });
+
+  it('OPTIONS preflight：允許的 origin 回 ACAO 與 methods，不允許的不回', async () => {
+    const ok = await SELF.fetch('https://x/report', { method: 'OPTIONS', headers: { Origin: ALLOWED } });
+    expect(ok.headers.get('Access-Control-Allow-Origin')).toBe(ALLOWED);
+    expect(ok.headers.get('Access-Control-Allow-Methods')).toContain('PUT');
+    expect(ok.headers.get('Access-Control-Allow-Headers')).toContain('X-Plugin-Token');
+
+    const bad = await SELF.fetch('https://x/report', { method: 'OPTIONS', headers: { Origin: BAD } });
+    expect(bad.headers.get('Access-Control-Allow-Origin')).toBeNull();
+  });
+
+  // admin 是非瀏覽器路徑（curl／腳本），沒有 Origin。若誤套白名單會讓管理命令全部 403。
+  it('admin 沒有 Origin 但 token 正確仍可用', async () => {
+    const res = await SELF.fetch('https://x/admin/stats', { headers: { Authorization: 'Bearer admin-secret' } });
+    expect(res.status).toBe(200);
   });
 
   it('Content-Type 非 json → 415；body 超過 8KB → 413', async () => {
@@ -178,6 +216,54 @@ describe('投票', () => {
 
   it('不存在的事件 → 404', async () => {
     expect((await post('/vote', { uuid: uuid(), eventId: 999999, kind: 'confirm' })).status).toBe(404);
+  });
+});
+
+describe('來源升級與冷卻', () => {
+  // 玩家先報、插件稍後證實＝必然會發生的順序。插件沒有 UUID 不能偽裝成附議，
+  // 但它的可信度較高 ⇒ 事件來源升級為 plugin，UI 才不會繼續標成低可信的「玩家通報」。
+  it('manual 事件被插件證實後，來源升級為 plugin', async () => {
+    stubDiscord();
+    const world = devStages.worlds[1];
+    // 先清掉該 world 既有事件，確保這輪是乾淨的
+    const pre = await (await SELF.fetch('https://x/state')).json() as any;
+    if (pre.events[world]) await revoke(pre.events[world].id);
+    await post('/report', { uuid: uuid(), world, startsInMinutes: 0 });
+    const before = await (await SELF.fetch('https://x/state')).json() as any;
+    expect(before.events[world].source).toBe('manual');
+
+    const r = await post('/report',
+      { world, weatherId: 195, missionIds: [520], phase: 'start' }, { 'X-Plugin-Token': 'plugin-secret' });
+    expect(r.status).toBe(409);   // 已有進行中事件 ⇒ 不開新的
+    const after = await (await SELF.fetch('https://x/state')).json() as any;
+    expect(after.events[world].id).toBe(before.events[world].id);
+    expect(after.events[world].source).toBe('plugin');
+    await revoke(after.events[world].id);
+  });
+
+  it('同一 UUID 同伺服器在冷卻內不能再開新事件（429）', async () => {
+    stubDiscord();
+    const world = devStages.worlds[2];
+    const u = uuid();
+    const first = await post('/report', { uuid: u, world, startsInMinutes: 0 });
+    const id = (await first.json() as any).eventId;
+    // 撤銷掉事件 ⇒ 已無 active，但冷卻仍應擋住同一人立刻再開
+    await revoke(id);
+    const again = await post('/report', { uuid: u, world, startsInMinutes: 0 });
+    expect(again.status).toBe(429);
+    expect((await again.json() as any).reason).toBe('cooldown');
+    // 別人不受影響
+    const other = await post('/report', { uuid: uuid(), world, startsInMinutes: 0 });
+    expect(other.status).toBe(200);
+    await revoke((await other.json() as any).eventId);
+  });
+
+  it('phase:end 在沒有進行中事件時不做任何事', async () => {
+    const world = devStages.worlds[6];
+    const r = await post('/report',
+      { world, weatherId: 196, phase: 'end' }, { 'X-Plugin-Token': 'plugin-secret' });
+    expect(r.status).toBe(409);
+    expect((await r.json() as any).reason).toBe('no_active_event');
   });
 });
 

@@ -21,3 +21,31 @@
 
 【一般】單一 `rejectedByWeather` 累計值無法驗證天氣閘假設。依據：spec 只要求被擋筆數，Task 2 只寫 stats 計數，Task 5 B-018 卻宣稱可藉此驗證假設；同時 `observability = false`。單一數字沒有 accepted 分母、時間分布或使用者後續訊號，無法區分亂按與遭誤擋的真實通報。建議動作：至少記錄不含身份的 accepted/rejected 分桶、日期與預告距離，並設計「我確實在遊戲中看到但被擋」的匿名回饋訊號及判定門檻。
 ```
+
+### d2b53e480990-1 codex sha256:2d4da115afc5a9219fc839c04509bf3a5ca195ce890a35329c76a4e0d6469b8f
+
+```text
+【致命】插件回報契約互相衝突，照 Task 1 實作會直接漏掉真實事件。spec「反惡意」更正明定 `missionIds` 選填，因任務板未開時插件讀不到；但 Task 1 Step 1 仍要求至少一個 critical ID，且使用未定義的「critical id 範圍」。此外 spec 把 token 放在 body、Task 2 Step 2 改成 `X-Plugin-Token`、Task 5 的介面又寫回 body。應先定稿唯一 wire contract：token 固定放 header、`missionIds` 缺省或空陣列均可，有值時才依 `missions.json` 的精確集合驗證，並加入三方契約測試。
+
+【致命】測試用的 `now` 看似要由 HTTP 呼叫者傳入，會讓公開客戶端控制安全時鐘。Task 2 Step 4 寫「測試呼叫端一律傳明確的 `now`」，但 spec 的任何 request schema 都沒有 `now`；若路由接受它，攻擊者可繞過 25 分鐘冷卻、事件過期和保留期。正式路由只能使用伺服器時間；測試時應由 test-only binding、依賴注入或假時鐘控制，並測試 body/query 中的 `now` 被拒絕或忽略。
+
+【嚴重】單一 `source` 欄位無法表達「玩家先報、插件稍後證實」這個必然情境。spec 資料模型只有 `source: plugin|manual`，反惡意第 3 層又規定重複通報轉附議，但插件 payload 沒有 UUID，無法合法加入 `confirms uuid[]`；若保留原列，UI 仍會錯標為低可信的「玩家通報」。應定義來源提升規則，例如插件命中既有 manual event 時將來源提升為 plugin 並記錄 `pluginObservedAt`，插件重複不得偽造成玩家附議，並測試 manual→plugin 與 plugin→manual 兩種順序。
+
+【嚴重】`phase:'end'` 沒有資料模型或狀態轉移定義，可能錯誤結束別人的事件。Task 5 會送 start/end，但 Task 2 的 DO 方法與測試只描述 `report`、固定 1200 秒到期和 admin revoke，沒有說 end 要更新哪一筆；僅靠 world 無法分辨遲到的 end、新一輪事件或先前的 manual event。應決定取消 end、只靠固定時長，或加入可配對的 observation/event token；若保留 end，必須明定離開 territory／讀取失敗不等於事件結束，並補 stale end、重複 end、manual event 不受影響等測試。
+
+【嚴重】前端沒有 UUID 的取得與持久化方案，三個核心寫入流程無法接線。`POST /report`、`POST /vote`、`PUT /sub` 都要求 UUID，但 Task 3 沒列 UUID 來源，Task 4 的既有設定介面只明列 `discord.webhookUrl`。應指定沿用哪個既有欄位，或以 `crypto.randomUUID()` 建立並持久化；同時定義跨分頁、重載、清除資料後的行為，以及禁止出現在 URL、DOM、log，並加入重載後仍可讀回訂閱的驗收。
+
+【嚴重】`PUT /sub` 完全沒有 rate limit，攻擊者可無限建立持久訂閱並放大每次 Discord fan-out。spec 與 Task 2 Step 3 只有 report、vote、GET 三個 limiter，而 Origin header 並不是非瀏覽器客戶端的身分驗證；任意 UUID 加合法 Discord webhook 即可持續填滿 `subs`。應加入訂閱寫入 limiter、資料量與單次 fan-out 上限、過久未更新訂閱的清理策略，並測試大量 UUID、限流 fail-open 時的可控退化。
+
+【嚴重】spec 已拍板的 per-UUID 25 分鐘冷卻沒有落入任何明確步驟或驗收。反惡意第 4 層要求同 UUID、同 world 25 分鐘內不能開新事件，但 Task 1 沒有相應純邏輯，Task 2 Step 1 未描述判定，整合測試清單也沒有此案例。應補上伺服器時間判定、明確錯誤碼，並測試事件已結束但未滿 25 分鐘、滿 25 分鐘、不同 world、插件來源等邊界。
+
+【嚴重】投票陣列沒有唯一性與改票規則，一個 UUID 可能自行湊滿三票或同時存在兩邊。Task 1 只要求 `applyVote` 判斷 `disputes ≥ 3 && confirms === 0`，卻未規定重複 vote 是否冪等、confirm→dispute 是否移除舊票。應把兩個 JSON 陣列當集合處理，同一 UUID 至多一票，改票時原子移除另一側，並加入重複投票、改票和並發投票測試。
+
+【嚴重】未定義 `startsInMinutes > 0` 在狀態、去重及通知上的語意。manual 可報 1–15 分鐘後開始，但 Task 3 現況卡只有「進行中／無事件」，Task 2 也沒說未開始事件是否占用每 world 的唯一 active 槽，Discord 要立即送還是開始時送。應明定 upcoming 狀態、倒數文案、去重窗口與各通知管道的送出時點，並測試未開始期間的第二筆通報及跨越 `startAt` 的狀態轉換。
+
+【嚴重】Task 2 仍要求 `/state` 使用 15 秒 edge cache，與 spec 的 Build 更正及撤銷驗收直接矛盾。spec 已明確移除快取以避免撤銷後仍顯示進行中，但 Task 2 Step 2 保留 `caches.default`，Step 4 又要求 admin revoke 後 `/state` 不再列出。應刪除快取步驟；若堅持保留，就必須設計所有狀態變更的精確失效機制並驗證，而不能讓測試繞過 cache。
+
+【嚴重】跨網域瀏覽器呼叫的 preflight 與非瀏覽器管理路由沒有驗收矩陣。Task 2 Step 2 只概括寫 CORS，測試清單沒有 `OPTIONS`；JSON `POST` 及 `PUT /sub` 會先 preflight。另一方面只明確豁免 plugin 的 Origin，可能讓沒有 Origin 的 bearer-token 管理命令全部 403。應逐路由定義 Origin 規則，為 report/vote/sub 測試 OPTIONS、允許 methods/headers，並驗證 admin 無 Origin 但 token 正確時可用、瀏覽器公開寫入仍受白名單限制。
+
+【一般】計畫仍保留已被推翻的驗收要求，而且所有未執行步驟都標成完成。Global Constraints 第二點仍要求在 UI 顯示天氣閘及觀測「被擋筆數」，與 Goal、spec 的「完全移除天氣閘」相反；Task 1–6 又全部使用 `[x]`，不符合「實作尚未開始」的前閘狀態。應刪除殘留天氣閘要求、改為來源分桶指標，並把執行 checklist 重設為 `[ ]`，避免後續工具與 Owner 誤判已完成或已驗收。
+```

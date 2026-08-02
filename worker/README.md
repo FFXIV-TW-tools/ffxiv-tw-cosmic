@@ -36,7 +36,7 @@
 
 ```bash
 pnpm install
-pnpm test              # 19 個整合測試（vitest-pool-workers）
+pnpm test              # 25 個整合測試（vitest-pool-workers）
 pnpm test:logic        # 17 個純函式測試（node --test）
 pnpm cf:deploy:dry     # 0 error 才往下
 # STOP（對外發佈，由 shawn 執行）：
