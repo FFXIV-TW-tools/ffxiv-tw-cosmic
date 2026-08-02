@@ -126,7 +126,12 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
 
   /**
    * 全頁唯一的金色高亮（設計系統：一頁最多 1 處，限「限時／唯一推薦／要你現在動作」）。
-   * 靈風視窗正是限時，且是 11 個緊急任務的必要條件。
+   * 靈風視窗正是限時，且是 20 個**天氣限定臨時任務**的必要條件。
+   *
+   * ⚠️ 2026-08-02 更正：這裡原本寫「緊急任務的必要條件」，**是錯的**。
+   * 掛靈風條件（cond 13）的 20 個任務 `class` 全部是 `temporary`；33 個 `critical`（緊急）任務的
+   * `conds` **全部是空的** —— client 裡沒有任何欄位說緊急任務需要靈風。舊文案是 2026-07-31
+   * 分類判準修正（commit 2577acf）之前的認知殘留，判準修好後沒人回來改這幾句。
    */
   function windyBlock(now) {
     const windy = weatherData.table.find((w) => w.name === '靈風');
@@ -137,7 +142,7 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
     const d = block(
       '靈風視窗',
       isNow ? `還剩 ${formatDuration(WEATHER_PERIOD - (now % WEATHER_PERIOD))}` : (next ? `${formatDuration(next.start - now)}後` : '—'),
-      `${count} 個緊急任務的必要條件（佔 ${windy.rate}% 時段）`,
+      `${count} 個天氣限定臨時任務的必要條件（佔 ${windy.rate}% 時段）`,
     );
     d.classList.add('codex-tint-panel', 'codex-tint-panel--highlight', 'codex-tint-panel--bar');
     return d;
@@ -145,7 +150,7 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
 
   /**
    * 機甲行動倒數。**刻意不用金色高亮**——設計系統規定一頁最多一處，那一處已經給了靈風視窗
-   * （它是 11 個緊急任務的必要條件）。這張是固定班表，錯過就等 20 分鐘，不是限時機會。
+   * （它是 20 個天氣限定臨時任務的必要條件）。這張是固定班表，錯過就等 20 分鐘，不是限時機會。
    */
   function mechBlock(now) {
     const next = nextMechAt(now);

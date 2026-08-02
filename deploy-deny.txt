@@ -8,3 +8,4 @@ deploy-deny.txt
 deploy-prepare.sh
 docs
 tools
+worker

@@ -28,6 +28,14 @@ date: 2026-07-31
 | 全服同步 | 天氣是 unix 時間的純函數，與伺服器 / DC / 實例無關 ⇒ 「各伺服器」這個維度不存在 |
 | 101 個任務的 ET 時段條件 | `WKSMissionLotterySpecialCond` row 1–12＝2 小時階梯 |
 | 11 個緊急任務的天候條件（靈風） | 同表 row 13 c2＝49（靈風）、row 14＝148（月塵）——**2/2 命中渴望灣天氣表裡的兩個非「晴朗」天氣**，是此欄為天氣 FK 的關鍵佐證 |
+
+> 更正（Build，2026-08-02）：上表「11 個**緊急**任務的天候條件」這句的**任務分類講錯了**。
+> 掛 cond 13（靈風）的是 20 個 `class: temporary`（臨時）任務；33 個 `critical`（緊急）任務的
+> `conds` 欄**全部是空的**——client 裡沒有任何欄位把緊急任務綁到任何天氣。
+> 「row 13/14 是天氣 FK」這個結論本身**不受影響**（那是條件表自己的解讀，仍然成立），
+> 錯的只是「掛這些條件的是哪一批任務」。舊數字 11 是 2026-07-31 分類判準修正
+> （commit `2577acf`）之前的計法。站上文案與 `modules/forecast-view.js` 已於
+> cycle `2026-08-02-emergency-report` 一併更正。
 | 544 個任務的完整屬性 | `WKSMissionUnit` ＋ `WKSMissionToDo` ＋ `WKSMissionReward`（欄位索引沿用 ICE fork 的反解，見 [P-005 plan](../../../../XIVpluginsDev/docs/plans/2026-07-30-P005-ice-cosmic-tc-fork-plan.md) §1）|
 | 宇宙工具 11 職 × 9 階升級鏈 | `WKSCosmoToolClass` c14–c22；道具名逐職吻合（手鋸＝木工、圓革刀＝皮革） |
 
