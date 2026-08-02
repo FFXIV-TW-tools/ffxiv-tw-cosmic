@@ -287,7 +287,29 @@ export class CosmicEventsDO extends DurableObject {
     );
     this._bump(kind === 'confirm' ? 'vote_confirm' : 'vote_dispute');
     if (v.changed) this._bump('event_disputed');
+    // 有別人證實了 ⇒ 靜置期沒有意義了，立刻送。
+    // 靜置期擋的是「沒人確認的孤例」，不是「已經有第二個人看到的事件」。
+    if (kind === 'confirm' && v.status === 'active') this._notifyNow(eventId, now);
     return { ok: true, status: v.status, confirms: v.confirms.length, disputes: v.disputes.length };
+  }
+
+  /**
+   * 通報者放棄靜置期、要求立刻推播（「我確定，馬上通知」）。
+   *
+   * <b>只有通報者本人、只在靜置期內有效</b>。這不會削弱靜置期的保護：誤按的人不會來按這顆，
+   * 而有惡意的人本來就等得起 30 秒。它換到的是「確定的人不必為了不確定的人等」。
+   *
+   * 送出即不可逆——`canWithdraw` 之外再加這一條：通知已經在別人手機上了。
+   */
+  notifyNow({ uuid, eventId }, now) {
+    const rows = this.sql.exec('SELECT * FROM events WHERE id = ?', eventId).toArray();
+    if (!rows.length) return { ok: false, reason: 'not_found' };
+    const ev = this._rowToEvent(rows[0]);
+    if (rows[0].reporter !== uuid) return { ok: false, reason: 'not_reporter' };
+    if (ev.status !== 'active' || ev.endAt <= now) return { ok: false, reason: 'not_active' };
+    if (!rows[0].notifyAt) return { ok: false, reason: 'already_sent' };
+    this._notifyNow(eventId, now);
+    return { ok: true, note: '已送出通知 — 從現在起無法撤回' };
   }
 
   /**
@@ -369,6 +391,9 @@ export class CosmicEventsDO extends DurableObject {
         warnedAt: ev.warnedAt,
         confirms: ev.confirms.length,
         disputes: ev.disputes.length,
+        // 還在靜置期＝通知尚未送出。前端靠它決定要不要給「我確定，馬上通知」，
+        // 以及撤回時該說「沒有人會收到」還是「無法收回」。不回這欄前端只能猜。
+        pendingNotify: (r.notifyAt ?? 0) > 0,
       };
     }
     return { now, events: byWorld };

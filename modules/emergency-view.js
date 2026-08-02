@@ -198,6 +198,12 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
     if (r.ok) onChanged?.();
   }
 
+  async function notifyNow(eventId) {
+    const r = await emergencyApi.notifyNow(eventId);
+    say(r.ok ? (r.data?.note || '已送出通知。') : r.message, r.ok ? 'ok' : 'warn');
+    await poll(true);
+  }
+
   async function poll(force = false) {
     const r = await emergencyApi.getState();
     if (!r.ok) {
@@ -279,9 +285,19 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
       const cancel = document.createElement('button');
       cancel.type = 'button';
       cancel.className = 'codex-btn codex-btn--ghost codex-small';
-      cancel.textContent = '取消（我按錯了）';
+      cancel.textContent = ev.pendingNotify ? '取消（我按錯了）' : '取消';
       cancel.addEventListener('click', () => withdraw(ev.id));
       actions.append(cancel);
+      // 還在靜置期才給「馬上通知」——已經送出去的事件按它沒有意義
+      if (ev.pendingNotify) {
+        const now = document.createElement('button');
+        now.type = 'button';
+        now.className = 'codex-btn codex-btn--ghost codex-small';
+        now.textContent = '我確定，馬上通知';
+        now.title = '跳過 30 秒等待直接送出通知。送出後就無法「沒有人會收到」了。';
+        now.addEventListener('click', () => notifyNow(ev.id));
+        actions.append(now);
+      }
     } else {
       actions.append(
         voteBtn('我也看到了', 'confirm', ev.id),

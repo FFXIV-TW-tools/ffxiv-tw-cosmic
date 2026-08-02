@@ -176,6 +176,24 @@ export default {
       return json(request, r, r.ok ? 200 : 404);
     }
 
+    // ── 放棄靜置期，立刻推播（通報者本人）──
+    if (path === '/notify-now' && request.method === 'POST') {
+      if (!originAllowed(request)) return json(request, { error: 'origin' }, 403);
+      if (await rateLimited(env, request, 'VOTE_RATE_LIMITER')) {
+        return json(request, { error: 'rate_limited' }, 429);
+      }
+      const { body, err } = await readJson(request);
+      if (err) return json(request, { error: err[1] }, err[0]);
+      // 與 /withdraw 同一組欄位（uuid + eventId），共用驗證
+      const v = L.validateWithdraw(body);
+      if (!v.ok) return json(request, { error: v.reason }, 400);
+      const s = stub(env);
+      if (await s.isBlocked(v.uuid)) return json(request, { error: 'blocked' }, 403);
+      const r = await s.notifyNow(v, now);
+      if (r.ok) return json(request, r);
+      return json(request, r, r.reason === 'not_found' || r.reason === 'not_active' ? 404 : 403);
+    }
+
     // ── 撤回自己的通報（誤按用）──
     if (path === '/withdraw' && request.method === 'POST') {
       if (!originAllowed(request)) return json(request, { error: 'origin' }, 403);

@@ -31,6 +31,7 @@ const MESSAGES = {
   has_confirms: '已經有人附議了，不能撤回 — 別人也看到了就不算誤按。',
   not_active: '這筆已經結束了，撤回沒有作用。',
   no_active_event: '這台伺服器目前沒有進行中的事件。',
+  already_sent: '通知已經送出去了，不用再按一次。',
   not_configured: '後端尚未完成設定，請稍後再試。',
 };
 
@@ -114,6 +115,13 @@ export const emergencyApi = {
     const uuid = await currentUuid();
     if (!uuid) return { ok: false, code: 'no_uuid', message: '尚未取得識別碼，請重新整理後再試。' };
     return call('/withdraw', { method: 'POST', body: { uuid, eventId } });
+  },
+
+  /** 放棄 30 秒靜置期，立刻推播（只有通報者本人、只在靜置期內有效）。 */
+  async notifyNow(eventId) {
+    const uuid = await currentUuid();
+    if (!uuid) return { ok: false, code: 'no_uuid', message: '尚未取得識別碼，請重新整理後再試。' };
+    return call('/notify-now', { method: 'POST', body: { uuid, eventId } });
   },
 
   async vote(eventId, kind) {

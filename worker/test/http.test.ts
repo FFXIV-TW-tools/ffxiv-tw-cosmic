@@ -399,6 +399,43 @@ describe('手動通報靜置 30 秒才推播', () => {
     expect(sentFor(calls, world)).toBe(0);   // 這一條就是整個機制存在的理由
   });
 
+  it('別人附議 → 立刻送，不再等靜置期滿', async () => {
+    const calls = stubDiscord();
+    const world = devStages.worlds[2];
+    await clearWorld(world);
+    await put('/sub', { uuid: uuid(), worlds: [world], webhookUrl: HOOK });
+
+    const { eventId } = await (await post('/report', { uuid: uuid(), world, startsInMinutes: 0 })).json() as any;
+    expect(sentFor(calls, world)).toBe(0);
+
+    await post('/vote', { uuid: uuid(), eventId, kind: 'confirm' });
+    await vi.waitFor(() => expect(sentFor(calls, world)).toBeGreaterThanOrEqual(1));
+    await revoke(eventId);
+  });
+
+  it('通報者按「馬上通知」→ 立刻送；別人按同一顆是 403，送過再按是 403', async () => {
+    const calls = stubDiscord();
+    const world = devStages.worlds[6];
+    await clearWorld(world);
+    await put('/sub', { uuid: uuid(), worlds: [world], webhookUrl: HOOK });
+
+    const u = uuid();
+    const { eventId } = await (await post('/report', { uuid: u, world, startsInMinutes: 0 })).json() as any;
+
+    // 不是通報者 → 403
+    expect((await post('/notify-now', { uuid: uuid(), eventId })).status).toBe(403);
+    expect(sentFor(calls, world)).toBe(0);
+
+    const ok = await post('/notify-now', { uuid: u, eventId });
+    expect(ok.status).toBe(200);
+    expect((await ok.json() as any).note).toContain('無法撤回');
+    await vi.waitFor(() => expect(sentFor(calls, world)).toBeGreaterThanOrEqual(1));
+
+    // 已經送過了 → 403（不是 200，避免重複推播）
+    expect((await post('/notify-now', { uuid: u, eventId })).status).toBe(403);
+    await revoke(eventId);
+  });
+
   it('插件在靜置期內證實同一台 → 立刻送，不再等', async () => {
     const calls = stubDiscord();
     const world = devStages.worlds[5];
