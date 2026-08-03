@@ -134,20 +134,32 @@ async function main() {
   setInterval(tick, TICK_MS);
 
   /**
-   * 初始分頁優先序：**網址 hash** → 上次看的那頁 → 預設。
+   * 初始分頁優先序：**網址 hash** → （**只有重整／上一頁時**）上次看的那頁 → 預設。
    *
-   * hash 排前面是因為它是「別人給我的連結」，意圖比我上次的瀏覽狀態明確
-   * （也讓「把緊急事件那頁傳給人」變得可能）。兩者都只認實際存在的分頁 id——
+   * hash 排最前是因為它是「別人給我的連結」，意圖比我上次的瀏覽狀態明確
+   * （也讓「把緊急事件那頁傳給人」變得可能）。只認實際存在的分頁 id——
    * 從 portal 進來時可能帶著 `#announce` 之類與本站無關的 hash。
+   *
+   * <b>「上次看的那頁」只在重整時採用</b>（Owner 兩次要求的交集）：
+   * 稍早要「F5 重整不要回到第一個分頁」，現在要「進去預設在緊急事件」——
+   * 看起來衝突，其實是兩種進站方式：
+   * · **重整／上一頁**＝我還在原地，把分頁還給我，不然捲動與篩選狀態等於白做；
+   * · **新開／從 portal 進來**＝新的一次造訪，該落在最該先看的那頁（緊急事件，`tabIds[0]`）。
+   *
+   * 用 Navigation Timing 的 `type` 分辨，不自己在 localStorage 記時間戳——
+   * 那是瀏覽器本來就知道的事實，自己記只會多一種會不準的來源。
    */
   function initialTab() {
     const fromHash = decodeURIComponent(location.hash.replace(/^#/, ''));
     if (tabIds.includes(fromHash)) return fromHash;
-    try {
-      const saved = localStorage.getItem(TAB_KEY);
-      if (tabIds.includes(saved)) return saved;
-    } catch {
-      // 私密模式／配額滿：記不住而已，照預設走
+    const navType = performance.getEntriesByType?.('navigation')?.[0]?.type;
+    if (navType === 'reload' || navType === 'back_forward') {
+      try {
+        const saved = localStorage.getItem(TAB_KEY);
+        if (tabIds.includes(saved)) return saved;
+      } catch {
+        // 私密模式／配額滿：記不住而已，照預設走
+      }
     }
     return tabIds[0];
   }
