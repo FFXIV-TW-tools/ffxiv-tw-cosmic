@@ -295,6 +295,50 @@ describe('事件變體（α／β）', () => {
     await revoke(first.eventId);
   });
 
+  it('插件同時給 variant 與 missionIds → 自動定案「通告↔任務組」並帶進 /state', async () => {
+    stubDiscord();
+    const w = devStages.worlds[2];
+    await clearWorld(w);
+    // meteor-α ＝ 515/524/538/519/523
+    const r = await post('/report',
+      { world: w, weatherId: 195, missionIds: [515, 524, 900], phase: 'start', variant: 'meteor-a' }, PLUG);
+    expect(r.status).toBe(200);
+    const st = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    expect(st.variantMap['meteor-a']).toBe('meteor-α');
+    await revoke(st.events[w].id);
+  });
+
+  it('證據判不出組時不寫對應（寧可留白也不猜）', async () => {
+    stubDiscord();
+    const w = devStages.worlds[4];
+    await clearWorld(w);
+    // storm 兩組各命中 → 自相矛盾；只給 1 筆 → 可能是殘留。兩種都不該定案。
+    await post('/report',
+      { world: w, weatherId: 194, missionIds: [518, 512], phase: 'start', variant: 'storm-b' }, PLUG);
+    const st = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    expect(st.variantMap['storm-b']).toBeUndefined();
+    await revoke(st.events[w].id);
+  });
+
+  it('管理端可人工定案，且會擋掉天氣對不上的組合', async () => {
+    const bad = await SELF.fetch('https://x/admin/variant-map', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer admin-secret', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ variant: 'spore-a', group: 'storm-α' }),
+    });
+    expect(bad.status).toBe(400);
+    expect((await bad.json() as any).reason).toBe('kind_mismatch');
+
+    const ok = await SELF.fetch('https://x/admin/variant-map', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer admin-secret', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ variant: 'spore-a', group: 'spore-β' }),
+    });
+    expect(ok.status).toBe(200);
+    const st = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    expect(st.variantMap['spore-a']).toBe('spore-β');
+  });
+
   it('phase 拼錯不再被靜默當成 start', async () => {
     const r = await post('/report',
       { world, weatherId: 196, missionIds: [518], phase: 'strat' }, PLUG);

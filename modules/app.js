@@ -101,7 +101,11 @@ async function main() {
   const emMap = createEmergencyMap(emPanel, missionData);
   const emView = createEmergencyView(emPanel, {
     worlds: devData.worlds,
-    onState: (state) => emNotify.onState(state),
+    onState: (state) => {
+      emNotify.onState(state);
+      // 已定案的「通告↔任務組」（B-023）。地圖靠它把「推定」換成事實並拿掉待實測記號。
+      emMap.setVariantMap(state.variantMap);
+    },
     onChanged: () => emHistory.refresh(),
     onShowMap: (world, kind) => emMap.open(world, kind),
   });

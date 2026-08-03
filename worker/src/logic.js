@@ -49,6 +49,13 @@ export function weatherKindOf(variant) {
   return variant.split('-')[0];
 }
 
+/**
+ * 「哪則開始通告對應哪一組任務」的判定。**表本身在 `modules/variant-groups.js`，前後端共用**
+ * ——後端另存一份就是第二份真相，而這份表的正確性是靠台服 client 幾何驗出來的，
+ * 漂移之後沒有任何機制會發現（AGENTS 鐵則 §3）。
+ */
+export { VARIANT_MISSIONS, resolveGroup, kindOfGroup } from '../../modules/variant-groups.js';
+
 /** critical（緊急）任務的 id 區間——插件回報的證據自洽檢查用。 */
 export const CRITICAL_MISSION_MIN = 512;
 export const CRITICAL_MISSION_MAX = 544;
@@ -251,7 +258,17 @@ export function validatePluginReport(body, now) {
     );
     if (!hasCritical) return { ok: false, reason: 'no_critical_evidence' };
   }
-  return { ok: true, world: body.world, phase, startAt: now, variant: body.variant ?? null };
+  return {
+    ok: true,
+    world: body.world,
+    phase,
+    startAt: now,
+    variant: body.variant ?? null,
+    // **存下來**（原本只驗不存）：`variant` 是通告文字解出來的、`missionIds` 是任務板看到的，
+    // 兩者**同時**出現的那一筆就是「哪則通告對應哪一組任務」的唯一證據（B-023）。
+    // 每次丟掉它，就等於每次事件都把那個答案扔了。
+    missionIds: ids.filter((i) => Number.isInteger(i)),
+  };
 }
 
 /**

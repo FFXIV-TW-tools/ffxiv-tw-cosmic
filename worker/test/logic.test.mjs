@@ -261,3 +261,35 @@ test('Discord 訊息：講時間，不揭露來源', () => {
     assert.ok(!JSON.stringify(a).includes(word), `訊息不得出現「${word}」`);
   }
 });
+
+test('resolveGroup：判不出來就回 null，不回「比較像」的那一組', () => {
+  // 磁暴 α＝518/522/530/537/543
+  assert.equal(L.resolveGroup([518, 522, 999], 'storm'), 'storm-α');
+  // 只命中 1 筆 → 不定案（任務板可能還留著上一次事件的殘留）
+  assert.equal(L.resolveGroup([518], 'storm'), null);
+  // 兩組都有命中 → 資料自相矛盾，不從中挑一個
+  assert.equal(L.resolveGroup([518, 522, 512, 521], 'storm'), null);
+  // 限定天氣：孢子霧的任務不會被判成磁暴的組
+  assert.equal(L.resolveGroup([513, 526, 528], 'storm'), null);
+  assert.equal(L.resolveGroup([513, 526, 528], 'spore'), 'spore-β');
+  assert.equal(L.resolveGroup([], 'storm'), null);
+  assert.equal(L.resolveGroup(null, 'storm'), null);
+});
+
+test('六組任務 id 互斥且合計 33（分組表的完整性）', () => {
+  const all = Object.values(L.VARIANT_MISSIONS).flat();
+  assert.equal(all.length, 33);
+  assert.equal(new Set(all).size, 33, '有任務同時屬於兩組');
+  for (const [g, ids] of Object.entries(L.VARIANT_MISSIONS)) {
+    for (const id of ids) {
+      assert.ok(id >= L.CRITICAL_MISSION_MIN && id <= L.CRITICAL_MISSION_MAX, `${g} 的 ${id} 不在緊急任務區間`);
+    }
+  }
+});
+
+test('插件通報會把 missionIds 帶出來（原本只驗不存＝每次都丟掉證據）', () => {
+  const r = L.validatePluginReport(
+    { world: W, weatherId: 196, missionIds: [518, 522, 1], phase: 'start', variant: 'storm-a' }, NOW,
+  );
+  assert.deepEqual(r.missionIds, [518, 522, 1]);
+});

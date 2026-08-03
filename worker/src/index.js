@@ -141,7 +141,10 @@ export default {
         const v = L.validatePluginReport(body, now);
         if (!v.ok) return json(request, { error: v.reason }, 400);
         const r = await stub(env).report(
-          { source: 'plugin', world: v.world, startAt: v.startAt, phase: v.phase, variant: v.variant },
+          {
+            source: 'plugin', world: v.world, startAt: v.startAt, phase: v.phase,
+            variant: v.variant, missionIds: v.missionIds,
+          },
           now,
         );
         // 與手動路徑同一套語意：409＝已有進行中事件（本筆只把來源升級成 plugin，不開新的）
@@ -269,6 +272,13 @@ export default {
         }
         const r = await s.adjustStart(body.eventId, body.startAt, now);
         return json(request, r, r.ok ? 200 : 404);
+      }
+      // 人工定案「哪則開始通告對應哪一組任務」——Owner 在遊戲裡看到就能直接寫，
+      // 不必等插件剛好覆蓋到出事件的那一台（B-023 的兩條路之一）。
+      if (path === '/admin/variant-map') {
+        // body 在上面已經讀過了（request body 只能讀一次）
+        const r = await s.setVariantMap(body?.variant, body?.group, now);
+        return json(request, r, r.ok ? 200 : 400);
       }
       if (path === '/admin/purge') return json(request, await s.purgeRevoked(now));
       if (path === '/admin/block') {

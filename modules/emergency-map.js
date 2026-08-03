@@ -11,22 +11,7 @@
  *    掛了就是把猜測寫成事實，而猜錯的人會跑錯半張圖。不猜（AGENTS 鐵則 §2）。
  */
 
-/**
- * 六個變體各自的任務 id。權威＝ICE fork `GatheringUtil.UpdateCriticalWeather()`。
- *
- * **這裡刻意只放 id，不放座標**——座標一律從 `missions.json` 的 `marker` 現查，
- * 抄一份進來就是第二份真相，台服改版後兩邊各自漂移（同 AGENTS 鐵則 §3 的道理）。
- *
- * 分組只到「渴望灣」為止。上游另有 Phaenna（第二張圖）的 18 筆，台服未實裝 ⇒ 不放。
- */
-const VARIANT_MISSIONS = {
-  'storm-α': [518, 522, 530, 537, 543],
-  'storm-β': [512, 521, 527, 533, 536, 542],
-  'meteor-α': [515, 524, 538, 519, 523],
-  'meteor-β': [516, 520, 525, 531, 534, 539],
-  'spore-α': [517, 532, 514, 529, 541],
-  'spore-β': [513, 526, 528, 535, 540, 544],
-};
+import { VARIANT_MISSIONS } from './variant-groups.js';
 
 const WEATHER_NAMES = { storm: '磁暴', meteor: '流星雨', spore: '孢子霧' };
 
@@ -118,6 +103,11 @@ export function createEmergencyMap(root, data) {
   /** 目前選的組（一定是單一組——一次事件只會出一組）。 */
   let selected = 'storm-α';
   let releaseTrap = null;
+  /**
+   * 後端已定案的「通告 → 任務組」（`{'storm-a': 'storm-β'}`）。**沒定案的變體不會在裡面**，
+   * 那時才走順序推定並顯示「※ 待實測確認」。空物件與猜出來的值，差別就是使用者知不知道。
+   */
+  let variantMap = {};
 
   /**
    * 建按鈕列。**只放這次事件那個天氣的兩組**（天氣未知才放全部六組）——
@@ -172,18 +162,32 @@ export function createEmergencyMap(root, data) {
     const kind = selected.split('-')[0];
 
     // **只顯示這一組自己的那一則**（Owner 2026-08-03：「磁暴 A 只顯示 A 的對話，不要混一起」）。
-    // 對應依 client 排列順序推定（見 START_ANNOUNCEMENTS 註解），所以後面掛一個短記號——
-    // 沒有記號的話，這條假設會在畫面上看起來像已知事實。
-    const idx = selected.endsWith('α') ? 0 : 1;
+    //
+    // 兩條路：後端已定案就用事實（B-023 的證據＝插件同時看到通告與任務板，或 Owner 人工回報）；
+    // 還沒定案就退回「client 排列順序相同」的推定，**並掛記號**——沒有記號的話，
+    // 這條假設會在畫面上看起來像已知事實，就不會有人去驗它。
+    // 同一種天氣是**兩則通告對兩組任務的雙射** ⇒ 定案其中一邊，另一邊由排除法直接得出。
+    // 這是推論不是猜測，所以另一邊也算「已定案」、同樣不掛待實測記號。
+    const pair = Object.entries(variantMap).find(([v]) => v.startsWith(`${kind}-`));
+    const decided = pair && (pair[1] === selected
+      ? pair[0]
+      // 定案的是同天氣的另一組 ⇒ 本組配另一則通告
+      : `${kind}-${pair[0].endsWith('-a') ? 'b' : 'a'}`);
+    const idx = decided
+      ? Number(decided.endsWith('-b'))
+      : Number(selected.endsWith('β'));
+
     el.note.replaceChildren();
     const line = document.createElement('span');
     line.className = 'cos-map__ann';
     line.textContent = `「${START_ANNOUNCEMENTS[kind][idx]}」`;
     el.note.append(line);
-    const mark = document.createElement('span');
-    mark.className = 'cos-map__ann cos-map__pending';
-    mark.textContent = '※ 通告與任務組的對應待實測確認';
-    el.note.append(mark);
+    if (!decided) {
+      const mark = document.createElement('span');
+      mark.className = 'cos-map__ann cos-map__pending';
+      mark.textContent = '※ 通告與任務組的對應待實測確認';
+      el.note.append(mark);
+    }
 
     el.pins.replaceChildren();
     el.legend.replaceChildren();
@@ -348,6 +352,12 @@ export function createEmergencyMap(root, data) {
      * **不自動選定其中一組**：通告文字（`storm-a`／`storm-b`）與任務分組（α／β）的對應
      * 目前無證據（B-023），自動選只有一半機率對，而使用者不會知道它選錯了。
      */
+    /** 後端回的已定案對應。沒有這個就一直停在「推定」，證據收到了也不會反映到畫面上。 */
+    setVariantMap(map) {
+      variantMap = map ?? {};
+      if (!el.overlay.hidden) render();
+    },
+
     open(world, kind) {
       const known = WEATHER_NAMES[kind] ? kind : null;
       // world 為空＝**速查模式**（不綁任何一筆事件，六組都列）。沒有事件時也想先看

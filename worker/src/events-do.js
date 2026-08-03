@@ -64,6 +64,9 @@ export class CosmicEventsDO extends DurableObject {
       ['nDispute', 'INTEGER NOT NULL DEFAULT 0'],
       ['warnedAt', 'INTEGER NOT NULL DEFAULT 0'],
       ['notifyAt', 'INTEGER NOT NULL DEFAULT 0'],
+      // 插件在任務板上看到的任務 id（JSON 陣列）。與 `variant` **同時**存在的那一筆
+      // 就是「哪則通告對應哪一組任務」的證據（B-023）；原本只驗不存＝每次事件都把答案丟掉。
+      ['missionIds', 'TEXT'],
     ];
     for (const [col, type] of columns) {
       try {
@@ -72,6 +75,58 @@ export class CosmicEventsDO extends DurableObject {
         // 欄位已存在（父層鐵則例外 a：窄的、預期內的 schema 既存檢查）
       }
     }
+
+    // 「開始通告 ↔ 任務組」的定案表。**一個變體只寫一次**——第一次拿到證據就定下來，
+    // 之後的事件不再改寫（改寫代表兩次證據互相矛盾，那要人去看，不該自動選一個）。
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS variant_map (
+      variant   TEXT PRIMARY KEY,
+      groupKey  TEXT NOT NULL,
+      source    TEXT NOT NULL,
+      eventId   INTEGER,
+      decidedAt INTEGER NOT NULL
+    )`);
+  }
+
+  /**
+   * 拿「通告變體 ＋ 任務板上的任務 id」定案一次對應。
+   *
+   * **只在兩者都有、而且判得出組時才寫**（`resolveGroup` 判不出來會回 null，不回「比較像」的）；
+   * **已經定過的不改寫**——同一個變體出現兩種答案代表資料互相矛盾，那要人去看。
+   */
+  _learnVariantMap(variant, missionIds, eventId, now) {
+    if (!variant || !Array.isArray(missionIds) || missionIds.length === 0) return;
+    const exists = this.sql
+      .exec('SELECT variant FROM variant_map WHERE variant = ?', variant).toArray();
+    if (exists.length) return;
+    const group = L.resolveGroup(missionIds, L.weatherKindOf(variant));
+    if (!group) return;
+    this.sql.exec(
+      'INSERT INTO variant_map (variant, groupKey, source, eventId, decidedAt) VALUES (?, ?, ?, ?, ?)',
+      variant, group, 'plugin', eventId, now,
+    );
+    this._bump('variant_map_learned');
+  }
+
+  /** 已定案的對應（`{'storm-a': 'storm-β'}`）。沒定案的變體不出現在裡面。 */
+  _variantMap() {
+    const out = {};
+    for (const r of this.sql.exec('SELECT variant, groupKey FROM variant_map').toArray()) {
+      out[r.variant] = r.groupKey;
+    }
+    return out;
+  }
+
+  /** 管理端人工定案（Owner 在遊戲裡看到就能直接寫，不必等插件剛好覆蓋到那一台）。 */
+  setVariantMap(variant, group, now) {
+    if (!L.VARIANTS.includes(variant)) return { ok: false, reason: 'bad_variant' };
+    if (!L.VARIANT_MISSIONS[group]) return { ok: false, reason: 'bad_group' };
+    if (L.kindOfGroup(group) !== L.weatherKindOf(variant)) return { ok: false, reason: 'kind_mismatch' };
+    this.sql.exec(
+      `INSERT INTO variant_map (variant, groupKey, source, eventId, decidedAt) VALUES (?, ?, 'manual', NULL, ?)
+       ON CONFLICT(variant) DO UPDATE SET groupKey = excluded.groupKey, source = 'manual', decidedAt = excluded.decidedAt`,
+      variant, group, now,
+    );
+    return { ok: true, variant, group };
   }
 
   // ── 小工具 ──
@@ -227,8 +282,10 @@ export class CosmicEventsDO extends DurableObject {
       this.sql.exec(
         // 變體只有**開始通告**帶得出來（預告階段兩個變體共用同一句），所以是在升級這一刻
         // 才寫得進去。`COALESCE` ＝插件沒偵測到就保持原值，不要用 null 蓋掉已知的。
-        'UPDATE events SET startAt = ?, endAt = ?, startExact = 1, variant = COALESCE(?, variant) WHERE id = ?',
-        now, now + L.EVENT_DURATION, input.variant ?? null, existing.id,
+        `UPDATE events SET startAt = ?, endAt = ?, startExact = 1,
+           variant = COALESCE(?, variant), missionIds = COALESCE(?, missionIds) WHERE id = ?`,
+        now, now + L.EVENT_DURATION, input.variant ?? null,
+        input.missionIds?.length ? JSON.stringify(input.missionIds) : null, existing.id,
       );
       this._bump('warn_to_start');
       this.ctx.waitUntil(this._fanout(this._activeEvent(world, now), now));
@@ -255,6 +312,8 @@ export class CosmicEventsDO extends DurableObject {
           existing.id,
         );
       }
+      // 兩個欄位齊了就定案一次「通告↔任務組」（同一個變體只會學一次）
+      this._learnVariantMap(input.variant, input.missionIds, existing.id, now);
       // 插件回報既有事件時，把來源升級成 plugin（可信度較高的那個要贏）
       if (source === 'plugin' && existing.source !== 'plugin') {
         this.sql.exec("UPDATE events SET source = 'plugin' WHERE id = ?", existing.id);
@@ -281,15 +340,17 @@ export class CosmicEventsDO extends DurableObject {
     const startAt = input.startAt;
     const delay = L.notifyDelayFor(source);
     this.sql.exec(
-      `INSERT INTO events (world, source, startAt, endAt, startExact, createdAt, reporter, notifyAt, variant, weather)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO events (world, source, startAt, endAt, startExact, createdAt, reporter, notifyAt, variant, weather, missionIds)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       world, source, startAt, startAt + L.EVENT_DURATION,
       source === 'plugin' ? 1 : 0, now, reporter, delay ? now + delay : 0,
       input.variant ?? null,
       // 手動＝使用者選的（選填）；插件＝由變體前綴推導，不必兩邊都送
       input.weather ?? L.weatherKindOf(input.variant) ?? null,
+      input.missionIds?.length ? JSON.stringify(input.missionIds) : null,
     );
     const id = this.sql.exec('SELECT last_insert_rowid() AS id').toArray()[0].id;
+    this._learnVariantMap(input.variant, input.missionIds, id, now);
     this._bump(source === 'plugin' ? 'report_ok_plugin' : 'report_ok_manual');
 
     if (delay) {
@@ -438,6 +499,9 @@ export class CosmicEventsDO extends DurableObject {
       events: byWorld,
       disputeThreshold: L.DISPUTE_THRESHOLD,
       lastEnded: this._lastEnded(now),
+      // 已定案的「通告↔任務組」。**沒定案的變體不會出現在這裡**——前端據此決定
+      // 要不要顯示「※ 待實測確認」。回一個空物件與回一個猜的值，差別就是使用者知不知道。
+      variantMap: this._variantMap(),
     };
   }
 
