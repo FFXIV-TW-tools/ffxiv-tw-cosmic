@@ -113,6 +113,23 @@ internal static class Program
         IconExporter.ExportItems(gd, ex.UsedItemIcons, Path.Combine(imgRoot, "items"));
         IconExporter.ExportItems(gd, ex.UsedWeatherIcons, Path.Combine(imgRoot, "weather"), "天氣圖示");
 
+        // 地圖底圖＋座標換算參數。**匯不出來就整批不寫**——任務有座標、底圖沒有的話，
+        // 前端只能畫出一堆沒有背景的點，那比沒有地圖更糟（半殘品原則，AGENTS §對外邊界）。
+        var mapInfo = MapExporter.Export(gd, Path.Combine(imgRoot, "map", "sinus-ardorum.png"));
+        if (mapInfo is null) return 1;
+        missions["map"] = new System.Text.Json.Nodes.JsonObject
+        {
+            ["image"] = "img/map/sinus-ardorum.png",
+            ["mapId"] = mapInfo.MapId,
+            ["mapRow"] = (int)mapInfo.MapRow,
+            ["territory"] = 1237,
+            // 世界座標 → 圖上像素的換算參數。前端照 monorepo 既有公式算，不自創。
+            ["sizeFactor"] = mapInfo.SizeFactor,
+            ["offsetX"] = mapInfo.OffsetX,
+            ["offsetY"] = mapInfo.OffsetY,
+            ["size"] = mapInfo.Size,
+        };
+
         Console.WriteLine("\n輸出：");
         Exporters.Write(Path.Combine(outDir, "weather.json"), weather);
         Exporters.Write(Path.Combine(outDir, "missions.json"), missions);

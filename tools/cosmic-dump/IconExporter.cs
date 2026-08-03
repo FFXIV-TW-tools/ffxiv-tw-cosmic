@@ -94,7 +94,8 @@ internal static class IconExporter
         return null;
     }
 
-    private static byte[] EncodePng(byte[] rgba, int width, int height)
+    /// <summary>地圖底圖也用這支（<see cref="MapExporter"/>）——PNG 編碼與圖片內容無關。</summary>
+    internal static byte[] EncodePng(byte[] rgba, int width, int height)
     {
         using var ms = new MemoryStream();
         ms.Write([0x89, (byte)'P', (byte)'N', (byte)'G', 0x0D, 0x0A, 0x1A, 0x0A]);

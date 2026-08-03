@@ -85,6 +85,7 @@ internal sealed class Exporters(GameData gd, JsonObject meta,
         var itemSheet = Sheet("Item");
         var weatherSheet = Sheet("Weather");
         var recipeSheet = Sheet("WKSMissionRecipe");
+        var markerSheet = Sheet("WKSMissionMapMarker");
 
         var o = Wrap("544 筆渴望灣任務。conditions 為額外開放條件；type=unknown 者語意未定，刻意不猜。");
         o["conditions"] = Conditions(condSheet, weatherSheet);
@@ -142,6 +143,11 @@ internal sealed class Exporters(GameData gd, JsonObject meta,
                  */
                 ["c14"] = (int)TcCosmicSheets.SlotUnknown(row),
                 ["items"] = RequiredItems(todoSheet, itemInfoSheet, itemSheet, unit.MissionToDo),
+                // 任務地點（世界座標 X/Z ＋ 半徑）。**不是顯示用的裝飾**——ICE 就是拿它當
+                // 採集路線的查詢 key（`TcMissionToDo.MapMarker` 的反解依據：108 筆採集任務
+                // 全部命中、產生的相異座標數恰好等於路線檔數）。沒有 marker 的任務輸出 null，
+                // 不補 0：這批 sheet 裡 0 是有意義的哨兵值（AGENTS 鐵則 §2 的由來）。
+                ["marker"] = Marker(todoSheet, markerSheet, unit.MissionToDo),
                 ["reward"] = Reward(rewardSheet, unit.RowId),
                 // 製作類任務要做的配方（`Recipe` row id，最多 5 個；採集/釣魚任務為空陣列）。
                 // 用途＝深連結到 crafter 求解手法。三段品質門檻**不在這裡**：那是配方的屬性
@@ -249,6 +255,22 @@ internal sealed class Exporters(GameData gd, JsonObject meta,
             if (id > 0) arr.Add((JsonNode)(int)id);
         }
         return arr;
+    }
+
+    /// <summary>
+    /// 任務地點 → <c>{x, y, r}</c>（世界座標與半徑，直接取自 <c>WKSMissionMapMarker</c>）。
+    ///
+    /// <para>刻意**不在這裡換算成地圖座標**：換算要 <c>Map.SizeFactor/Offset</c>，那是消費端
+    /// 畫圖時的事，而且台服 <c>Map</c> 的欄序尚未驗過（鐵則：不猜 RawRow 欄位索引）。
+    /// 這一層只負責把 client 裡的原值搬出來。</para>
+    /// </summary>
+    private static JsonNode? Marker(ExcelSheet<RawRow> todoSheet, ExcelSheet<RawRow> markerSheet, uint todoId)
+    {
+        if (todoId == 0 || !todoSheet.TryGetRow(todoId, out var todoRow)) return null;
+        var markerId = new TcMissionToDo(todoRow).MapMarker;
+        if (markerId == 0 || !markerSheet.TryGetRow(markerId, out var markerRow)) return null;
+        var mk = new TcMissionMapMarker(markerRow);
+        return new JsonObject { ["x"] = mk.X, ["y"] = mk.Y, ["r"] = mk.Radius };
     }
 
     private JsonArray RequiredItems(ExcelSheet<RawRow> todoSheet, ExcelSheet<RawRow> itemInfoSheet,

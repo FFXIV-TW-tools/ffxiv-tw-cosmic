@@ -17,6 +17,7 @@ import { createDevStageView } from './dev-stage-view.js';
 import { createJobPicker } from './job-prefs.js';
 import { createAlarm } from './alarm.js';
 import { createEmergencyView } from './emergency-view.js';
+import { createEmergencyMap } from './emergency-map.js';
 import { createEmergencyNotify } from './emergency-notify.js';
 import { createEmergencyHistory } from './emergency-history.js';
 
@@ -95,6 +96,9 @@ async function main() {
   const emPanel = document.querySelector('#panel-emergency');
   const emNotify = createEmergencyNotify(emPanel, { worlds: devData.worlds });
   const emHistory = createEmergencyHistory(emPanel, { worlds: devData.worlds });
+  // 地點圖是**純靜態**的（座標與底圖都在 client 裡），後端掛掉時它照常能看，
+  // 所以它不接現況、也不需要 emView。
+  createEmergencyMap(emPanel, missionData);
   const emView = createEmergencyView(emPanel, {
     worlds: devData.worlds,
     onState: (state) => emNotify.onState(state),

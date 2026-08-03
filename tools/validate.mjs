@@ -47,6 +47,19 @@ check(cls('basic') === 308, `基礎任務 = ${cls('basic')}，應為 308`);
 check(cls('temporary') === 203, `臨時任務 = ${cls('temporary')}，應為 203（高難 96 ＋ 高難+ 96 ＋ 11 個帶 ET 條件的 A 階）`);
 check(cls('critical') === 33, `緊急任務 = ${cls('critical')}，應為 33`);
 
+// ── 地圖（任務地點）─────────────────────────────────────────────
+// 33 筆緊急任務**全部**要有座標，因為地點圖就是照它畫的。少一筆＝圖上少一個點，
+// 而畫面上完全沒有訊號（其餘的點照樣畫得出來）⇒ 只能靠這條擋。
+const criticals = m.missions.filter((x) => x.class === 'critical');
+const noMarker = criticals.filter((x) => !x.marker);
+check(noMarker.length === 0, `緊急任務缺座標 ${noMarker.length} 筆（id ${noMarker.slice(0, 5).map((x) => x.id)}）`);
+// 六個變體共 20 個相異地點（2026-08-03 由 client 座標算出，並與 ICE 的錨點交叉對照）
+const spots = new Set(criticals.filter((x) => x.marker).map((x) => `${x.marker.x},${x.marker.y}`));
+check(spots.size === 20, `緊急任務相異地點 = ${spots.size}，應為 20`);
+// 底圖與換算參數缺一不可：少了任何一個，前端只能畫出一堆沒有背景或位置全錯的點
+check(!!m.map?.image, 'missions.json 缺 map.image（底圖沒匯出）');
+check(m.map?.sizeFactor > 0, `map.sizeFactor = ${m.map?.sizeFactor}，應為正數（世界座標換算的分母）`);
+
 const conditioned = m.missions.filter((x) => x.conds.length > 0);
 check(conditioned.length === 63, `有條件任務 = ${conditioned.length}，應為 63（LotterySpecialCond＝col[15]）`);
 check(m.missions.every((x) => x.conds.length <= 1), '有任務帶超過一個條件（LotterySpecialCond 是單一欄）');

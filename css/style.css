@@ -677,3 +677,128 @@ body {
   max-width: 16em;
   margin-bottom: var(--space-3, 12px);
 }
+
+/* ══ 緊急任務地點圖 ══════════════════════════════════════════════════════
+   底圖是正方形 ⇒ 容器用 aspect-ratio 撐住，pin 以百分比定位就會跟著縮放，
+   不必在 resize 時重算（也就不會有「縮視窗後點跑掉」那類 bug）。
+   **小圖**：這是查位置用的，不是要看風景（Owner 2026-08-03）。 */
+.cos-map {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  max-width: 440px;
+  margin: var(--space-3, 12px) 0;
+  border: 1px solid var(--color-border, #2b3f56);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+}
+
+.cos-map__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* pin 層不吃滑鼠：底圖之後若要能拖曳／點擊，不會被這一層擋住 */
+.cos-map__pins {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* pin ＝ 編號 ＋ 該地點要去的職業圖示，橫向排成一顆藥丸。
+   只有編號的話還是得去對照下方圖例，等於沒畫在圖上。 */
+.cos-map__pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px;
+  border-radius: 999px;
+  border: 1px solid var(--color-bg, #080c13);
+  /* 底圖是照片，純色塊會糊在裡面 ⇒ 給一圈暗外光把它從背景裡拉出來 */
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 45%), 0 2px 6px rgb(0 0 0 / 55%);
+  pointer-events: auto;
+  cursor: default;
+  white-space: nowrap;
+}
+
+/* 兩組同時顯示時要分得出誰是誰。第一組用本工具的 accent（cyan），第二組用 warn（琥珀）
+   —— 兩者都已在 token 裡，不另開顏色。 */
+.cos-map__pin--g0 { background: var(--accent); }
+.cos-map__pin--g1 { background: var(--color-warn, #e8a45a); }
+
+.cos-map__pinno {
+  font-size: var(--fs-xs, 0.75rem);
+  font-weight: 700;
+  /* pin 是亮色底，字要深色才讀得出來 */
+  color: var(--color-bg, #080c13);
+  padding-inline: 2px;
+}
+
+.cos-map__pinjob {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+/* 圖例裡的那顆是靜態標記，不該有絕對定位 */
+.cos-map__pin--static {
+  position: static;
+  transform: none;
+  flex: 0 0 auto;
+}
+
+.cos-map__picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1, 4px);
+  margin-top: var(--space-3, 12px);
+}
+
+/* 選中的那顆用邊框標示，不換 class family（仍是 ghost 按鈕） */
+.cos-map__pick--on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.cos-map__legend {
+  display: grid;
+  gap: var(--space-2, 8px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cos-map__legenditem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2, 8px);
+}
+
+.cos-map__job {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1, 4px);
+  color: var(--color-text-muted, #c0c9da);
+}
+
+.cos-map__jobicon {
+  width: 20px;
+  height: 20px;
+}
+
+.cos-map__group {
+  color: var(--color-text-muted, #c0c9da);
+  border-color: var(--color-border, #2b3f56);
+}
+
+/* 按鈕副標＝這一組有什麼任務。**這是目前唯一分得準的識別方式**——「A 組／B 組」在
+   通告↔分組的對應確定之前只是編號（B-023），掛上去等於要人拿猜出來的編號去對照。 */
+.cos-map__hint {
+  display: block;
+  font-size: var(--fs-xs, 0.75rem);
+  color: var(--color-text-muted, #c0c9da);
+}
