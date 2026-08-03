@@ -388,6 +388,19 @@
         </div>
       </div>
 
+      <!-- 速查入口。與上面「某一筆事件要去哪」是兩個不同的問題：這裡不綁伺服器、六組都列，
+           沒有事件的時候也查得到（Owner 2026-08-03）。共用同一個彈窗，不另建一份 DOM。 -->
+      <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
+        <span class="codex-hud" aria-hidden="true"></span>
+        <div class="cos-panel__head">
+          <h2 class="codex-h2 cos-panel__title">任務地點速查</h2>
+          <button class="codex-btn codex-btn--ghost" type="button" id="em-map-lookup">🗺 開啟地點圖</button>
+        </div>
+        <p class="codex-body">
+          六組固定地點（三種天氣 × 兩組任務），<strong>不隨伺服器或時間變</strong> — 隨時可以先看。
+        </p>
+      </section>
+
       <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
         <span class="codex-hud" aria-hidden="true"></span>
         <h2 class="codex-h2 cos-panel__title">

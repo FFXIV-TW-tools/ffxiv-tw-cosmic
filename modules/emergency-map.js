@@ -332,9 +332,14 @@ export function createEmergencyMap(root, data) {
      */
     open(world, kind) {
       const known = WEATHER_NAMES[kind] ? kind : null;
-      el.title.textContent = known
-        ? `${world} · ${WEATHER_NAMES[known]} — 任務地點`
-        : `${world} — 任務地點（這筆沒填天氣，六組都列出來對照）`;
+      // world 為空＝**速查模式**（不綁任何一筆事件，六組都列）。沒有事件時也想先看
+      // 「這六組分別長什麼樣」是合理的（Owner 2026-08-03），而那與「這筆事件要去哪」
+      // 是兩個不同的問題 —— 標題要講清楚是哪一個，否則速查會被當成現況。
+      el.title.textContent = !world
+        ? '任務地點速查 — 六組固定地點'
+        : known
+          ? `${world} · ${WEATHER_NAMES[known]} — 任務地點`
+          : `${world} — 任務地點（這筆沒填天氣，六組都列出來對照）`;
       buildPicker(known);
       selected = `${known ?? 'storm'}-α`;
       render();

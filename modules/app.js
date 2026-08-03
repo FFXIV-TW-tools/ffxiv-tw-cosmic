@@ -106,6 +106,8 @@ async function main() {
     onShowMap: (world, kind) => emMap.open(world, kind),
   });
   onEmergencyTab = () => emHistory.ensureLoaded();
+  // 速查：不綁任何一筆事件，六組都列。共用同一個彈窗。
+  emPanel.querySelector('#em-map-lookup')?.addEventListener('click', () => emMap.open(null, null));
 
   const picker = createJobPicker(document.querySelector('#job-picker'), jobs, (ids) => {
     nowPanel.setJobs(ids);
