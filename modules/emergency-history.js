@@ -1,4 +1,23 @@
 /**
+ * 補上「距上次」：同一台伺服器上，這一筆與**前一次**事件相隔多久。
+ *
+ * <b>只在同一台之間算</b>——七台各自獨立發事件，跨伺服器的「間隔」不對應任何真實的東西。
+ * 用開始時間（只有預告沒等到開始的那種就用預告時刻，與表格其他欄一致）。
+ * 找不到更舊的一筆就是 `null`，不補 0——那是「沒有資料」，不是「間隔 0」。
+ */
+function withIntervals(rows) {
+  const lastByWorld = new Map();
+  // 後端回的是新到舊；由舊往新掃才拿得到「前一次」
+  for (const r of [...rows].reverse()) {
+    const t = r.startAt || r.warnedAt;
+    const prev = lastByWorld.get(r.world);
+    r.gapSeconds = prev && t > prev ? t - prev : null;
+    if (t) lastByWorld.set(r.world, t);
+  }
+  return rows;
+}
+
+/**
  * 緊急事件歷史紀錄——已結束或已撤銷的回報，新到舊。
  *
  * **這是本站唯一會累積的緊急事件資料。** 其他所有東西都是時間的純函數（重算即可得），
@@ -13,7 +32,7 @@
  */
 
 import { emergencyApi } from './emergency-api.js';
-import { clockText, dateText } from './eorzea-time.js';
+import { clockText, dateText, formatDuration } from './eorzea-time.js';
 
 const STATUS_LABEL = {
   ended: ['已結束', ''],
@@ -45,16 +64,29 @@ export function createEmergencyHistory(root, { worlds }) {
     table: root.querySelector('#em-hist'),
     empty: root.querySelector('#em-hist-empty'),
     note: root.querySelector('#em-hist-note'),
+    limit: root.querySelector('#em-hist-limit'),
   };
 
   el.world.append(new Option('全部伺服器', ''));
   for (const w of worlds) el.world.append(new Option(w, w));
   el.world.addEventListener('change', () => load());
+  // 只改顯示筆數不必重抓——資料已經在手上（而且間隔要靠完整那份才算得出來）
+  el.limit?.addEventListener('change', () => { if (last) render(last); });
+
+  /** 最近一次抓到的完整結果。**間隔一定要用完整那份算**，否則被截掉的那筆就沒有前一筆可比。 */
+  let last = null;
 
   let loaded = false;
 
   function render(data) {
-    const rows = data?.rows ?? [];
+    last = data;
+    const all = data?.rows ?? [];
+    // **先用完整清單算間隔，再截**。反過來的話，被截掉的那一筆會少一個「前一次」而顯示 —，
+    // 看起來像「沒有前一次事件」，但真相只是它被畫面上的筆數上限藏起來了。
+    const withGap = withIntervals(all);
+    const cap = Number(el.limit?.value ?? 20);
+    const rows = withGap.slice(0, cap);
+
     el.empty.hidden = rows.length > 0;
     el.table.hidden = rows.length === 0;
 
@@ -68,6 +100,9 @@ export function createEmergencyHistory(root, { worlds }) {
         dateText(t),
         clockText(t),
         r.world,
+        // 距上次（同一台）。**跨伺服器不算**——七台各自獨立發事件，混在一起算出來的
+        // 「間隔」不對應任何真實的東西。
+        r.gapSeconds ? formatDuration(r.gapSeconds) : '—',
         // 提前量：預告→實際開始。累積幾筆之後這才是有依據的數字。
         r.leadSeconds ? `${Math.round(r.leadSeconds / 60)} 分` : '—',
         String(r.confirms),
@@ -76,7 +111,7 @@ export function createEmergencyHistory(root, { worlds }) {
       ];
       cells.forEach((text, i) => {
         const td = document.createElement('td');
-        if (i === 1 || i === 3 || i === 4 || i === 5) td.className = 'codex-table__num';
+        if (i === 1 || i === 3 || i === 4 || i === 5 || i === 6) td.className = 'codex-table__num';
         if (text !== null) td.textContent = text;
         tr.append(td);
       });
@@ -87,13 +122,17 @@ export function createEmergencyHistory(root, { worlds }) {
       return tr;
     }));
 
+    const hidden = withGap.length - rows.length;
     el.note.textContent = rows.length
-      ? `保留 ${data.retentionDays} 天；滿 7 天的紀錄只留時間與數量，回報者身份會被清掉。`
+      ? `顯示 ${rows.length} 筆${hidden > 0 ? `（另有 ${hidden} 筆未顯示）` : ''}；`
+        + `保留 ${data.retentionDays} 天，滿 7 天的紀錄只留時間與數量，回報者身份會被清掉。`
       : '';
   }
 
   async function load() {
-    const r = await emergencyApi.getHistory(el.world.value, 50);
+    // 一律抓後端上限（100）。畫面顯示幾筆是另一回事——多抓的那些是**間隔欄的算料**，
+    // 少抓就會讓最舊那幾筆算不出間隔。
+    const r = await emergencyApi.getHistory(el.world.value, 100);
     if (!r.ok) {
       el.empty.hidden = false;
       el.table.hidden = true;

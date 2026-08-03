@@ -412,6 +412,12 @@
         <div class="codex-field cos-em__histfilter">
           <label class="codex-field__label" for="em-hist-world">伺服器</label>
           <select class="codex-select" id="em-hist-world"></select>
+          <label class="codex-field__label" for="em-hist-limit">顯示</label>
+          <select class="codex-select" id="em-hist-limit">
+            <option value="20" selected>最近 20 筆</option>
+            <option value="50">最近 50 筆</option>
+            <option value="100">最近 100 筆</option>
+          </select>
         </div>
         <div class="codex-empty cos-hideable" id="em-hist-empty" hidden>
           <div class="codex-empty__icon" aria-hidden="true">🗒</div>
@@ -421,13 +427,14 @@
           <table class="codex-table codex-table--fixed codex-table--zebra" id="em-hist">
             <thead>
               <tr>
-                <th style="width:16%">日期</th>
-                <th class="codex-table__num" style="width:12%">開始</th>
-                <th style="width:18%">伺服器</th>
+                <th style="width:14%">日期</th>
+                <th class="codex-table__num" style="width:10%">開始</th>
+                <th style="width:15%">伺服器</th>
+                <th class="codex-table__num" style="width:15%">距上次<span class="codex-small cos-th-note">同一台伺服器</span></th>
                 <th class="codex-table__num" style="width:14%">預告提前<span class="codex-small cos-th-note">預兆通告→實際開始</span></th>
-                <th class="codex-table__num" style="width:12%">附議</th>
-                <th class="codex-table__num" style="width:12%">否認</th>
-                <th style="width:16%">狀態</th>
+                <th class="codex-table__num" style="width:10%">附議</th>
+                <th class="codex-table__num" style="width:10%">否認</th>
+                <th style="width:12%">狀態</th>
               </tr>
             </thead>
             <tbody></tbody>
