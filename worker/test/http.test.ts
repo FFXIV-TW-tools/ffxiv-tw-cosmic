@@ -227,6 +227,20 @@ describe('插件通報', () => {
   });
 });
 
+describe('schema 遷移', () => {
+  // 2026-08-03 實測：variant 與 weather 兩個 ALTER 共用一個 try，先加的那欄已存在時
+  // 第一句就丟例外並被 catch 吞掉 ⇒ 後面的欄位永遠沒被建立，症狀是部署後 500
+  // 「table events has no column named weather」。本機全新 DB 測不出來——所以這條測的是
+  // 「每一欄都真的存在」，而不是「建構子有沒有丟例外」。
+  it('events 表的每一個後加欄位都存在（一欄一個 ALTER）', async () => {
+    const cols = await runInDurableObject(doStub(), (inst: any) =>
+      [...inst.sql.exec('PRAGMA table_info(events)')].map((r: any) => r.name));
+    for (const c of ['variant', 'weather', 'nConfirm', 'nDispute', 'warnedAt', 'notifyAt']) {
+      expect(cols).toContain(c);
+    }
+  });
+});
+
 describe('事件變體（α／β）', () => {
   const world = devStages.worlds[3];
 

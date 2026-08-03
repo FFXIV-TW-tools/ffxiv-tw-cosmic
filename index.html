@@ -322,28 +322,39 @@
         <p class="codex-small cos-em__status" id="em-status">載入中…</p>
       </section>
 
-      <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
-        <span class="codex-hud" aria-hidden="true"></span>
-        <!-- 「剛剛開始」已由上面每一列的按鈕承接（伺服器＝那一列，選不錯）。
-             這張表單只剩兩種用途：預告、以及已經開始一段時間。 -->
-        <h2 class="codex-h2 cos-panel__title">不是剛剛開始的？</h2>
-        <p class="codex-body">
-          剛開始的直接按上面那一列的「我看到了，通報」。這裡是給<strong>預告</strong>（還沒開始）
-          和<strong>已經開始一段時間</strong>用的。事件固定 <strong>20 分鐘</strong>。
-        </p>
-        <div class="cos-em__form">
-          <div class="codex-field">
-            <label class="codex-field__label" for="em-world">伺服器</label>
-            <select class="codex-select" id="em-world"></select>
+      <!-- 通報彈窗（入口＝各伺服器現況每一列的按鈕）。**伺服器不再是欄位**，它就是你按的那一列
+           ⇒ 選錯伺服器這類錯誤從根上消失（2026-08-02 實測過預設值會造成誤報）。
+           不包在 codex-tablet 裡：那會變成一張永遠空著的卡片佔版面。 -->
+        <div class="codex-modal-overlay" id="em-report-overlay" hidden>
+          <div class="codex-modal" role="dialog" aria-modal="true" aria-labelledby="em-report-title">
+            <div class="codex-modal__header">
+              <h3 class="codex-h3" id="em-report-title">通報緊急事件</h3>
+              <button class="codex-modal__close" type="button" aria-label="關閉" id="em-report-close">×</button>
+            </div>
+            <div class="codex-modal__body">
+              <p class="codex-body">
+                伺服器：<strong id="em-report-world">—</strong>　·　事件固定 <strong>20 分鐘</strong>
+              </p>
+              <div class="codex-field">
+                <label class="codex-field__label" for="em-lead">什麼時候開始</label>
+                <select class="codex-select" id="em-lead"></select>
+              </div>
+              <div class="codex-field">
+                <label class="codex-field__label" for="em-weather">哪一種天氣</label>
+                <select class="codex-select" id="em-weather"></select>
+              </div>
+              <p class="codex-small cos-em__note">
+                <strong>不確定天氣就選「不確定」</strong> —— 填錯會讓之後的地圖把人導去錯的地點，
+                比沒填更糟。送出後 30 秒內都還能取消，那段時間內取消就不會有人收到通知。
+              </p>
+              <p class="codex-small cos-em__msg" id="em-msg"></p>
+            </div>
+            <div class="codex-modal__footer">
+              <button class="codex-btn codex-btn--ghost" type="button" id="em-report-cancel">取消</button>
+              <button class="codex-btn codex-btn--primary" type="button" id="em-submit">送出通報</button>
+            </div>
           </div>
-          <div class="codex-field">
-            <label class="codex-field__label" for="em-lead">什麼時候開始</label>
-            <select class="codex-select" id="em-lead"></select>
-          </div>
-          <button class="codex-btn codex-btn--primary" type="button" id="em-submit">送出通報</button>
         </div>
-        <p class="codex-small cos-em__msg" id="em-msg"></p>
-      </section>
 
       <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
         <span class="codex-hud" aria-hidden="true"></span>

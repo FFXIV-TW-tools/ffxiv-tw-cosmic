@@ -34,6 +34,21 @@ export const VARIANTS = [
   'storm-a', 'storm-b', 'meteor-a', 'meteor-b', 'spore-a', 'spore-b',
 ];
 
+/**
+ * 天氣種類。**比變體粗一階**，因為手動通報者只看得到是哪種天氣——
+ * 要分辨 α／β 得逐字讀開始通告，那不該要求玩家做。
+ *
+ * 插件送 `variant` 時這一欄由前綴推導（`storm-a` → `storm`），不必兩邊都送。
+ * 這樣「插件顧不到的 5 台」至少也有天氣，地圖功能對它們就不是全黑的。
+ */
+export const WEATHER_KINDS = ['storm', 'meteor', 'spore'];
+
+/** `storm-a` → `storm`；不是已知變體就回 null（不從任意字串亂切）。 */
+export function weatherKindOf(variant) {
+  if (!VARIANTS.includes(variant)) return null;
+  return variant.split('-')[0];
+}
+
 /** critical（緊急）任務的 id 區間——插件回報的證據自洽檢查用。 */
 export const CRITICAL_MISSION_MIN = 512;
 export const CRITICAL_MISSION_MAX = 544;
@@ -177,7 +192,18 @@ export function validateManualReport(body, now) {
   if (!Number.isInteger(lead) || lead < MIN_LEAD_MINUTES || lead > MAX_LEAD_MINUTES) {
     return { ok: false, reason: 'bad_lead' };
   }
-  return { ok: true, world: body.world, startAt: now + lead * 60 };
+  // 天氣是**選填**：通報者可能只是路過看到公告、沒注意是哪一種。
+  // 不確定就別逼他選一個——填錯的天氣會讓地圖把人導去錯的地點，比沒有更糟（鐵則 §2）。
+  if (body.weather !== undefined && body.weather !== null
+      && !WEATHER_KINDS.includes(body.weather)) {
+    return { ok: false, reason: 'bad_weather_kind' };
+  }
+  return {
+    ok: true,
+    world: body.world,
+    startAt: now + lead * 60,
+    weather: body.weather ?? null,
+  };
 }
 
 /**

@@ -16,7 +16,6 @@ import { emergencyApi } from './emergency-api.js';
 const POLL_SECONDS = 60;
 
 /** 上次通報選的伺服器。純檢視狀態，不進跨工具設定。 */
-const LAST_WORLD_KEY = 'ffxiv-tw-cosmic:em-world';
 
 /**
  * 自己送出過的 eventId。用來決定要不要顯示「取消」按鈕——
@@ -44,21 +43,19 @@ function rememberMine(id) {
   }
 }
 
-function loadLastWorld() {
-  try {
-    return localStorage.getItem(LAST_WORLD_KEY) ?? '';
-  } catch {
-    return '';
-  }
-}
-
-function saveLastWorld(w) {
-  try {
-    localStorage.setItem(LAST_WORLD_KEY, w);
-  } catch {
-    // 私密模式／配額滿：記不住而已，功能不受影響
-  }
-}
+/**
+ * 天氣選項。**「不確定」排第一且是預設**——填錯的天氣會讓之後的地圖把人導去錯的地點，
+ * 比沒填更糟（同鐵則 §2：寧可標成未知，不要拿看起來合理的值充數）。
+ *
+ * 只到「哪一種天氣」為止，不問 α／β：要分辨那個得逐字讀開始通告，不該要求玩家做。
+ * 變體由插件比對 client 通告得出，兩條路徑各做自己做得準的事。
+ */
+const WEATHER_OPTIONS = [
+  ['', '不確定'],
+  ['storm', '磁暴'],
+  ['meteor', '流星雨'],
+  ['spore', '孢子霧'],
+];
 
 /**
  * 「什麼時候開始」的選項，**分成兩組**：已經開始的、還沒開始的。
@@ -98,10 +95,14 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
   const el = {
     list: root.querySelector('#em-list'),
     status: root.querySelector('#em-status'),
-    world: root.querySelector('#em-world'),
     lead: root.querySelector('#em-lead'),
+    weather: root.querySelector('#em-weather'),
     submit: root.querySelector('#em-submit'),
     msg: root.querySelector('#em-msg'),
+    overlay: root.querySelector('#em-report-overlay'),
+    dialogWorld: root.querySelector('#em-report-world'),
+    close: root.querySelector('#em-report-close'),
+    cancel: root.querySelector('#em-report-cancel'),
   };
 
   /** 最近一次成功取得的現況；後端掛掉時保留上一份並標明時間，不清空。 */
@@ -110,12 +111,10 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
   let lastPoll = 0;
   let offline = false;
 
-  // **不給預設值**。`<select>` 天生會選第一個選項，也就是「伊弗利特」——
-  // 泰坦的玩家沒注意到下拉框按下去，送出的就是一筆伊弗利特的假通報，而這種
-  // 「不是惡意但是錯的」通報，社交層完全分辨不出來（只會被三個人否認掉，
-  // 代價是另一台伺服器的人先被吵一次）。所以寧可逼人選一次。
-  el.world.append(new Option('請選擇伺服器', ''));
-  for (const w of worlds) el.world.append(new Option(w, w));
+  // 天氣是**選填**。第一項就是「不確定」而且是預設——填錯的天氣會讓之後的地圖把人導去
+  // 錯的地點，比沒填更糟（鐵則 §2 的同一個道理：寧可標成未知，不要拿看起來合理的值充數）。
+  for (const [v, label] of WEATHER_OPTIONS) el.weather.append(new Option(label, v));
+
   for (const [groupLabel, options] of LEAD_GROUPS) {
     const group = document.createElement('optgroup');
     group.label = groupLabel;
@@ -127,64 +126,54 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
   // 同一種錯：下拉選單的第一項不是中性值。
   el.lead.value = '0';
 
-  el.world.addEventListener('change', () => {
-    if (el.world.value) saveLastWorld(el.world.value);
-    syncSubmitState();
-  });
-  syncSubmitState();
-  applyDefaultWorld();
-
-  function syncSubmitState() {
-    el.submit.disabled = !el.world.value;
-    el.submit.title = el.world.value ? '' : '請先選擇伺服器';
-  }
-
   /**
-   * 預設值優先序：**這頁上次選的** → portal 跨工具的「我的伺服器」→ 不預設。
-   *
-   * 上次選的排在前面是因為它更貼近當下意圖（有人會替朋友的伺服器回報）；
-   * `character.mainWorld` 是跨工具共用的身份設定（marketboard／BIS 也在吃），
-   * 本站只讀不寫——那是使用者在 portal 設定的東西，不該被這頁的臨時選擇覆蓋。
+   * 彈窗鎖定的伺服器。**由使用者按的那一列決定，不是選出來的**——
+   * 2026-08-02 實測過「下拉選單預設選到第一台」會產生報錯伺服器的假通報，
+   * 而那種「不是惡意但是錯的」通報社交層分辨不出來。把欄位整個拿掉，錯誤就沒有發生的餘地。
    */
-  async function applyDefaultWorld() {
-    const known = (w) => (worlds.includes(w) ? w : '');
-    let want = known(loadLastWorld());
-    if (!want) {
-      const s = window.FFXIVSettings;
-      if (s) {
-        // settings-client 是非同步 hydrate 的，不等它就會讀到空字串（實測踩過）
-        try {
-          if (s.ready) await s.ready;
-        } catch {
-          // 雲端拉取失敗不代表本機沒有值，繼續往下讀
-        }
-        want = known(s.get?.('character.mainWorld') ?? '');
-      }
-    }
-    if (want) {
-      el.world.value = want;
-      syncSubmitState();
-    }
+  let dialogWorld = '';
+  let releaseTrap = null;
+
+  function openReport(world) {
+    dialogWorld = world;
+    el.dialogWorld.textContent = world;
+    el.lead.value = '0';
+    el.weather.value = '';
+    say('', 'ok');
+    el.submit.disabled = false;
+    el.overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    releaseTrap = window.FFXIVA11y?.trapFocus?.(el.overlay) ?? null;
   }
+
+  function closeReport() {
+    el.overlay.hidden = true;
+    document.body.style.overflow = '';
+    releaseTrap?.();
+    releaseTrap = null;
+  }
+
+  el.close?.addEventListener('click', closeReport);
+  el.cancel?.addEventListener('click', closeReport);
+  el.overlay?.addEventListener('click', (e) => {
+    if (e.target === el.overlay) closeReport();   // 只認遮罩本身
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !el.overlay.hidden) closeReport();
+  });
 
   el.submit.addEventListener('click', submit);
 
-  /** 列上的一鍵通報＝該伺服器、「剛剛開始」。伺服器不由使用者選，所以選不錯。 */
-  async function quickReport(world, btn) {
-    btn.disabled = true;
-    await sendReport(world, 0);
-    // 不把 btn 開回來：成功的話這一列會被重畫成「已回報」，那顆按鈕本來就該消失；
-    // 失敗（冷卻／限流）時 poll 也會重畫，重畫後的新按鈕是可按的
-  }
-
   async function submit() {
     el.submit.disabled = true;
-    await sendReport(el.world.value, Number(el.lead.value));
-    syncSubmitState();   // 不能無條件開回來——沒選伺服器時它本來就該是關的
+    const ok = await sendReport(dialogWorld, Number(el.lead.value), el.weather.value || null);
+    el.submit.disabled = false;
+    // 成功就關窗（結果會顯示在那一列上）；失敗留著讓人看錯誤訊息並重試
+    if (ok) closeReport();
   }
 
-  async function sendReport(world, lead) {
-    const r = await emergencyApi.report(world, lead);
+  async function sendReport(world, lead, weather) {
+    const r = await emergencyApi.report(world, lead, weather);
     if (r.ok) {
       if (!r.duplicate && Number.isInteger(r.data?.eventId)) rememberMine(r.data.eventId);
       say(
@@ -197,9 +186,10 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
       );
       await poll(true);
       onChanged?.();   // 新事件要進歷史紀錄（撤銷／結束後才會出現在那張表）
-    } else {
-      say(r.message, 'warn');
+      return true;
     }
+    say(r.message, 'warn');
+    return false;
   }
 
   function say(text, tone) {
@@ -305,7 +295,7 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
       quick.type = 'button';
       quick.className = 'codex-btn codex-btn--ghost codex-small cos-em__quick';
       quick.textContent = '我看到了，通報';
-      quick.addEventListener('click', () => quickReport(world, quick));
+      quick.addEventListener('click', () => openReport(world));
       li.append(none, lastEndedEl(world, now), quick);
       return li;
     }

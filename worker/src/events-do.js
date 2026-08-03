@@ -50,18 +50,26 @@ export class CosmicEventsDO extends DurableObject {
     // `CREATE TABLE IF NOT EXISTS` 不會補欄位到既有表，所以用 ALTER；已經有了就會丟錯，吞掉即可
     // （父層鐵則例外 a：窄的、預期內的 schema 既存檢查）。
     // `notifyAt`：待推播的時間戳；0 ＝ 沒有待推播的東西（已送出或不需延遲）。
-    try {
+    // **一個 ALTER 一個 try**。兩句共用一個 try 會出事：先加的那欄已經存在時第一句就丟例外，
+    // 於是後面的欄位**永遠不會被建立**，而 catch 把它吞得無聲無息——症狀是部署後
+    // 「table events has no column named X」的 500，本機全新 DB 反而測不出來
+    // （2026-08-03 實測：variant 已存在的 DO 上，weather 就是這樣沒建起來）。
+    const columns = [
       // 事件變體（storm-a／meteor-b…）。插件比對 client 的開始通告得來；
       // 沒偵測到就維持 NULL——空字串會讓「沒偵測到」與「偵測到但空」分不開（鐵則 §2）。
-      this.sql.exec('ALTER TABLE events ADD COLUMN variant TEXT');
-    } catch {
-      // 欄位已存在
-    }
-    for (const col of ['nConfirm', 'nDispute', 'warnedAt', 'notifyAt']) {
+      ['variant', 'TEXT'],
+      // 天氣種類（storm／meteor／spore）。插件由 variant 前綴推導，手動通報由使用者選（選填）。
+      ['weather', 'TEXT'],
+      ['nConfirm', 'INTEGER NOT NULL DEFAULT 0'],
+      ['nDispute', 'INTEGER NOT NULL DEFAULT 0'],
+      ['warnedAt', 'INTEGER NOT NULL DEFAULT 0'],
+      ['notifyAt', 'INTEGER NOT NULL DEFAULT 0'],
+    ];
+    for (const [col, type] of columns) {
       try {
-        this.sql.exec(`ALTER TABLE events ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0`);
+        this.sql.exec(`ALTER TABLE events ADD COLUMN ${col} ${type}`);
       } catch {
-        // 欄位已存在
+        // 欄位已存在（父層鐵則例外 a：窄的、預期內的 schema 既存檢查）
       }
     }
   }
@@ -156,6 +164,7 @@ export class CosmicEventsDO extends DurableObject {
       disputes: JSON.parse(r.disputes),
       status: r.status,
       variant: r.variant ?? null,
+      weather: r.weather ?? null,
     };
   }
 
@@ -191,9 +200,10 @@ export class CosmicEventsDO extends DurableObject {
     if (input.phase === 'warn') {
       if (existing) return { ok: true, eventId: existing.id, duplicate: true };
       this.sql.exec(
-        `INSERT INTO events (world, source, startAt, endAt, startExact, createdAt, reporter, warnedAt, variant)
-         VALUES (?, ?, 0, ?, 0, ?, '', ?, ?)`,
+        `INSERT INTO events (world, source, startAt, endAt, startExact, createdAt, reporter, warnedAt, variant, weather)
+         VALUES (?, ?, 0, ?, 0, ?, '', ?, ?, ?)`,
         world, source, now + L.WARN_TTL, now, now, input.variant ?? null,
+        input.weather ?? L.weatherKindOf(input.variant) ?? null,
       );
       const wid = this.sql.exec('SELECT last_insert_rowid() AS id').toArray()[0].id;
       this._bump('warn_ok');
@@ -261,11 +271,13 @@ export class CosmicEventsDO extends DurableObject {
     const startAt = input.startAt;
     const delay = L.notifyDelayFor(source);
     this.sql.exec(
-      `INSERT INTO events (world, source, startAt, endAt, startExact, createdAt, reporter, notifyAt, variant)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO events (world, source, startAt, endAt, startExact, createdAt, reporter, notifyAt, variant, weather)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       world, source, startAt, startAt + L.EVENT_DURATION,
       source === 'plugin' ? 1 : 0, now, reporter, delay ? now + delay : 0,
       input.variant ?? null,
+      // 手動＝使用者選的（選填）；插件＝由變體前綴推導，不必兩邊都送
+      input.weather ?? L.weatherKindOf(input.variant) ?? null,
     );
     const id = this.sql.exec('SELECT last_insert_rowid() AS id').toArray()[0].id;
     this._bump(source === 'plugin' ? 'report_ok_plugin' : 'report_ok_manual');
@@ -406,6 +418,7 @@ export class CosmicEventsDO extends DurableObject {
         // 以及撤回時該說「沒有人會收到」還是「無法收回」。不回這欄前端只能猜。
         pendingNotify: (r.notifyAt ?? 0) > 0,
         variant: r.variant ?? null,
+        weather: r.weather ?? null,
       };
     }
     // 前端要在事件列上顯示「否認 2／3 就下架」。門檻是後端的判斷依據，
@@ -476,6 +489,7 @@ export class CosmicEventsDO extends DurableObject {
         // 而不是拿單一觀察去猜（本 repo 已為此吃過一次虧）。
         leadSeconds: (r.warnedAt && r.startAt) ? r.startAt - r.warnedAt : null,
         variant: r.variant ?? null,
+        weather: r.weather ?? null,
         confirms: r.nConfirm ?? 0,
         disputes: r.nDispute ?? 0,
       })),

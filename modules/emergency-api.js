@@ -105,10 +105,13 @@ export const emergencyApi = {
   getHistory: (world = '', limit = 50) =>
     call(`/history?limit=${limit}${world ? `&world=${encodeURIComponent(world)}` : ''}`),
 
-  async report(world, startsInMinutes) {
+  /** @param weather 'storm'｜'meteor'｜'spore'｜null（不確定 ⇒ **不送這個欄位**，不要送空字串） */
+  async report(world, startsInMinutes, weather = null) {
     const uuid = await currentUuid();
     if (!uuid) return { ok: false, code: 'no_uuid', message: '尚未取得識別碼，請重新整理後再試。' };
-    return call('/report', { method: 'POST', body: { uuid, world, startsInMinutes } });
+    const body = { uuid, world, startsInMinutes };
+    if (weather) body.weather = weather;
+    return call('/report', { method: 'POST', body });
   },
 
   async withdraw(eventId) {

@@ -153,7 +153,7 @@ export default {
       const s = stub(env);
       if (await s.isBlocked(body.uuid)) return json(request, { error: 'blocked' }, 403);
       const r = await s.report(
-        { source: 'manual', world: v.world, startAt: v.startAt, reporter: body.uuid },
+        { source: 'manual', world: v.world, startAt: v.startAt, reporter: body.uuid, weather: v.weather },
         now,
       );
       if (!r.ok) return json(request, r, 429);          // 冷卻中＝請稍後，不是壞請求
