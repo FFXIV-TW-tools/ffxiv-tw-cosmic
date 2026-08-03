@@ -802,3 +802,51 @@ body {
   font-size: var(--fs-xs, 0.75rem);
   color: var(--color-text-muted, #c0c9da);
 }
+
+/* 一個地點＝真實座標的小點 ＋ 可被推開的標籤。**點不動、標籤才動**——
+   兩個地點只差幾個百分點時標籤會疊成一團（Owner 2026-08-03 截圖），但把點也移走
+   就等於畫錯位置。 */
+.cos-map__spot { display: contents; }
+
+.cos-map__dot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--color-bg, #080c13);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 45%);
+}
+.cos-map__dot--g0 { background: var(--accent); }
+.cos-map__dot--g1 { background: var(--color-warn, #e8a45a); }
+
+/* 目前現況：哪一台有事、什麼天氣。地圖本身是靜態查詢，這一行是它與現況的唯一連結 */
+.cos-map__live { margin-top: var(--space-3, 12px); }
+
+/* 天氣已知時，其餘四組淡出——範圍縮小是有依據的，但不代表已經選定其中一組 */
+.cos-map__pick--off { opacity: 0.4; }
+
+/* 聊天欄通告原文：一則一行，短 */
+.cos-map__ann { display: block; }
+
+/* 天氣標籤兼「展開地點圖」入口：看得出可以按，但不搶那一列真正的動作鈕（附議／否認） */
+.cos-em__weather--link {
+  cursor: pointer;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* 採集範圍圈＝client 給的半徑（`WKSMissionMapMarker` 的 c3），就是遊戲畫在地圖上那個圈。
+   交付點的半徑是 0 ⇒ 畫成點（見 .cos-map__dot）——0 不是缺值，是「這裡是一個點」。 */
+.cos-map__area {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 45%), inset 0 0 0 1px rgb(0 0 0 / 45%);
+}
+.cos-map__area--g0 { color: var(--accent); background: var(--accent-soft); }
+.cos-map__area--g1 {
+  color: var(--color-warn, #e8a45a);
+  background: var(--color-warn-soft, rgba(232, 164, 90, 0.18));
+}

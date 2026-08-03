@@ -30,6 +30,9 @@ const VARIANT_MISSIONS = {
 
 const WEATHER_NAMES = { storm: '磁暴', meteor: '流星雨', spore: '孢子霧' };
 
+/** 標籤最小垂直間距（圖寬的百分比）。pin 高約 23px、圖寬 440px ⇒ 5.3%；取 6% 留一點縫。 */
+const MIN_GAP = 6;
+
 /**
  * 兩則**開始**通告（預告那則 A／B 共用，分不出來所以不列在這）。
  *
@@ -74,11 +77,23 @@ function toPercent(world, offset, sizeFactor) {
 }
 
 /**
+ * 半徑（世界單位）→ 圖上百分比。同一條換算的**差分**形式：offset 與 sizeFactor 相消，
+ * 只剩 `41 / 2048 / 40`。
+ *
+ * 這一欄是 client 給的（`WKSMissionMapMarker.c3`），就是遊戲在地圖上畫的那個範圍圈。
+ * 採集區有半徑（80／100／120），交付點是 0 ⇒ **0 不是缺值，是「這裡是一個點」**。
+ */
+function radiusPercent(r, sizeFactor) {
+  return (r * (41 / sizeFactor * 100) / 2048 / 40) * 100 * (sizeFactor / 100);
+}
+
+/**
  * @param {HTMLElement} root #panel-emergency
  * @param {object} data missions.json
  */
 export function createEmergencyMap(root, data) {
   const el = {
+    live: root.querySelector('#em-map-live'),
     picker: root.querySelector('#em-map-picker'),
     note: root.querySelector('#em-map-note'),
     img: root.querySelector('#em-map-img'),
@@ -86,7 +101,7 @@ export function createEmergencyMap(root, data) {
     legend: root.querySelector('#em-map-legend'),
   };
   const cfg = data.map;
-  if (!el.picker || !cfg) return;
+  if (!el.picker || !cfg) return { syncTo() {} };
 
   el.img.src = cfg.image;
 
@@ -134,19 +149,15 @@ export function createEmergencyMap(root, data) {
     const groups = [selected];
     const kind = selected.split('-')[0];
 
+    // 只留**聊天欄那兩句**（Owner 2026-08-03：「只要把職業跟天氣是怎麼通知的顯示出來就好了，
+    // 一堆字幹嘛」）。前一版把整套推理過程寫在這裡——那些屬於註解與 ❓ 說明卡，不屬於畫面。
     el.note.replaceChildren();
-    el.note.append(
-      `${WEATHER_NAMES[kind]}有兩組任務，一次事件只會出其中一組 — 開任務板看是哪幾個任務，`
-      + '就知道要看這張圖的哪一組。這一組的地點是遊戲資料寫死的，不隨伺服器變。',
-      document.createElement('br'),
-    );
-    // 聊天欄的開始通告原文：兩則列出來讓人比對自己看到的是哪一句。
-    // **不標哪則對應哪一組**——那個對應目前無證據（B-023），標了就是把猜測寫成事實。
-    const ann = document.createElement('span');
-    ann.textContent = `${WEATHER_NAMES[kind]}的開始通告有兩則：「${START_ANNOUNCEMENTS[kind][0]}」`
-      + `／「${START_ANNOUNCEMENTS[kind][1]}」。`
-      + '（哪一則對應哪一組尚未確認，所以請以任務板上的任務為準。）';
-    el.note.append(ann);
+    for (const line of START_ANNOUNCEMENTS[kind]) {
+      const p = document.createElement('span');
+      p.className = 'cos-map__ann';
+      p.textContent = `「${line}」`;
+      el.note.append(p);
+    }
 
     el.pins.replaceChildren();
     el.legend.replaceChildren();
@@ -162,25 +173,67 @@ export function createEmergencyMap(root, data) {
         spots.get(key).missions.push(m);
       }
 
-      let n = 0;
-      for (const spot of spots.values()) {
-        n += 1;
-        el.pins.append(pin(spot, g, gi, n));
-        el.legend.append(legendItem(spot, g, gi, n));
+      // 先算好每顆的位置，讓開重疊之後才畫（同一組裡常有兩個點只差幾個百分點，
+      // 標籤直接畫上去會疊成一團看不出誰是誰 —— Owner 2026-08-03 截圖）
+      const placed = [...spots.values()].map((spot, i) => ({
+        spot,
+        n: i + 1,
+        x: toPercent(spot.marker.x, cfg.offsetX, cfg.sizeFactor),
+        y: toPercent(spot.marker.y, cfg.offsetY, cfg.sizeFactor),
+      }));
+      deOverlap(placed);
+      for (const p of placed) {
+        el.pins.append(pin(p, g, gi));
+        el.legend.append(legendItem(p.spot, gi, p.n));
       }
     });
+  }
+
+  /**
+   * 讓重疊的標籤上下讓開。**只動標籤，不動地點**——真實座標另外畫（範圍圈或點）釘在原位，
+   * 標籤移走了也還看得出正確位置。由上而下掃一次就夠（點不多）。
+   */
+  function deOverlap(placed) {
+    const sorted = [...placed].sort((a, b) => a.y - b.y);
+    for (let i = 1; i < sorted.length; i++) {
+      const prev = sorted[i - 1];
+      const cur = sorted[i];
+      // 橫向也靠得夠近才會真的疊到，否則不必動
+      if (Math.abs(cur.x - prev.x) > 14) continue;
+      if (cur.y - prev.y >= MIN_GAP) continue;
+      cur.y = prev.y + MIN_GAP;
+    }
   }
 
   /**
    * 一個地點一顆 pin，**上面直接畫該地點要去的職業圖示**（Owner 2026-08-03）。
    * 只寫編號的話還是得對照下面的圖例才知道自己該不該去，等於沒有畫在圖上。
    */
-  function pin(spot, group, groupIndex, n) {
+  function pin(p, group, groupIndex) {
+    const { spot, n } = p;
+    const wrap = document.createElement('div');
+    wrap.className = 'cos-map__spot';
+    wrap.title = `${spot.missions.map((m) => `${m.jobs.map(jobLabel).join('・')}：${m.name}`).join('\n')}`;
+
+    // 真實座標。有半徑就畫成**範圍圈**（＝遊戲地圖上那個圈，資料出自 `WKSMissionMapMarker` 的
+    // 半徑欄），沒有就畫一個點——client 的 0 是「這裡是一個點」（交付／製作處），不是缺值。
+    const rp = radiusPercent(spot.marker.r, cfg.sizeFactor);
+    const at = document.createElement('span');
+    at.className = rp > 0
+      ? `cos-map__area cos-map__area--g${groupIndex}`
+      : `cos-map__dot cos-map__dot--g${groupIndex}`;
+    at.style.left = `${toPercent(spot.marker.x, cfg.offsetX, cfg.sizeFactor)}%`;
+    at.style.top = `${toPercent(spot.marker.y, cfg.offsetY, cfg.sizeFactor)}%`;
+    if (rp > 0) {
+      at.style.width = `${rp * 2}%`;
+      at.style.height = `${rp * 2}%`;
+    }
+    wrap.append(at);
+
     const d = document.createElement('div');
     d.className = `cos-map__pin cos-map__pin--g${groupIndex}`;
-    d.style.left = `${toPercent(spot.marker.x, cfg.offsetX, cfg.sizeFactor)}%`;
-    d.style.top = `${toPercent(spot.marker.y, cfg.offsetY, cfg.sizeFactor)}%`;
-    d.title = `${group}\n${spot.missions.map((m) => `${m.jobs.map(jobLabel).join('・')}：${m.name}`).join('\n')}`;
+    d.style.left = `${p.x}%`;
+    d.style.top = `${p.y}%`;
 
     const seq = document.createElement('span');
     seq.className = 'cos-map__pinno';
@@ -198,10 +251,11 @@ export function createEmergencyMap(root, data) {
       icon.loading = 'lazy';
       d.append(icon);
     }
-    return d;
+    wrap.append(d);
+    return wrap;
   }
 
-  function legendItem(spot, group, groupIndex, n) {
+  function legendItem(spot, groupIndex, n) {
     const li = document.createElement('li');
     li.className = 'cos-map__legenditem';
 
@@ -232,7 +286,48 @@ export function createEmergencyMap(root, data) {
     return li;
   }
 
-  // 刻意**不做**「跟著現況自動切到這次的變體」：後端存的 `storm-a`／`storm-b` 是通告文字，
-  // 這裡的分組是 α／β，兩者對應未知（B-023）⇒ 自動切只會有一半機率切對，
-  // 而使用者不會知道它切錯了。等對應解出來再接。
+  return {
+    /**
+     * 從現況那一列跳過來：展開地圖、切到該天氣、捲到看得到的位置。
+     * **只切到天氣**（該天氣的第一組），不假裝知道是哪一組——那個對應還沒有證據（B-023）。
+     */
+    openFor(kind) {
+      if (WEATHER_NAMES[kind]) {
+        selected = `${kind}-α`;
+        render();
+      }
+      const wrap = root.querySelector('.cos-map__wrap');
+      if (wrap) wrap.open = true;
+      wrap?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    },
+
+    /**
+     * 把現況接進地圖（Owner 2026-08-03：「根本看不出來現在是哪個事件」）。
+     *
+     * 做兩件事，**都不含猜測**：
+     * 1. 頂上寫出目前有事件的伺服器與天氣（沒有就明說沒有）。
+     * 2. 該天氣的兩顆按鈕標成候選，其餘四顆淡出——範圍從六組縮到兩組是**有依據的**
+     *    （天氣是通報進來的事實）。
+     *
+     * **不自動選定其中一組**：`storm-a`／`storm-b`（通告文字）與 α／β（任務分組）的對應
+     * 目前無證據（B-023），自動切只有一半機率對，而使用者不會知道它切錯了。
+     */
+    syncTo(state) {
+      const events = Object.values(state?.events ?? {});
+      const kinds = new Set(events.map((e) => e.weather).filter(Boolean));
+
+      el.live.replaceChildren();
+      if (!events.length) {
+        el.live.textContent = '目前沒有人回報進行中的事件 — 下面是六組的固定地點，可以先查。';
+      } else {
+        el.live.textContent = `現在：${events.map((e) => e.world + (WEATHER_NAMES[e.weather] ? ` ${WEATHER_NAMES[e.weather]}` : '（天氣未填）')).join('、')}`;
+      }
+
+      // 天氣已知 ⇒ 只可能是那兩組，其餘淡出。全部未知就不淡（沒有依據可縮範圍）。
+      for (const b of el.picker.children) {
+        const isCandidate = kinds.size === 0 || kinds.has(b.dataset.key.split('-')[0]);
+        b.classList.toggle('cos-map__pick--off', !isCandidate);
+      }
+    },
+  };
 }

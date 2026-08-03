@@ -133,7 +133,7 @@ const LEAD_GROUPS = [
  * @param {HTMLElement} root #panel-emergency
  * @param {{worlds: string[], onState?: (state:object)=>void}} opts
  */
-export function createEmergencyView(root, { worlds, onState, onChanged }) {
+export function createEmergencyView(root, { worlds, onState, onChanged, onShowMap }) {
   const el = {
     list: root.querySelector('#em-list'),
     status: root.querySelector('#em-status'),
@@ -346,12 +346,10 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
  * 才指得出地點，而「不知道」與「知道是磁暴但不知道 A／B」對它是不同的輸入。
  */
 function weatherLabel(ev) {
-  if (ev.variant) {
-    const w = WEATHERS.find((x) => x.starts.some(([v]) => v === ev.variant));
-    const i = w?.starts.findIndex(([v]) => v === ev.variant) ?? -1;
-    if (w && i >= 0) return `${w.name} ${AB[i]}`;
-  }
-  return WEATHERS.find((x) => x.kind === ev.weather)?.name ?? null;
+  // **只寫天氣，不寫 A／B**：地圖上沒有 A／B（通告↔任務分組的對應還沒有證據，B-023），
+  // 這裡寫了「磁暴 B」，人到地圖上會找不到叫 B 的那一組。變體仍然存在後端，只是還不能用來指路。
+  const kind = ev.weather ?? (ev.variant ? ev.variant.split('-')[0] : null);
+  return WEATHERS.find((x) => x.kind === kind)?.name ?? null;
 }
 
 /** 一台伺服器一列。沒有事件的也要列出來——「查過了，沒有」跟「不知道」是兩回事。 */
@@ -409,11 +407,17 @@ function weatherLabel(ev) {
 
     // 天氣／變體：**沒有就整個不放**（不寫「未知」——那會被讀成「查過了是未知」，
     // 但真相是沒人填）。有值才顯示，也讓填錯的人自己看得出來要按取消重報。
+    const kind = ev.weather ?? (ev.variant ? ev.variant.split('-')[0] : null);
     const w = weatherLabel(ev);
     if (w) {
-      const tag = document.createElement('span');
-      tag.className = 'codex-badge cos-em__weather';
-      tag.textContent = w;
+      // 天氣本身就當成「看地點圖」的入口（Owner 2026-08-03：「有連結可以快速展開地圖」）。
+      // 另放一顆按鈕只會讓這一列更擠，而天氣正是決定要看哪一組地點的那個欄位。
+      const tag = document.createElement('button');
+      tag.type = 'button';
+      tag.className = 'codex-badge cos-em__weather cos-em__weather--link';
+      tag.textContent = `${w} · 地點圖`;
+      tag.title = `展開地點圖，看${w}要去哪幾個點`;
+      tag.addEventListener('click', () => onShowMap?.(kind));
       li.append(tag);
     }
 
