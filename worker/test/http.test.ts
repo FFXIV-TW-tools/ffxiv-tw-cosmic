@@ -116,6 +116,17 @@ describe('邊界', () => {
     expect(r.status).toBe(403);
   });
 
+  // B-047：遷 xivtc.com 期間的雙列契約。漏新的 ⇒ cosmic.xivtc.com 的通報／同步全滅；
+  // 漏舊的 ⇒ 手上是舊書籤的既有使用者當場斷線。兩邊都要有斷言才擋得住其中一邊被順手刪掉。
+  it('新網域 cosmic.xivtc.com 放行，未列舉的 xivtc 子網域仍被拒', async () => {
+    const ok = await SELF.fetch('https://x/health', { headers: { Origin: 'https://cosmic.xivtc.com' } });
+    expect(ok.headers.get('Access-Control-Allow-Origin')).toBe('https://cosmic.xivtc.com');
+    for (const o of ['https://unknown.xivtc.com', 'https://cosmic.xivtc.com.attacker.net']) {
+      const r = await SELF.fetch('https://x/health', { headers: { Origin: o } });
+      expect(r.headers.get('Access-Control-Allow-Origin'), o).toBeNull();
+    }
+  });
+
   it('同一 IP 連續通報會被限流（2/60s）', async () => {
     stubDiscord();
     const same = '203.0.113.7';

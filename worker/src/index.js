@@ -19,8 +19,13 @@ export { CosmicEventsDO };
 L.setWorlds(devStages.worlds);
 
 /** 照抄 portal settings worker：只認自家 Pages（含 CF preview hash）與本機。 */
+// B-047：遷 xivtc.com 期間**新舊雙列**，舊條目在遷移完成前不得移除。
+// ⚠️ 新網域用精確 host、不用 `([a-z-]+\.)?xivtc\.com` 萬用比對 —— 那會放行任何現在或
+//    未來的子網域，是不必要的邊界擴張（同 portal worker 的決定）。
+// 只列 cosmic 自己：實測本 worker 唯一呼叫端是 `modules/emergency-api.js`，無跨工具呼叫。
 const ORIGIN_PATTERNS = [
   /^https:\/\/([a-f0-9]+\.)?ffxiv-[a-z-]+\.pages\.dev$/,
+  /^https:\/\/cosmic\.xivtc\.com$/,
   /^http:\/\/(localhost|127\.0\.0\.1)(:[0-9]+)?$/,
 ];
 
