@@ -343,8 +343,14 @@
                 <label class="codex-field__label" for="em-weather">哪一種天氣</label>
                 <select class="codex-select" id="em-weather"></select>
               </div>
+              <!-- 遊戲原文對照：選單裡是預告那一句，事件開始後才通報的人看到的是另外兩則之一。
+                   六則全部出自台服 client 的 MassivePcContentTextData，不是轉述。 -->
+              <details class="codex-accordion cos-em__ann">
+                <summary>對照遊戲公告原文</summary>
+                <div class="codex-accordion__body" id="em-ann"></div>
+              </details>
               <p class="codex-small cos-em__note">
-                <strong>不確定天氣就選「不確定」</strong> —— 填錯會讓之後的地圖把人導去錯的地點，
+                <strong>不確定就選「不確定」</strong> —— 填錯會讓之後的地圖把人導去錯的地點，
                 比沒填更糟。送出後 30 秒內都還能取消，那段時間內取消就不會有人收到通知。
               </p>
               <p class="codex-small cos-em__msg" id="em-msg"></p>

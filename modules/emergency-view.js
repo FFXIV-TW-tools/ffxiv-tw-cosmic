@@ -52,9 +52,23 @@ function rememberMine(id) {
  */
 const WEATHER_OPTIONS = [
   ['', '不確定'],
-  ['storm', '磁暴'],
-  ['meteor', '流星雨'],
-  ['spore', '孢子霧'],
+  ['storm', '磁暴 — 「即將發生大規模磁暴……」'],
+  ['meteor', '流星雨 — 「觀測到小型隕石群正在靠近！」'],
+  ['spore', '孢子霧 — 「觀測到孢子霧爆發的預兆！」'],
+];
+
+/**
+ * 選單裡放的是**預告**的原文（那是多數人看到的第一句）。事件開始後才通報的人看到的是
+ * 另外兩則之一，所以底下再列出來讓他比對——**六則全部出自台服 client 的
+ * `MassivePcContentTextData`**（2026-08-03 離線解出），不是轉述。
+ *
+ * 每種天氣的「開始」有兩則，對應兩組不同的任務與地點；這裡只讓玩家選到天氣為止，
+ * 分辨是哪一則交給插件（要逐字比對，不該要求玩家做）。
+ */
+const WEATHER_ANNOUNCEMENTS = [
+  ['磁暴', '即將發生大規模磁暴……', ['已確認磁暴造成惡劣影響…收集救災所需的物資', '磁暴造成渴望灣多個地區受災…展開救災活動']],
+  ['流星雨', '觀測到小型隕石群正在靠近！', ['有小型隕石雨墜落在月門基地附近…恢復生產建設秩序', '隕石雨墜落造成的衝擊導致地面氣體外洩']],
+  ['孢子霧', '觀測到孢子霧爆發的預兆！', ['渴望灣東部爆發孢子霧…查明是否出現變異菌床', '孢子霧吞沒渴望灣東部…除去變異菌床']],
 ];
 
 /**
@@ -97,6 +111,7 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
     status: root.querySelector('#em-status'),
     lead: root.querySelector('#em-lead'),
     weather: root.querySelector('#em-weather'),
+    announcements: root.querySelector('#em-ann'),
     submit: root.querySelector('#em-submit'),
     msg: root.querySelector('#em-msg'),
     overlay: root.querySelector('#em-report-overlay'),
@@ -114,6 +129,21 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
   // 天氣是**選填**。第一項就是「不確定」而且是預設——填錯的天氣會讓之後的地圖把人導去
   // 錯的地點，比沒填更糟（鐵則 §2 的同一個道理：寧可標成未知，不要拿看起來合理的值充數）。
   for (const [v, label] of WEATHER_OPTIONS) el.weather.append(new Option(label, v));
+
+  // 遊戲原文對照表（收合）：預告一則、開始兩則。讓人拿看到的那句直接比對，不必回憶。
+  if (el.announcements) {
+    for (const [name, warn, starts] of WEATHER_ANNOUNCEMENTS) {
+      const block = document.createElement('p');
+      block.className = 'codex-small';
+      const title = document.createElement('strong');
+      title.textContent = name;
+      block.append(title, document.createTextNode(`　預告：「${warn}」`));
+      for (const s of starts) {
+        block.append(document.createElement('br'), document.createTextNode(`　　開始：「${s}」`));
+      }
+      el.announcements.append(block);
+    }
+  }
 
   for (const [groupLabel, options] of LEAD_GROUPS) {
     const group = document.createElement('optgroup');
@@ -256,11 +286,13 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
    * 資料由後端 `/state.lastEnded` 給，前端不從歷史表推——那支只回 50 筆，久沒事件的會被漏掉。
    */
   function lastEndedEl(world, now) {
-    const t = state?.lastEnded?.[world];
-    if (!t) return document.createTextNode('');
+    // **沒有紀錄時也要放這個 span（空的）**：它是固定寬的一欄，右邊的按鈕靠它對齊。
+    // 只在有值時才 append 的話，七列的按鈕會各自從不同的 x 開始（Owner 2026-08-03 截圖）。
     const span = document.createElement('span');
     span.className = 'codex-small cos-em__last';
-    span.textContent = `上次 ${clockText(t)} 結束 · ${formatDuration(now - t)}前`;
+    const t = state?.lastEnded?.[world];
+    // 沒有紀錄就留空——寫「無紀錄」會讓人以為那台從沒出過事件，但真相是本站 8/2 才開始收
+    span.textContent = t ? `上次 ${clockText(t)} 結束 · ${formatDuration(now - t)}前` : '';
     return span;
   }
 
@@ -345,7 +377,8 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
     votes.textContent = nearDrop
       ? `附議 ${ev.confirms}　否認 ${ev.disputes}／${threshold} 就下架`
       : `附議 ${ev.confirms}　否認 ${ev.disputes}`;
-    li.append(votes);
+    // 有事件的列也放這一欄（多半是空的）：七列的按鈕靠它落在同一個 x
+    li.append(votes, lastEndedEl(world, now));
 
     const actions = document.createElement('span');
     actions.className = 'cos-em__actions';
@@ -370,6 +403,8 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
     } else {
       actions.append(
         voteBtn('我也看到了', 'confirm', ev.id),
+        // 否認走 danger 色（Owner 2026-08-03）：它的後果是**把別人的通報下架**，
+        // 跟「我也看到了」不是同一種份量，長得一樣會被順手亂按。
         voteBtn('查無此事', 'dispute', ev.id),
       );
     }
@@ -380,7 +415,8 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
   function voteBtn(label, kind, eventId) {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'codex-btn codex-btn--ghost codex-small';
+    // 否認＝把別人的通報推向下架，屬於設計系統說的「破壞性操作」⇒ danger 變體
+    b.className = `codex-btn codex-small ${kind === 'dispute' ? 'codex-btn--danger' : 'codex-btn--ghost'}`;
     b.textContent = label;
     b.addEventListener('click', () => vote(eventId, kind));
     return b;

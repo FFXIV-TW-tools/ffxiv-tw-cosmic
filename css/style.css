@@ -80,20 +80,26 @@ body {
 }
 .cos-panel__head .cos-panel__title { margin-bottom: 0; }
 
-/* 「上次 03:24 結束 · 4 小時前」靠右，與倒數／票數分開，掃視時各在固定位置 */
+/* 「上次 03:24 結束 · 4 小時前」——**固定寬、靠右**。
+   內容長度每列不同（「55 分 18 秒前」vs「5 小時 11 分前」），若讓它自然寬，
+   後面的按鈕就會每列從不同的 x 開始（Owner 2026-08-03 截圖）。固定寬＝按鈕永遠對齊。
+   沒有紀錄的列也會放一個空的，維持同一個欄位結構。 */
 .cos-em__last {
+  flex: 0 0 15em;
   margin-left: auto;
+  text-align: right;
   color: var(--color-text-muted, #c0c9da);
   white-space: nowrap;
 }
 
-/* 列上的一鍵通報。沒有「上次結束」那一格時，靠 margin-left:auto 自己貼右邊；
-   有的話就接在它後面（`.cos-em__last` 已經把空間吃掉了）。 */
-.cos-em__quick {
-  margin-left: auto;
+/* 動作區固定寬並靠右：一顆（通報）與兩顆（附議／否認）都從同一條右邊界排起 */
+.cos-em__quick,
+.cos-em__actions {
+  flex: 0 0 auto;
+  margin-left: var(--space-3, 12px);
+  justify-content: flex-end;
   white-space: nowrap;
 }
-.cos-em__last + .cos-em__quick { margin-left: var(--space-3, 12px); }
 .cos-panel__lead { margin: 0 0 var(--space-4, 16px); }
 .cos-panel p { margin: 0 0 var(--space-2, 8px); }
 .cos-panel p:last-child { margin-bottom: 0; }
