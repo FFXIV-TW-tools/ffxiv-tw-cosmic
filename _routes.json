@@ -1,9 +1,10 @@
 {
   "version": 1,
-  "description": "Pages Functions 只攔文件導覽（B-048 交接頁）；其餘全走純靜態 CDN。include 的唯一事實源＝tests/route-manifest.json，由 tests/handoff.test.mjs 守全等。刻意不用 /* —— 那會讓每個 CSS/JS/圖片請求都變成一次 Functions invocation。",
+  "description": "Pages Functions 攔：① 舊網址交接頁（B-048，導覽路徑）② /settings-api/* 設定 API 同源代理（後端 PoP 修復）。其餘全走純靜態 CDN。⚠️ include 的唯一事實源＝tests/route-manifest.json，契約是 include ≡ paths ＋ extraRoutes（全等，由 tests/handoff.test.mjs 守）。刻意不用 /* —— 那會讓每個 CSS/JS/圖片請求都變成一次 Functions invocation。",
   "include": [
     "/",
-    "/index.html"
+    "/index.html",
+    "/settings-api/*"
   ],
   "exclude": []
 }

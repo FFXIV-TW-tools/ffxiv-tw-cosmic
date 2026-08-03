@@ -1,8 +1,12 @@
 {
-  "_why": "交接頁要攔哪些路徑的唯一事實源。_routes.json 的 include 必須與 paths 全等（tests/handoff.test.mjs 守）。",
+  "_why": "交接頁要攔哪些路徑的唯一事實源。_routes.json 的 include 必須 ≡ paths ＋ extraRoutes（tests/handoff.test.mjs 守全等）。",
   "_how": "來源＝該站實際可導覽的 path：站內連結 ∪ sitemap.xml ∪ rewrite 規則 ∪ 已知書籤。**不是掃 .html 檔名推出來的** —— 那樣抓不到無副檔名路徑（ranking 的 /timeline、bis 的 /calibration），漏列的深鏈會直接吃到原站、繞過整個交接。",
   "paths": [
     "/",
     "/index.html"
-  ]
+  ],
+  "extraRoutes": [
+    "/settings-api/*"
+  ],
+  "_why_extra": "設定 API 同源代理（後端 PoP 修復）。共用後端在 *.workers.dev，該 hostname 只解析到 SIN；同源代理讓它落在本站的 KHH，並額外省下冷啟動建線與 CORS preflight。"
 }
