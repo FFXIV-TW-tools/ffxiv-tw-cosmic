@@ -27,4 +27,4 @@ Disallow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://ffxiv-tw-cosmic.pages.dev/sitemap.xml
+Sitemap: https://cosmic.xivtc.com/sitemap.xml
