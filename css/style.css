@@ -858,3 +858,18 @@ body {
   color: var(--color-warn, #e8a45a);
   margin-top: var(--space-1, 4px);
 }
+
+/* 一種天氣一行：分組由版面講出來，不必讀字判斷哪兩顆是同一種天氣 */
+.cos-map__pickrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  margin-bottom: var(--space-2, 8px);
+}
+
+/* 行首的天氣名固定寬，三行的按鈕才會從同一個 x 排起 */
+.cos-map__pickname {
+  flex: 0 0 4.5em;
+  color: var(--color-text-muted, #c0c9da);
+}

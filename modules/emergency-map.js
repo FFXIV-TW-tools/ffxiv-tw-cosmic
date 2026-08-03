@@ -127,15 +127,28 @@ export function createEmergencyMap(root, data) {
   function buildPicker(kind) {
     el.picker.replaceChildren();
     const kinds = kind ? [kind] : Object.keys(WEATHER_NAMES);
+    // **一種天氣一行**（Owner 2026-08-03）。六顆按鈕擠成一排時，「哪兩顆是同一種天氣」
+    // 只能靠讀字判斷；分行之後那個分組是版面本身講出來的。
     for (const k of kinds) {
-      for (const key of [`${k}-α`, `${k}-β`]) {
+      const row = document.createElement('div');
+      row.className = 'cos-map__pickrow';
+
+      const label = document.createElement('span');
+      label.className = 'codex-label cos-map__pickname';
+      label.textContent = WEATHER_NAMES[k];
+      row.append(label);
+
+      for (const [key, ab] of [[`${k}-α`, 'A'], [`${k}-β`, 'B']]) {
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'codex-btn codex-btn--ghost codex-small cos-map__pick';
         b.dataset.key = key;
-        // 標籤用**這組有什麼任務**，不用 A／B——「哪則通告＝哪一組」還沒有證據（B-023），
-        // 掛上 A／B 等於要人拿一個猜出來的編號去對照，猜錯就跑錯半張圖。
-        b.append(document.createTextNode(kind ? '這一組' : WEATHER_NAMES[k]));
+        // A／B 直接寫在按鈕上（Owner 2026-08-03：「還是有區分更明顯」）。**這個編號的
+        // 對應仍是推定**（見 START_ANNOUNCEMENTS），所以每一組底下那行「※ 待實測確認」
+        // 不能拿掉——編號一旦看起來像事實，就沒有人會去驗它。
+        const name = document.createElement('strong');
+        name.textContent = `${WEATHER_NAMES[k]} ${ab}`;
+        b.append(name);
         const hint = document.createElement('span');
         hint.className = 'cos-map__hint';
         hint.textContent = GROUP_HINT[key] ?? '';
@@ -144,8 +157,9 @@ export function createEmergencyMap(root, data) {
           selected = key;
           render();
         });
-        el.picker.append(b);
+        row.append(b);
       }
+      el.picker.append(row);
     }
   }
 
@@ -267,6 +281,11 @@ export function createEmergencyMap(root, data) {
     return wrap;
   }
 
+  /**
+   * 圖例：編號 ＋ 該點的職業圖示。**不列任務名**（Owner 2026-08-03「任務名稱不用顯示」）——
+   * 要決定的是「我這個職業要不要去、去哪一點」，任務名在遊戲的任務板上本來就看得到。
+   * 名稱仍留在 pin 的 title（滑鼠停上去看得到），不是刪掉資訊，是不佔版面。
+   */
   function legendItem(spot, groupIndex, n) {
     const li = document.createElement('li');
     li.className = 'cos-map__legenditem';
@@ -276,22 +295,21 @@ export function createEmergencyMap(root, data) {
     badge.textContent = String(n);
     li.append(badge);
 
-    for (const m of spot.missions) {
+    // 同一點的職業可能重複（兩個任務同職），去重後才不會出現兩顆一樣的圖示
+    for (const j of [...new Set(spot.missions.flatMap((m) => m.jobs))]) {
+      const abbr = jobAbbr(j);
       const item = document.createElement('span');
       item.className = 'cos-map__job';
-      for (const j of m.jobs) {
-        const abbr = jobAbbr(j);
-        if (abbr) {
-          const icon = document.createElement('img');
-          icon.src = `img/jobs/${abbr}.png`;
-          icon.alt = '';
-          icon.className = 'cos-map__jobicon';
-          icon.loading = 'lazy';
-          item.append(icon);
-        }
+      if (abbr) {
+        const icon = document.createElement('img');
+        icon.src = `img/jobs/${abbr}.png`;
+        icon.alt = '';
+        icon.className = 'cos-map__jobicon';
+        icon.loading = 'lazy';
+        item.append(icon);
       }
       const text = document.createElement('span');
-      text.textContent = `${m.jobs.map(jobLabel).join('・')}　${m.name}`;
+      text.textContent = jobLabel(j);
       item.append(text);
       li.append(item);
     }
