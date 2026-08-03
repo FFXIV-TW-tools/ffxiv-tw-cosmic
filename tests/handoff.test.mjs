@@ -88,8 +88,13 @@ ok(!/setTimeout|await |\.then\(/.test(body.split('<noscript>')[0]),
 // ── ⑥ _routes.json ≡ route manifest ──
 const routes = JSON.parse(readFileSync(join(ROOT, '_routes.json'), 'utf8'));
 const manifest = JSON.parse(readFileSync(join(ROOT, 'tests', 'route-manifest.json'), 'utf8'));
-ok(JSON.stringify(routes.include) === JSON.stringify(manifest.paths),
-  '_routes.json 的 include ≡ route-manifest.json 的 paths');
+// 全等，不是「包含」——**多出來的路徑必須在 manifest 顯式宣告**（`extraRoutes`）。
+// 為什麼不放寬成 ⊆：include 多一條就是多一次 Functions invocation ＋ 多一個攔截面，
+// 那必須是有人刻意寫下的，不能靠「反正是子集」溜進來。
+// extraRoutes 的用途＝同站其他 Function（如設定 API 同源代理、hotlink 守衛、/news）。
+const expectRoutes = manifest.paths.concat(manifest.extraRoutes || []);
+ok(JSON.stringify(routes.include) === JSON.stringify(expectRoutes),
+  '_routes.json 的 include ≡ route-manifest.json 的 paths ＋ extraRoutes（多一條都要顯式宣告）');
 ok(!routes.include.includes('/*'),
   'include 不得用 /* —— 那會讓每個資產請求都變成一次 Functions invocation');
 
