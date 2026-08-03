@@ -628,6 +628,13 @@ body {
   color: var(--color-text-muted, #c0c9da);
 }
 
+/* 天氣／變體標示。刻意比狀態徽章弱一階：它是補充資訊，不該和「預告／已回報」搶第一眼 */
+.cos-em__weather {
+  white-space: nowrap;
+  color: var(--color-text-muted, #c0c9da);
+  border-color: var(--color-border, #2b3f56);
+}
+
 /* 倒數吃掉中間的剩餘寬，把附議數與按鈕推到右邊 */
 .cos-em__when { flex: 1 1 auto; }
 

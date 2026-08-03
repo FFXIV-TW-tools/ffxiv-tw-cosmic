@@ -44,31 +44,59 @@ function rememberMine(id) {
 }
 
 /**
- * 天氣選項。**「不確定」排第一且是預設**——填錯的天氣會讓之後的地圖把人導去錯的地點，
- * 比沒填更糟（同鐵則 §2：寧可標成未知，不要拿看起來合理的值充數）。
+ * 天氣／變體。**六則通告全部出自台服 client 的 `MassivePcContentTextData`**
+ *（2026-08-03 離線解出），不是轉述。
  *
- * 只到「哪一種天氣」為止，不問 α／β：要分辨那個得逐字讀開始通告，不該要求玩家做。
- * 變體由插件比對 client 通告得出，兩條路徑各做自己做得準的事。
+ * 每種天氣有三則：一則**預告**（A／B 共用，看到它的人分不出來）、兩則**開始**（A／B 各一，
+ * 對應不同的任務與地點）。所以選單必須有「只看到預告」那一層——
+ * 逼只看到預告的人選 A 或 B，就是在製造假資料（鐵則 §2）。
  */
-const WEATHER_OPTIONS = [
-  ['', '不確定'],
-  ['storm', '磁暴 — 「即將發生大規模磁暴……」'],
-  ['meteor', '流星雨 — 「觀測到小型隕石群正在靠近！」'],
-  ['spore', '孢子霧 — 「觀測到孢子霧爆發的預兆！」'],
+const WEATHERS = [
+  {
+    kind: 'storm',
+    name: '磁暴',
+    warn: '即將發生大規模磁暴……所有機械設備都可能會受到影響！請大家提高警覺！',
+    starts: [
+      ['storm-a', '已確認磁暴造成惡劣影響…收集救災所需的物資'],
+      ['storm-b', '磁暴造成渴望灣多個地區受災…展開救災活動'],
+    ],
+  },
+  {
+    kind: 'meteor',
+    name: '流星雨',
+    warn: '觀測到小型隕石群正在靠近！',
+    starts: [
+      ['meteor-a', '有小型隕石雨墜落在月門基地附近…恢復生產建設秩序'],
+      ['meteor-b', '隕石雨墜落造成的衝擊導致地面氣體外洩'],
+    ],
+  },
+  {
+    kind: 'spore',
+    name: '孢子霧',
+    warn: '觀測到孢子霧爆發的預兆！',
+    starts: [
+      ['spore-a', '渴望灣東部爆發孢子霧…查明是否出現變異菌床'],
+      ['spore-b', '孢子霧吞沒渴望灣東部…除去變異菌床'],
+    ],
+  },
 ];
 
-/**
- * 選單裡放的是**預告**的原文（那是多數人看到的第一句）。事件開始後才通報的人看到的是
- * 另外兩則之一，所以底下再列出來讓他比對——**六則全部出自台服 client 的
- * `MassivePcContentTextData`**（2026-08-03 離線解出），不是轉述。
- *
- * 每種天氣的「開始」有兩則，對應兩組不同的任務與地點；這裡只讓玩家選到天氣為止，
- * 分辨是哪一則交給插件（要逐字比對，不該要求玩家做）。
- */
-const WEATHER_ANNOUNCEMENTS = [
-  ['磁暴', '即將發生大規模磁暴……', ['已確認磁暴造成惡劣影響…收集救災所需的物資', '磁暴造成渴望灣多個地區受災…展開救災活動']],
-  ['流星雨', '觀測到小型隕石群正在靠近！', ['有小型隕石雨墜落在月門基地附近…恢復生產建設秩序', '隕石雨墜落造成的衝擊導致地面氣體外洩']],
-  ['孢子霧', '觀測到孢子霧爆發的預兆！', ['渴望灣東部爆發孢子霧…查明是否出現變異菌床', '孢子霧吞沒渴望灣東部…除去變異菌床']],
+/** A／B 的顯示字。變體只有兩個，順序即 client 內的順序。 */
+const AB = ['A', 'B'];
+
+/** 選單值 → 送出去的欄位。`kind` 只知道天氣、`variant` 連 A／B 都知道。 */
+const WEATHER_CHOICES = [
+  { value: '', label: '不確定', weather: null, variant: null },
+  ...WEATHERS.flatMap((w) => [
+    // 只看到預告 ⇒ 只報得出天氣。這一項必須排在該天氣的最前面，它才是預設的落點。
+    { value: w.kind, label: `${w.name}（只看到預告，不確定 A／B）`, weather: w.kind, variant: null },
+    ...w.starts.map(([variant, text], i) => ({
+      value: variant,
+      label: `${w.name} ${AB[i]} — 「${text}」`,
+      weather: w.kind,
+      variant,
+    })),
+  ]),
 ];
 
 /**
@@ -128,19 +156,33 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
 
   // 天氣是**選填**。第一項就是「不確定」而且是預設——填錯的天氣會讓之後的地圖把人導去
   // 錯的地點，比沒填更糟（鐵則 §2 的同一個道理：寧可標成未知，不要拿看起來合理的值充數）。
-  for (const [v, label] of WEATHER_OPTIONS) el.weather.append(new Option(label, v));
+  // 「不確定」單獨在最上面，其餘依天氣分組——同一種天氣的三個選項要黏在一起，
+  // 才看得出「預告 ／ A ／ B」是同一件事的三種確定程度。
+  el.weather.append(new Option(WEATHER_CHOICES[0].label, WEATHER_CHOICES[0].value));
+  for (const w of WEATHERS) {
+    const group = document.createElement('optgroup');
+    group.label = w.name;
+    for (const c of WEATHER_CHOICES.filter((x) => x.weather === w.kind)) {
+      group.append(new Option(c.label, c.value));
+    }
+    el.weather.append(group);
+  }
 
-  // 遊戲原文對照表（收合）：預告一則、開始兩則。讓人拿看到的那句直接比對，不必回憶。
+  // 遊戲原文對照表（收合）：預告一則、開始兩則且**標明哪則是 A 哪則是 B**——
+  // 選單問 A／B，這裡就得答得出 A／B，否則等於要人瞎猜（2026-08-03 Owner 指出）。
   if (el.announcements) {
-    for (const [name, warn, starts] of WEATHER_ANNOUNCEMENTS) {
+    for (const w of WEATHERS) {
       const block = document.createElement('p');
       block.className = 'codex-small';
       const title = document.createElement('strong');
-      title.textContent = name;
-      block.append(title, document.createTextNode(`　預告：「${warn}」`));
-      for (const s of starts) {
-        block.append(document.createElement('br'), document.createTextNode(`　　開始：「${s}」`));
-      }
+      title.textContent = w.name;
+      block.append(title, document.createTextNode(`　預告（A／B 共用）：「${w.warn}」`));
+      w.starts.forEach(([, text], i) => {
+        block.append(
+          document.createElement('br'),
+          document.createTextNode(`　　${w.name} ${AB[i]}：「${text}」`),
+        );
+      });
       el.announcements.append(block);
     }
   }
@@ -196,14 +238,15 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
 
   async function submit() {
     el.submit.disabled = true;
-    const ok = await sendReport(dialogWorld, Number(el.lead.value), el.weather.value || null);
+    const choice = WEATHER_CHOICES.find((c) => c.value === el.weather.value) ?? WEATHER_CHOICES[0];
+    const ok = await sendReport(dialogWorld, Number(el.lead.value), choice);
     el.submit.disabled = false;
     // 成功就關窗（結果會顯示在那一列上）；失敗留著讓人看錯誤訊息並重試
     if (ok) closeReport();
   }
 
-  async function sendReport(world, lead, weather) {
-    const r = await emergencyApi.report(world, lead, weather);
+  async function sendReport(world, lead, choice) {
+    const r = await emergencyApi.report(world, lead, choice);
     if (r.ok) {
       if (!r.duplicate && Number.isInteger(r.data?.eventId)) rememberMine(r.data.eventId);
       say(
@@ -296,7 +339,22 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
     return span;
   }
 
-  /** 一台伺服器一列。沒有事件的也要列出來——「查過了，沒有」跟「不知道」是兩回事。 */
+  /**
+ * 事件上的天氣標示：`磁暴 A`／`磁暴`（只知道天氣）／`null`（沒人填）。
+ *
+ * 三種狀態必須分得出來，不能把後兩者都畫成同一個樣子——之後的地圖只在知道 A／B 時
+ * 才指得出地點，而「不知道」與「知道是磁暴但不知道 A／B」對它是不同的輸入。
+ */
+function weatherLabel(ev) {
+  if (ev.variant) {
+    const w = WEATHERS.find((x) => x.starts.some(([v]) => v === ev.variant));
+    const i = w?.starts.findIndex(([v]) => v === ev.variant) ?? -1;
+    if (w && i >= 0) return `${w.name} ${AB[i]}`;
+  }
+  return WEATHERS.find((x) => x.kind === ev.weather)?.name ?? null;
+}
+
+/** 一台伺服器一列。沒有事件的也要列出來——「查過了，沒有」跟「不知道」是兩回事。 */
   function row(world, ev, now) {
     const li = document.createElement('li');
     li.className = 'cos-em__row';
@@ -348,6 +406,16 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
     badge.className = `codex-badge ${warnOnly ? 'codex-badge--warn' : 'codex-badge--ok'}`;
     badge.textContent = warnOnly ? '預告' : '已回報';
     li.append(badge);
+
+    // 天氣／變體：**沒有就整個不放**（不寫「未知」——那會被讀成「查過了是未知」，
+    // 但真相是沒人填）。有值才顯示，也讓填錯的人自己看得出來要按取消重報。
+    const w = weatherLabel(ev);
+    if (w) {
+      const tag = document.createElement('span');
+      tag.className = 'codex-badge cos-em__weather';
+      tag.textContent = w;
+      li.append(tag);
+    }
 
     const when = document.createElement('strong');
     when.className = 'cos-em__when';

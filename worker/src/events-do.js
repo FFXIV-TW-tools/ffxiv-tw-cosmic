@@ -245,6 +245,16 @@ export class CosmicEventsDO extends DurableObject {
           v.confirms.length, v.disputes.length, existing.id,
         );
       }
+      // 附議者可能比第一個人知道得多：只看到預告的人選不出 α／β，事件開始後才進來的人選得出。
+      // **只補空欄**（`COALESCE(舊, 新)` — 舊值非空就贏），後到的人不能改寫已經定下來的變體。
+      if (input.variant || input.weather) {
+        this.sql.exec(
+          'UPDATE events SET variant = COALESCE(variant, ?), weather = COALESCE(weather, ?) WHERE id = ?',
+          input.variant ?? null,
+          input.weather ?? L.weatherKindOf(input.variant) ?? null,
+          existing.id,
+        );
+      }
       // 插件回報既有事件時，把來源升級成 plugin（可信度較高的那個要贏）
       if (source === 'plugin' && existing.source !== 'plugin') {
         this.sql.exec("UPDATE events SET source = 'plugin' WHERE id = ?", existing.id);

@@ -64,6 +64,25 @@ test('手動通報：欄位邊界', () => {
   assert.equal(L.validateManualReport(null, NOW).reason, 'bad_body');
 });
 
+test('手動通報：天氣與變體都選填，變體優先於天氣', () => {
+  const base = { uuid: U1, world: W, startsInMinutes: 0 };
+  // 三種確定程度都要收：什麼都沒填 ／ 只看到預告（分不出 A、B）／ 看到開始通告
+  assert.deepEqual(
+    [L.validateManualReport(base, NOW).weather, L.validateManualReport(base, NOW).variant],
+    [null, null],
+    '沒填就是 null，不能自己補一個合理值（鐵則 §2）',
+  );
+  const kindOnly = L.validateManualReport({ ...base, weather: 'storm' }, NOW);
+  assert.deepEqual([kindOnly.weather, kindOnly.variant], ['storm', null]);
+  const full = L.validateManualReport({ ...base, variant: 'storm-b' }, NOW);
+  assert.deepEqual([full.weather, full.variant], ['storm', 'storm-b'], '天氣由變體前綴推導');
+  // 兩欄互相矛盾時變體贏（它是逐字比對通告來的），不是靜默各留一半
+  const clash = L.validateManualReport({ ...base, weather: 'spore', variant: 'storm-a' }, NOW);
+  assert.deepEqual([clash.weather, clash.variant], ['storm', 'storm-a']);
+  assert.equal(L.validateManualReport({ ...base, variant: 'storm-c' }, NOW).reason, 'bad_variant');
+  assert.equal(L.validateManualReport({ ...base, weather: 'rain' }, NOW).reason, 'bad_weather_kind');
+});
+
 test('手動通報：startAt 是 now + 預告分鐘', () => {
   const r = L.validateManualReport({ uuid: U1, world: W, startsInMinutes: 5 }, NOW);
   assert.equal(r.startAt, NOW + 300);

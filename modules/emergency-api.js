@@ -25,6 +25,8 @@ const MESSAGES = {
   bad_world: '伺服器不在繁中服 7 台之內。',
   bad_lead: '開始時間超出可通報範圍（0–15 分鐘）。',
   bad_uuid: '識別碼異常 — 到工具箱設定重新產生一次即可。',
+  bad_weather_kind: '天氣選項不正確，請重新選一次。',
+  bad_variant: '天氣選項不正確，請重新選一次。',
   bad_webhook: 'Discord webhook 網址不對（只接受 discord.com 的 webhook 連結）。',
   not_found: '找不到這筆通報，可能已經過期或被撤銷。',
   not_reporter: '這筆不是你送的，不能撤回 — 如果你認為是誤報，請按「查無此事」。',
@@ -105,12 +107,17 @@ export const emergencyApi = {
   getHistory: (world = '', limit = 50) =>
     call(`/history?limit=${limit}${world ? `&world=${encodeURIComponent(world)}` : ''}`),
 
-  /** @param weather 'storm'｜'meteor'｜'spore'｜null（不確定 ⇒ **不送這個欄位**，不要送空字串） */
-  async report(world, startsInMinutes, weather = null) {
+  /**
+   * @param choice `{weather, variant}`，兩者都可能是 null（只看到預告 ⇒ 只有 weather；
+   *   完全沒注意 ⇒ 兩個都沒有）。**null 的欄位整個不送**，不要送空字串——後端對
+   *   `undefined`（沒填）與不合法的值處置不同，空字串會被當成後者退掉。
+   */
+  async report(world, startsInMinutes, choice = null) {
     const uuid = await currentUuid();
     if (!uuid) return { ok: false, code: 'no_uuid', message: '尚未取得識別碼，請重新整理後再試。' };
     const body = { uuid, world, startsInMinutes };
-    if (weather) body.weather = weather;
+    if (choice?.weather) body.weather = choice.weather;
+    if (choice?.variant) body.variant = choice.variant;
     return call('/report', { method: 'POST', body });
   },
 

@@ -259,6 +259,31 @@ describe('事件變體（α／β）', () => {
     await revoke(st.events[world].id);
   });
 
+  it('手動通報也能帶變體；後到的附議者只補空欄，不改寫已定下來的', async () => {
+    stubDiscord();
+    const w = devStages.worlds[6];
+    await clearWorld(w);
+    // 第一個人只看到預告 ⇒ 只報得出天氣種類
+    const first = await (await post('/report',
+      { uuid: uuid(), world: w, startsInMinutes: 0, weather: 'storm' })).json() as any;
+    const mid = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    expect([mid.events[w].weather, mid.events[w].variant]).toEqual(['storm', null]);
+
+    // 第二個人事件開始後才進來，看得到開始通告 ⇒ 補上 α／β（空欄才補）
+    const dup = await post('/report',
+      { uuid: uuid(), world: w, startsInMinutes: 0, variant: 'storm-b' });
+    expect(dup.status).toBe(409);                       // 已有進行中事件 ⇒ 轉附議
+    const after = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    expect(after.events[w].variant).toBe('storm-b');
+    expect(after.events[w].id).toBe(first.eventId);
+
+    // 第三個人選錯了也蓋不掉已經定下來的變體
+    await post('/report', { uuid: uuid(), world: w, startsInMinutes: 0, variant: 'spore-a' });
+    const last = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    expect(last.events[w].variant).toBe('storm-b');
+    await revoke(first.eventId);
+  });
+
   it('phase 拼錯不再被靜默當成 start', async () => {
     const r = await post('/report',
       { world, weatherId: 196, missionIds: [518], phase: 'strat' }, PLUG);

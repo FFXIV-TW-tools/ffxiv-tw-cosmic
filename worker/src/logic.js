@@ -198,11 +198,21 @@ export function validateManualReport(body, now) {
       && !WEATHER_KINDS.includes(body.weather)) {
     return { ok: false, reason: 'bad_weather_kind' };
   }
+  // 變體（α／β）同樣選填，而且**比天氣更常留白**：預告那一則對兩個變體是同一句，
+  // 只看到預告的人分不出來，逼他選就是在製造假資料（鐵則 §2）。
+  if (body.variant !== undefined && body.variant !== null
+      && !VARIANTS.includes(body.variant)) {
+    return { ok: false, reason: 'bad_variant' };
+  }
+  const variant = body.variant ?? null;
   return {
     ok: true,
     world: body.world,
     startAt: now + lead * 60,
-    weather: body.weather ?? null,
+    // 給了變體就由它推天氣種類，不採信另一欄——兩欄互相矛盾時（`storm-a` ＋ `spore`）
+    // 只能有一個贏，而變體是逐字比對通告得來的，比較不會選錯。
+    weather: (variant ? weatherKindOf(variant) : body.weather) ?? null,
+    variant,
   };
 }
 
