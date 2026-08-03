@@ -6,7 +6,8 @@
     "/index.html"
   ],
   "extraRoutes": [
-    "/settings-api/*"
+    "/settings-api/*",
+    "/cosmic-api/*"
   ],
-  "_why_extra": "設定 API 同源代理（後端 PoP 修復）。共用後端在 *.workers.dev，該 hostname 只解析到 SIN；同源代理讓它落在本站的 KHH，並額外省下冷啟動建線與 CORS preflight。"
+  "_why_extra": "① 設定 API 同源代理（後端 PoP 修復）。共用後端在 *.workers.dev，該 hostname 只解析到 SIN；同源代理讓它落在本站的 KHH，並額外省下冷啟動建線與 CORS preflight。② /cosmic-api/* 同理，代理本站自己的 ffxiv-tw-cosmic-api（實測 /health 780ms → 240ms）；通報頁每次進頁與每次通報都付一次那個差額，且 POST 帶 JSON body 必發 preflight。"
 }

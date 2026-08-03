@@ -8,10 +8,13 @@
  * 使用者已經為 sub-timer／marketboard 有一個了，再發一組只會讓他多記一個祕密。
  */
 
+// 線上一律走**同源代理** `/cosmic-api/*`（Pages Function + service binding → ffxiv-tw-cosmic-api）。
+// 為什麼不直打 workers.dev：那個 hostname 只解析到 SIN（實測 /health 780ms），同源走本站的 KHH 是 240ms，
+// 且省掉冷啟動建線與 CORS preflight（本模組的 POST 帶 JSON body，preflight 必發）。
 const DEV = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 const BASE = DEV
   ? `http://${location.hostname}:8789`
-  : 'https://ffxiv-tw-cosmic-api.ffxiv-tw-tools.workers.dev';
+  : location.origin + '/cosmic-api';
 
 const TIMEOUT_MS = 8000;
 const RETRIES = 2;
