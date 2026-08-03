@@ -417,7 +417,7 @@ function weatherLabel(ev) {
     tag.className = 'codex-badge cos-em__weather cos-em__weather--link';
     tag.textContent = w ? `${w} · 地點圖` : '🗺 地點圖';
     tag.title = w ? `展開地點圖，看${w}要去哪幾個點` : '展開地點圖（這筆沒填天氣，六組都可以對照）';
-    tag.addEventListener('click', () => onShowMap?.(world, kind));
+    tag.addEventListener('click', () => onShowMap?.(world, kind, ev.group));
     li.append(tag);
 
     const when = document.createElement('strong');

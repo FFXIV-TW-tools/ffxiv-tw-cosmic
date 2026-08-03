@@ -101,17 +101,13 @@ async function main() {
   const emMap = createEmergencyMap(emPanel, missionData);
   const emView = createEmergencyView(emPanel, {
     worlds: devData.worlds,
-    onState: (state) => {
-      emNotify.onState(state);
-      // 已定案的「通告↔任務組」（B-023）。地圖靠它把「推定」換成事實並拿掉待實測記號。
-      emMap.setVariantMap(state.variantMap);
-    },
+    onState: (state) => emNotify.onState(state),
     onChanged: () => emHistory.refresh(),
-    onShowMap: (world, kind) => emMap.open(world, kind),
+    onShowMap: (world, kind, group) => emMap.open(world, kind, group),
   });
   onEmergencyTab = () => emHistory.ensureLoaded();
   // 速查：不綁任何一筆事件，六組都列。共用同一個彈窗。
-  emPanel.querySelector('#em-map-lookup')?.addEventListener('click', () => emMap.open(null, null));
+  emPanel.querySelector('#em-map-lookup')?.addEventListener('click', () => emMap.open(null, null, null));
 
   const picker = createJobPicker(document.querySelector('#job-picker'), jobs, (ids) => {
     nowPanel.setJobs(ids);

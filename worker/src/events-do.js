@@ -67,6 +67,10 @@ export class CosmicEventsDO extends DurableObject {
       // 插件在任務板上看到的任務 id（JSON 陣列）。與 `variant` **同時**存在的那一筆
       // 就是「哪則通告對應哪一組任務」的證據（B-023）；原本只驗不存＝每次事件都把答案丟掉。
       ['missionIds', 'TEXT'],
+      // 這次事件實際是哪一組（`storm-α`…），由 `missionIds` 判出來。**這才是地圖該用的欄位**
+      // ——原本繞道「開始通告 → 變體 → 推定組別」，而 2026-08-03 利維坦實測發現聊天欄
+      // 根本沒有那六句（只有一句「發生了緊急情況。」）⇒ 那條路是死的。任務板直接就是答案。
+      ['groupKey', 'TEXT'],
     ];
     for (const [col, type] of columns) {
       try {
@@ -85,6 +89,28 @@ export class CosmicEventsDO extends DurableObject {
       eventId   INTEGER,
       decidedAt INTEGER NOT NULL
     )`);
+  }
+
+  /**
+   * 用任務板看到的任務 id 補上這筆事件的組別（與 `missionIds` 本身）。
+   *
+   * **只補空欄**：先到的值贏，後來的不改寫。判不出組（`resolveGroup` 回 null）就只補
+   * `missionIds`，組別留空——寧可留白也不寫一個「比較像」的答案。
+   */
+  _fillFromBoard(eventId, input, now) {
+    const ids = input.missionIds;
+    if (!Array.isArray(ids) || ids.length === 0) return;
+    const rows = this.sql
+      .exec('SELECT missionIds, groupKey, weather FROM events WHERE id = ?', eventId).toArray();
+    if (!rows.length) return;
+    const cur = rows[0];
+    const group = cur.groupKey
+      ?? L.resolveGroup(ids, cur.weather ?? L.weatherKindOf(input.variant) ?? undefined);
+    this.sql.exec(
+      'UPDATE events SET missionIds = COALESCE(missionIds, ?), groupKey = COALESCE(groupKey, ?) WHERE id = ?',
+      JSON.stringify(ids), group ?? null, eventId,
+    );
+    if (!cur.groupKey && group) this._bump('group_resolved');
   }
 
   /**
@@ -312,6 +338,10 @@ export class CosmicEventsDO extends DurableObject {
           existing.id,
         );
       }
+      // **補送路徑**：事件開始那一秒任務板多半沒開，插件讀不到 `missionIds`。
+      // 玩家之後打開任務板時插件會再送一次，這裡把當時空著的欄位補起來
+      // （Owner 2026-08-03：「不可能一直開任務板」——把偵測綁在翻轉那一秒本來就會漏）。
+      this._fillFromBoard(existing.id, input, now);
       // 兩個欄位齊了就定案一次「通告↔任務組」（同一個變體只會學一次）
       this._learnVariantMap(input.variant, input.missionIds, existing.id, now);
       // 插件回報既有事件時，把來源升級成 plugin（可信度較高的那個要贏）
@@ -350,6 +380,7 @@ export class CosmicEventsDO extends DurableObject {
       input.missionIds?.length ? JSON.stringify(input.missionIds) : null,
     );
     const id = this.sql.exec('SELECT last_insert_rowid() AS id').toArray()[0].id;
+    this._fillFromBoard(id, input, now);
     this._learnVariantMap(input.variant, input.missionIds, id, now);
     this._bump(source === 'plugin' ? 'report_ok_plugin' : 'report_ok_manual');
 
@@ -490,6 +521,8 @@ export class CosmicEventsDO extends DurableObject {
         pendingNotify: (r.notifyAt ?? 0) > 0,
         variant: r.variant ?? null,
         weather: r.weather ?? null,
+        // 這次實際是哪一組（任務板判出來的）。有值＝地圖可以直接開那一組，不必猜。
+        group: r.groupKey ?? null,
       };
     }
     // 前端要在事件列上顯示「否認 2／3 就下架」。門檻是後端的判斷依據，

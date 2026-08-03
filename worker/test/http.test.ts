@@ -339,6 +339,27 @@ describe('事件變體（α／β）', () => {
     expect(st.variantMap['spore-a']).toBe('spore-β');
   });
 
+  it('補送：開始時板子沒開 → 之後補一筆帶 missionIds 的，組別補得上去', async () => {
+    stubDiscord();
+    const w = devStages.worlds[1];
+    await clearWorld(w);
+    // 天氣翻轉那一秒任務板沒開 ⇒ missionIds 是空的（Owner：「不可能一直開任務板」）
+    const first = await post('/report',
+      { world: w, weatherId: 196, missionIds: [], phase: 'start' }, PLUG);
+    expect(first.status).toBe(200);
+    const mid = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    expect(mid.events[w].group).toBeNull();
+    expect(mid.events[w].weather).toBe('storm');   // 天氣仍由 weatherId 查表得出
+
+    // 玩家之後打開任務板 → 插件補送（後端視為附議，只補空欄）
+    await post('/report',
+      { world: w, weatherId: 196, missionIds: [518, 522, 530], phase: 'start' }, PLUG);
+    const after = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    expect(after.events[w].group).toBe('storm-α');
+    expect(after.events[w].id).toBe(mid.events[w].id);   // 同一筆，不是新開的
+    await revoke(after.events[w].id);
+  });
+
   it('phase 拼錯不再被靜默當成 start', async () => {
     const r = await post('/report',
       { world, weatherId: 196, missionIds: [518], phase: 'strat' }, PLUG);

@@ -6,39 +6,36 @@
  * 2. **變體分組（哪幾個任務算同一次事件）** — 來自 ICE 的對照表（國際服），但已用台服 client
  *    幾何交叉驗證：33 筆完整分割無遺漏、每組的製作任務座標與該組錨點差 4～19 單位，
  *    採集／釣魚職差得遠是因為上游存交付點、client 存採集區（2026-08-03 驗）。
- * 3. **通告文字 ↔ 變體** — **未知**。通告分得出兩則、任務分得出兩組，但兩者之間沒有證據
- *    （B-023）。⇒ 兩組各自獨立呈現、按鈕用「這組有什麼任務」當標籤，**不掛 A／B**：
- *    掛了就是把猜測寫成事實，而猜錯的人會跑錯半張圖。不猜（AGENTS 鐵則 §2）。
+ * 3. **這次是哪一組** — 由**任務板**判定（後端 `resolveGroup()`，插件送 `missionIds`）。
+ *    判得出來就直接開那一組並標「✓」；判不出來就六組都列著讓人自己對，**不猜**。
+ *
+ * ⚠️ 原本走的是「開始通告文字 → 變體 → 推定組別」，2026-08-03 利維坦實測**證偽**：
+ * 事件開始時聊天欄只有一句「發生了緊急情況。」，client 解出的那六則一句都沒出現。
  */
 
 import { VARIANT_MISSIONS } from './variant-groups.js';
 
 const WEATHER_NAMES = { storm: '磁暴', meteor: '流星雨', spore: '孢子霧' };
 
+/** `storm-α` → `storm`。 */
+const kindOf = (group) => group.split('-')[0];
+
 /** 標籤最小垂直間距（圖寬的百分比）。pin 高約 23px、圖寬 440px ⇒ 5.3%；取 6% 留一點縫。 */
 const MIN_GAP = 6;
 
 /**
- * 兩則**開始**通告，順序＝client 內的順序（預告那則兩組共用，分不出來所以不列在這）。
+ * ⚠️ **client 的 `MassivePcContentTextData` 有六則「開始通告」文字，但它們不在聊天欄。**
  *
- * ⚠️ **索引 0→α、1→β 是「排列順序相同」的假設，不是已證實的對應**（Owner 2026-08-03
- * 兩次要求分開顯示後採用）。真正的證據要等插件抓到一筆**同時**有開始通告與任務板的紀錄
- * ——那時任務 id 落在哪一組就直接定案（docs/BACKLOG.md B-023）。
+ * 2026-08-03 利維坦實測：磁暴事件開始時聊天欄只有一句「發生了緊急情況。」，那六句
+ * 一句都沒出現（Owner 推測是任務 NPC 附近的區域訊息）。整個「靠通告文字分辨 A／B」
+ * 的前提因此不成立 ⇒ **已從畫面移除**，在確認它們到底出現在哪個介面之前不再宣稱它們是通告。
  *
- * 在那之前 UI 上必須留「待實測」記號：這一欄錯了會把人送到地圖的另一半，
- * 而錯的形式是**完全沒有訊號**（畫面照常、通告也照常，只是指錯地方）。
+ * 現在的判準改用**任務板**：任務 id 直接就決定是哪一組，不必經過文字。
  */
-const START_ANNOUNCEMENTS = {
-  storm: ['已確認磁暴造成惡劣影響…收集救災所需的物資', '磁暴造成渴望灣多個地區受災…展開救災活動'],
-  meteor: ['有小型隕石雨墜落在月門基地附近…恢復生產建設秩序', '隕石雨墜落造成的衝擊導致地面氣體外洩'],
-  spore: ['渴望灣東部爆發孢子霧…查明是否出現變異菌床', '孢子霧吞沒渴望灣東部…除去變異菌床'],
-};
 
 /**
- * 每一組的**代表任務**（取該組的頭兩個），拿來當按鈕副標。
- *
- * 這是目前唯一**分得準**的識別方式：任務板上出現的是哪幾個任務是看得到的事實，
- * 而「A 組／B 組」這種標籤在對應關係確定之前只是編號。
+ * 每一組的**代表任務**，拿來當按鈕副標。任務板上出現的是哪幾個任務是玩家看得到的事實，
+ * 也是插件判組的同一個依據——人跟程式看的是同一件東西。
  */
 const GROUP_HINT = {
   'storm-α': '吸引器・無人機搜索',
@@ -103,11 +100,8 @@ export function createEmergencyMap(root, data) {
   /** 目前選的組（一定是單一組——一次事件只會出一組）。 */
   let selected = 'storm-α';
   let releaseTrap = null;
-  /**
-   * 後端已定案的「通告 → 任務組」（`{'storm-a': 'storm-β'}`）。**沒定案的變體不會在裡面**，
-   * 那時才走順序推定並顯示「※ 待實測確認」。空物件與猜出來的值，差別就是使用者知不知道。
-   */
-  let variantMap = {};
+  /** 這次事件已由任務板確認的組（`storm-α`…）。沒確認就是 null——不猜。 */
+  let confirmedGroup = null;
 
   /**
    * 建按鈕列。**只放這次事件那個天氣的兩組**（天氣未知才放全部六組）——
@@ -133,9 +127,8 @@ export function createEmergencyMap(root, data) {
         b.type = 'button';
         b.className = 'codex-btn codex-btn--ghost codex-small cos-map__pick';
         b.dataset.key = key;
-        // A／B 直接寫在按鈕上（Owner 2026-08-03：「還是有區分更明顯」）。**這個編號的
-        // 對應仍是推定**（見 START_ANNOUNCEMENTS），所以每一組底下那行「※ 待實測確認」
-        // 不能拿掉——編號一旦看起來像事實，就沒有人會去驗它。
+        // A／B 直接寫在按鈕上（Owner 2026-08-03：「還是有區分更明顯」）。**它只是組的編號**
+        // ——現在辨識靠的是任務板上的任務，不是通告文字（那條路已證實走不通，見檔頭）。
         const name = document.createElement('strong');
         name.textContent = `${WEATHER_NAMES[k]} ${ab}`;
         b.append(name);
@@ -154,40 +147,26 @@ export function createEmergencyMap(root, data) {
   }
 
   function render() {
-    for (const b of el.picker.children) {
+    // **要 querySelectorAll('button')，不能用 `children`**：改成「一種天氣一行」之後，
+    // picker 的直接子層是 row 容器、不是按鈕 ⇒ `dataset.key` 全是 undefined，
+    // 選中狀態永遠不會亮，而且**不會報錯**（2026-08-03 實測才發現）。
+    for (const b of el.picker.querySelectorAll('button')) {
       b.classList.toggle('cos-map__pick--on', b.dataset.key === selected);
     }
 
     const groups = [selected];
     const kind = selected.split('-')[0];
 
-    // **只顯示這一組自己的那一則**（Owner 2026-08-03：「磁暴 A 只顯示 A 的對話，不要混一起」）。
-    //
-    // 兩條路：後端已定案就用事實（B-023 的證據＝插件同時看到通告與任務板，或 Owner 人工回報）；
-    // 還沒定案就退回「client 排列順序相同」的推定，**並掛記號**——沒有記號的話，
-    // 這條假設會在畫面上看起來像已知事實，就不會有人去驗它。
-    // 同一種天氣是**兩則通告對兩組任務的雙射** ⇒ 定案其中一邊，另一邊由排除法直接得出。
-    // 這是推論不是猜測，所以另一邊也算「已定案」、同樣不掛待實測記號。
-    const pair = Object.entries(variantMap).find(([v]) => v.startsWith(`${kind}-`));
-    const decided = pair && (pair[1] === selected
-      ? pair[0]
-      // 定案的是同天氣的另一組 ⇒ 本組配另一則通告
-      : `${kind}-${pair[0].endsWith('-a') ? 'b' : 'a'}`);
-    const idx = decided
-      ? Number(decided.endsWith('-b'))
-      : Number(selected.endsWith('β'));
-
+    // 通告文字已移除（見檔頭）。這裡改講**這一組怎麼認出來**——認的依據是任務板上的任務，
+    // 那是玩家看得到、而且不會有兩種解讀的東西。
     el.note.replaceChildren();
-    const line = document.createElement('span');
-    line.className = 'cos-map__ann';
-    line.textContent = `「${START_ANNOUNCEMENTS[kind][idx]}」`;
-    el.note.append(line);
-    if (!decided) {
-      const mark = document.createElement('span');
-      mark.className = 'cos-map__ann cos-map__pending';
-      mark.textContent = '※ 通告與任務組的對應待實測確認';
-      el.note.append(mark);
-    }
+    const how = document.createElement('span');
+    how.className = 'cos-map__ann';
+    how.textContent = confirmedGroup === selected
+      ? '✓ 這次的事件就是這一組（插件從任務板讀到的）'
+      : `任務板出現「${GROUP_HINT[selected] ?? ''}」這類任務就是這一組`;
+    if (confirmedGroup === selected) how.classList.add('cos-map__confirmed');
+    el.note.append(how);
 
     el.pins.replaceChildren();
     el.legend.replaceChildren();
@@ -352,14 +331,10 @@ export function createEmergencyMap(root, data) {
      * **不自動選定其中一組**：通告文字（`storm-a`／`storm-b`）與任務分組（α／β）的對應
      * 目前無證據（B-023），自動選只有一半機率對，而使用者不會知道它選錯了。
      */
-    /** 後端回的已定案對應。沒有這個就一直停在「推定」，證據收到了也不會反映到畫面上。 */
-    setVariantMap(map) {
-      variantMap = map ?? {};
-      if (!el.overlay.hidden) render();
-    },
-
-    open(world, kind) {
-      const known = WEATHER_NAMES[kind] ? kind : null;
+    open(world, kind, group) {
+      // 任務板已經確認是哪一組 ⇒ **直接開那一組**，不必讓人自己選、也沒有猜的餘地。
+      confirmedGroup = VARIANT_MISSIONS[group] ? group : null;
+      const known = WEATHER_NAMES[kind] ? kind : (confirmedGroup ? kindOf(confirmedGroup) : null);
       // world 為空＝**速查模式**（不綁任何一筆事件，六組都列）。沒有事件時也想先看
       // 「這六組分別長什麼樣」是合理的（Owner 2026-08-03），而那與「這筆事件要去哪」
       // 是兩個不同的問題 —— 標題要講清楚是哪一個，否則速查會被當成現況。
@@ -369,7 +344,7 @@ export function createEmergencyMap(root, data) {
           ? `${world} · ${WEATHER_NAMES[known]} — 任務地點`
           : `${world} — 任務地點（這筆沒填天氣，六組都列出來對照）`;
       buildPicker(known);
-      selected = `${known ?? 'storm'}-α`;
+      selected = confirmedGroup ?? `${known ?? 'storm'}-α`;
       render();
       openModal();
     },
