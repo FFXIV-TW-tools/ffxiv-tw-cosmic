@@ -7,5 +7,6 @@ deploy-allow.txt
 deploy-deny.txt
 deploy-prepare.sh
 docs
+tests
 tools
 worker

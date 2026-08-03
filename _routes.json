@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "description": "Pages Functions 只攔文件導覽（B-048 交接頁）；其餘全走純靜態 CDN。include 的唯一事實源＝tests/route-manifest.json，由 tests/handoff.test.mjs 守全等。刻意不用 /* —— 那會讓每個 CSS/JS/圖片請求都變成一次 Functions invocation。",
+  "include": [
+    "/",
+    "/index.html"
+  ],
+  "exclude": []
+}

@@ -1,7 +1,9 @@
 _headers
+_routes.json
 css
 data
 favicon-192.png
+functions
 img
 index.html
 modules
