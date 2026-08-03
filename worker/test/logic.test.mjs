@@ -293,3 +293,16 @@ test('插件通報會把 missionIds 帶出來（原本只驗不存＝每次都�
   );
   assert.deepEqual(r.missionIds, [518, 522, 1]);
 });
+
+test('插件通報的天氣種類由 weatherId 查表得出（不靠 variant）', () => {
+  const base = { world: W, phase: 'start', missionIds: [518] };
+  // 194/195 都是流星雨——id 四個、天氣三種，不是一對一
+  assert.equal(L.validatePluginReport({ ...base, weatherId: 194 }, NOW).weather, 'meteor');
+  assert.equal(L.validatePluginReport({ ...base, weatherId: 195 }, NOW).weather, 'meteor');
+  assert.equal(L.validatePluginReport({ ...base, weatherId: 196 }, NOW).weather, 'storm');
+  assert.equal(L.validatePluginReport({ ...base, weatherId: 197 }, NOW).weather, 'spore');
+  // 沒抓到開始通告（variant 為 null）時天氣仍然填得出來——這正是原本會空著的情況
+  assert.equal(L.validatePluginReport({ ...base, weatherId: 196 }, NOW).variant, null);
+  // warn 相位沒有 weatherId（天氣還沒翻轉）⇒ 不編一個
+  assert.equal(L.validatePluginReport({ world: W, phase: 'warn' }, NOW).weather, null);
+});

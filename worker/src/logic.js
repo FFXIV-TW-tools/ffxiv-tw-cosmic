@@ -21,6 +21,24 @@ export const EVENT_DURATION = 1200;
 export const EMERGENCY_WEATHER = [194, 195, 196, 197];
 
 /**
+ * 緊急天氣 id → 天氣種類。**來自 client 的 `Weather` 表**（`data/item_dict/datamining_tc/
+ * en_Weather.csv`：194/195 Meteor Showers、196 Astromagnetic Storms、197 Sporing Mist）
+ * ——不是推測，是查表。
+ *
+ * 沒有這一層的話，插件報的事件天氣欄永遠是 NULL（它送的是 `weatherId`，而天氣種類原本
+ * 只從 `variant` 前綴推導），於是**插件覆蓋到的那一台反而在地圖上顯示「天氣未填」**——
+ * 可信度最高的來源給出最少的資訊，正好反了（2026-08-03 利維坦 #34 實測）。
+ *
+ * 注意 **194 與 195 都是流星雨**：id 有四個、天氣只有三種，不是一對一。
+ */
+export const WEATHER_ID_KIND = { 194: 'meteor', 195: 'meteor', 196: 'storm', 197: 'spore' };
+
+/** 緊急天氣 id → `storm`／`meteor`／`spore`；不是緊急天氣就回 null。 */
+export function kindOfWeatherId(id) {
+  return WEATHER_ID_KIND[id] ?? null;
+}
+
+/**
  * 事件變體。每種緊急天氣有**兩則不同的開始通告**，對應兩組不同的任務與地點
  * （上游 ICE 稱 α／β）。字串來自台服 client 的 `MassivePcContentTextData`
  * （2026-08-03 離線解出 1025/1077・1078/1079・1080/1081）。
@@ -264,6 +282,10 @@ export function validatePluginReport(body, now) {
     phase,
     startAt: now,
     variant: body.variant ?? null,
+    // 天氣種類由 `weatherId` 查表得出（見 WEATHER_ID_KIND）——插件送的是 id，
+    // 而 `variant` 常常是 null（沒抓到開始通告），只靠 variant 推導會讓天氣欄空著。
+    // `warn` 相位沒有 weatherId（天氣還沒翻轉）⇒ 回 null，不編一個。
+    weather: kindOfWeatherId(body.weatherId),
     // **存下來**（原本只驗不存）：`variant` 是通告文字解出來的、`missionIds` 是任務板看到的，
     // 兩者**同時**出現的那一筆就是「哪則通告對應哪一組任務」的唯一證據（B-023）。
     // 每次丟掉它，就等於每次事件都把那個答案扔了。

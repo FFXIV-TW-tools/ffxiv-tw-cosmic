@@ -143,7 +143,7 @@ export default {
         const r = await stub(env).report(
           {
             source: 'plugin', world: v.world, startAt: v.startAt, phase: v.phase,
-            variant: v.variant, missionIds: v.missionIds,
+            variant: v.variant, weather: v.weather, missionIds: v.missionIds,
           },
           now,
         );
