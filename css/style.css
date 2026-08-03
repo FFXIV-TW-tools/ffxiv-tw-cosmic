@@ -820,12 +820,6 @@ body {
 .cos-map__dot--g0 { background: var(--accent); }
 .cos-map__dot--g1 { background: var(--color-warn, #e8a45a); }
 
-/* 目前現況：哪一台有事、什麼天氣。地圖本身是靜態查詢，這一行是它與現況的唯一連結 */
-.cos-map__live { margin-top: var(--space-3, 12px); }
-
-/* 天氣已知時，其餘四組淡出——範圍縮小是有依據的，但不代表已經選定其中一組 */
-.cos-map__pick--off { opacity: 0.4; }
-
 /* 聊天欄通告原文：一則一行，短 */
 .cos-map__ann { display: block; }
 
@@ -850,3 +844,10 @@ body {
   color: var(--color-warn, #e8a45a);
   background: var(--color-warn-soft, rgba(232, 164, 90, 0.18));
 }
+
+/* 彈窗內各區塊的節奏（modal 的外圍內距由 `.codex-modal__body` 給，這裡只管區塊之間） */
+.cos-map__picker { margin-bottom: var(--space-2, 8px); }
+.cos-map__legend { margin-top: var(--space-3, 12px); }
+
+/* 地圖在彈窗裡置中：彈窗比 440px 寬時，靠左會在右邊留一塊莫名的空白 */
+.cos-map { margin-inline: auto; }

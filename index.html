@@ -362,30 +362,31 @@
           </div>
         </div>
 
-      <!-- 任務地點圖。底圖與座標都出自台服 client（`WKSMissionMapMarker`），
-           變體分組出自 ICE 的對照表且已用 client 幾何交叉驗證（見 modules/emergency-map.js）。 -->
-      <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
-        <span class="codex-hud" aria-hidden="true"></span>
-        <h2 class="codex-h2 cos-panel__title">
-          任務地點圖
-          <span class="codex-help-trigger" data-help="緊急任務分成六組（三種天氣 × 兩個變體），每一組固定是那幾個任務、去那幾個地點——**這部分是 client 寫死的，不隨伺服器變**。｜座標直接來自遊戲資料（每個任務自己的地點標記），不是人工標的。｜底圖是渴望灣最新開發階段那張；建築物美術會隨開發階段變，但任務地點不會。｜**「哪一則開始通告對應哪一組」目前還沒確定**——通告文字分得出 A、B 兩則，但哪一則對應哪一組任務要等插件抓到第一筆同時有通告與任務板的紀錄。在那之前只知道天氣的話，兩組都會畫出來。">
-            這張圖準嗎 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
-          </span>
-        </h2>
-        <!-- 預設收合（Owner 2026-08-03「點擊再展開，讓空間不要那麼擠那麼高」）：
-             地圖是查詢用的，不是每次進站都要看的東西，展開狀態會把下面的歷史紀錄推到很遠。 -->
-        <details class="codex-accordion cos-map__wrap">
-          <summary>展開地圖 — 看這次要去哪幾個點</summary>
-          <p class="codex-body cos-map__live" id="em-map-live"></p>
-          <div class="cos-map__picker" id="em-map-picker" role="group" aria-label="選擇天氣變體"></div>
-          <p class="codex-small cos-em__note" id="em-map-note"></p>
-          <div class="cos-map" id="em-map">
-            <img class="cos-map__img" id="em-map-img" alt="渴望灣地圖" loading="lazy" decoding="async">
-            <div class="cos-map__pins" id="em-map-pins"></div>
+      <!-- 任務地點圖＝**每一筆事件自己一張**（Owner 2026-08-03：「不要共用地圖，到時候每個
+           緊急一起出你怎麼顯示」）。共用一張在兩台同時出不同天氣時就矛盾了 ⇒ 改成彈窗，
+           由現況那一列打開，天氣與伺服器都由那一列決定。
+           a11y 契約照設計系統 §.codex-modal：role/aria-modal/aria-labelledby 同層、
+           ESC 與點遮罩關閉、開窗 trapFocus、關窗還焦。 -->
+      <div class="codex-modal-overlay" id="em-map-overlay" hidden>
+        <div class="codex-modal codex-modal--wide" role="dialog" aria-modal="true" aria-labelledby="em-map-title">
+          <div class="codex-modal__header">
+            <h3 class="codex-h3" id="em-map-title">任務地點圖</h3>
+            <button class="codex-modal__close" type="button" aria-label="關閉" id="em-map-close">×</button>
           </div>
-          <ul class="cos-map__legend" id="em-map-legend"></ul>
-        </details>
-      </section>
+          <div class="codex-modal__body">
+            <div class="cos-map__picker" id="em-map-picker" role="group" aria-label="選擇任務組"></div>
+            <p class="codex-small cos-em__note" id="em-map-note"></p>
+            <div class="cos-map" id="em-map">
+              <img class="cos-map__img" id="em-map-img" alt="渴望灣地圖" loading="lazy" decoding="async">
+              <div class="cos-map__pins" id="em-map-pins"></div>
+            </div>
+            <ul class="cos-map__legend" id="em-map-legend"></ul>
+          </div>
+          <div class="codex-modal__footer">
+            <button class="codex-btn codex-btn--ghost" type="button" id="em-map-cancel">關閉</button>
+          </div>
+        </div>
+      </div>
 
       <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
         <span class="codex-hud" aria-hidden="true"></span>

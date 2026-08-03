@@ -96,17 +96,14 @@ async function main() {
   const emPanel = document.querySelector('#panel-emergency');
   const emNotify = createEmergencyNotify(emPanel, { worlds: devData.worlds });
   const emHistory = createEmergencyHistory(emPanel, { worlds: devData.worlds });
-  // 地點圖的**地點資料**是純靜態的（座標與底圖都在 client 裡），後端掛掉時照常查得到；
-  // 現況只是拿來標「現在哪一台有事、是什麼天氣」，拿不到就顯示沒有事件，不影響查詢。
+  // 地點圖＝**每一筆事件自己一張**的彈窗，由現況那一列打開（伺服器與天氣都由那一列給）。
+  // 地點資料本身是純靜態的（座標與底圖都在 client 裡），後端掛掉時照樣看得到。
   const emMap = createEmergencyMap(emPanel, missionData);
   const emView = createEmergencyView(emPanel, {
     worlds: devData.worlds,
-    onState: (state) => {
-      emNotify.onState(state);
-      emMap.syncTo(state);
-    },
+    onState: (state) => emNotify.onState(state),
     onChanged: () => emHistory.refresh(),
-    onShowMap: (kind) => emMap.openFor(kind),
+    onShowMap: (world, kind) => emMap.open(world, kind),
   });
   onEmergencyTab = () => emHistory.ensureLoaded();
 

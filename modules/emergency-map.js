@@ -93,7 +93,10 @@ function radiusPercent(r, sizeFactor) {
  */
 export function createEmergencyMap(root, data) {
   const el = {
-    live: root.querySelector('#em-map-live'),
+    overlay: root.querySelector('#em-map-overlay'),
+    title: root.querySelector('#em-map-title'),
+    close: root.querySelector('#em-map-close'),
+    cancel: root.querySelector('#em-map-cancel'),
     picker: root.querySelector('#em-map-picker'),
     note: root.querySelector('#em-map-note'),
     img: root.querySelector('#em-map-img'),
@@ -101,7 +104,7 @@ export function createEmergencyMap(root, data) {
     legend: root.querySelector('#em-map-legend'),
   };
   const cfg = data.map;
-  if (!el.picker || !cfg) return { syncTo() {} };
+  if (!el.picker || !cfg) return { open() {} };
 
   el.img.src = cfg.image;
 
@@ -109,25 +112,27 @@ export function createEmergencyMap(root, data) {
   const jobLabel = (i) => data.jobs?.[i]?.label ?? `職業 ${i}`;
   const jobAbbr = (i) => data.jobs?.[i]?.abbr ?? '';
 
-  /**
-   * 目前選的組（一定是單一組）。**沒有「全部」選項**（Owner 2026-08-03：「會有點誤導」）——
-   * 一次事件只會出一組，把兩組疊在同一張圖上會讓人以為要跑八個點。
-   */
+  /** 目前選的組（一定是單一組——一次事件只會出一組）。 */
   let selected = 'storm-α';
+  let releaseTrap = null;
 
-  buildPicker();
-  render();
-
-  function buildPicker() {
-    for (const [kind, name] of Object.entries(WEATHER_NAMES)) {
-      for (const key of [`${kind}-α`, `${kind}-β`]) {
+  /**
+   * 建按鈕列。**只放這次事件那個天氣的兩組**（天氣未知才放全部六組）——
+   * 這張圖是**某一筆事件的**，不是共用查詢表（Owner 2026-08-03：
+   * 「不要共用地圖，到時候每個緊急一起出你怎麼顯示」）。
+   */
+  function buildPicker(kind) {
+    el.picker.replaceChildren();
+    const kinds = kind ? [kind] : Object.keys(WEATHER_NAMES);
+    for (const k of kinds) {
+      for (const key of [`${k}-α`, `${k}-β`]) {
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'codex-btn codex-btn--ghost codex-small cos-map__pick';
         b.dataset.key = key;
         // 標籤用**這組有什麼任務**，不用 A／B——「哪則通告＝哪一組」還沒有證據（B-023），
         // 掛上 A／B 等於要人拿一個猜出來的編號去對照，猜錯就跑錯半張圖。
-        b.append(document.createTextNode(name));
+        b.append(document.createTextNode(kind ? '這一組' : WEATHER_NAMES[k]));
         const hint = document.createElement('span');
         hint.className = 'cos-map__hint';
         hint.textContent = GROUP_HINT[key] ?? '';
@@ -286,48 +291,47 @@ export function createEmergencyMap(root, data) {
     return li;
   }
 
+  function openModal() {
+    el.overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    releaseTrap = window.FFXIVA11y?.trapFocus?.(el.overlay) ?? null;
+  }
+
+  function closeModal() {
+    el.overlay.hidden = true;
+    document.body.style.overflow = '';
+    releaseTrap?.();
+    releaseTrap = null;
+  }
+
+  el.close?.addEventListener('click', closeModal);
+  el.cancel?.addEventListener('click', closeModal);
+  el.overlay?.addEventListener('click', (e) => {
+    if (e.target === el.overlay) closeModal();   // 只認遮罩本身
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !el.overlay.hidden) closeModal();
+  });
+
   return {
     /**
-     * 從現況那一列跳過來：展開地圖、切到該天氣、捲到看得到的位置。
-     * **只切到天氣**（該天氣的第一組），不假裝知道是哪一組——那個對應還沒有證據（B-023）。
-     */
-    openFor(kind) {
-      if (WEATHER_NAMES[kind]) {
-        selected = `${kind}-α`;
-        render();
-      }
-      const wrap = root.querySelector('.cos-map__wrap');
-      if (wrap) wrap.open = true;
-      wrap?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-    },
-
-    /**
-     * 把現況接進地圖（Owner 2026-08-03：「根本看不出來現在是哪個事件」）。
+     * 開某一筆事件的地圖。**伺服器與天氣都由那一列給**，不是共用一張圖去猜——
+     * 兩台同時出不同天氣的事件時，共用那張圖必然有一台是錯的
+     *（Owner 2026-08-03：「不要共用地圖，到時候每個緊急一起出你怎麼顯示」）。
      *
-     * 做兩件事，**都不含猜測**：
-     * 1. 頂上寫出目前有事件的伺服器與天氣（沒有就明說沒有）。
-     * 2. 該天氣的兩顆按鈕標成候選，其餘四顆淡出——範圍從六組縮到兩組是**有依據的**
-     *    （天氣是通報進來的事實）。
-     *
-     * **不自動選定其中一組**：`storm-a`／`storm-b`（通告文字）與 α／β（任務分組）的對應
-     * 目前無證據（B-023），自動切只有一半機率對，而使用者不會知道它切錯了。
+     * 天氣已知 ⇒ 只放那個天氣的兩組（範圍從六縮到二是有依據的）；未知 ⇒ 六組都放。
+     * **不自動選定其中一組**：通告文字（`storm-a`／`storm-b`）與任務分組（α／β）的對應
+     * 目前無證據（B-023），自動選只有一半機率對，而使用者不會知道它選錯了。
      */
-    syncTo(state) {
-      const events = Object.values(state?.events ?? {});
-      const kinds = new Set(events.map((e) => e.weather).filter(Boolean));
-
-      el.live.replaceChildren();
-      if (!events.length) {
-        el.live.textContent = '目前沒有人回報進行中的事件 — 下面是六組的固定地點，可以先查。';
-      } else {
-        el.live.textContent = `現在：${events.map((e) => e.world + (WEATHER_NAMES[e.weather] ? ` ${WEATHER_NAMES[e.weather]}` : '（天氣未填）')).join('、')}`;
-      }
-
-      // 天氣已知 ⇒ 只可能是那兩組，其餘淡出。全部未知就不淡（沒有依據可縮範圍）。
-      for (const b of el.picker.children) {
-        const isCandidate = kinds.size === 0 || kinds.has(b.dataset.key.split('-')[0]);
-        b.classList.toggle('cos-map__pick--off', !isCandidate);
-      }
+    open(world, kind) {
+      const known = WEATHER_NAMES[kind] ? kind : null;
+      el.title.textContent = known
+        ? `${world} · ${WEATHER_NAMES[known]} — 任務地點`
+        : `${world} — 任務地點（這筆沒填天氣，六組都列出來對照）`;
+      buildPicker(known);
+      selected = `${known ?? 'storm'}-α`;
+      render();
+      openModal();
     },
   };
 }

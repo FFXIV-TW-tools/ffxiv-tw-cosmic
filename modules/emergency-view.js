@@ -407,19 +407,18 @@ function weatherLabel(ev) {
 
     // 天氣／變體：**沒有就整個不放**（不寫「未知」——那會被讀成「查過了是未知」，
     // 但真相是沒人填）。有值才顯示，也讓填錯的人自己看得出來要按取消重報。
+    // 地點圖入口。**不管天氣有沒有填都要有**——第一版掛在天氣標籤上，結果沒填天氣的事件
+    // 整列連一個入口都沒有（Owner 2026-08-03 截圖：奧汀「天氣未填」，畫面上找不到地圖）。
+    // 而「不知道天氣」正是最需要去看地圖的情況：六組長什麼樣，看了才對得出來。
     const kind = ev.weather ?? (ev.variant ? ev.variant.split('-')[0] : null);
     const w = weatherLabel(ev);
-    if (w) {
-      // 天氣本身就當成「看地點圖」的入口（Owner 2026-08-03：「有連結可以快速展開地圖」）。
-      // 另放一顆按鈕只會讓這一列更擠，而天氣正是決定要看哪一組地點的那個欄位。
-      const tag = document.createElement('button');
-      tag.type = 'button';
-      tag.className = 'codex-badge cos-em__weather cos-em__weather--link';
-      tag.textContent = `${w} · 地點圖`;
-      tag.title = `展開地點圖，看${w}要去哪幾個點`;
-      tag.addEventListener('click', () => onShowMap?.(kind));
-      li.append(tag);
-    }
+    const tag = document.createElement('button');
+    tag.type = 'button';
+    tag.className = 'codex-badge cos-em__weather cos-em__weather--link';
+    tag.textContent = w ? `${w} · 地點圖` : '🗺 地點圖';
+    tag.title = w ? `展開地點圖，看${w}要去哪幾個點` : '展開地點圖（這筆沒填天氣，六組都可以對照）';
+    tag.addEventListener('click', () => onShowMap?.(world, kind));
+    li.append(tag);
 
     const when = document.createElement('strong');
     when.className = 'cos-em__when';
