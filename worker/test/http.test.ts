@@ -360,6 +360,29 @@ describe('事件變體（α／β）', () => {
     await revoke(after.events[w].id);
   });
 
+  it('預告不推播，天氣真的翻轉才推播', async () => {
+    const w = devStages.worlds[3];
+    await clearWorld(w);
+    const uuid1 = uuid();
+    await put('/sub', { uuid: uuid1, worlds: [w], webhookUrl: HOOK });
+
+    // 預告：事件要進得去，但**一則都不能送**
+    const calls = stubDiscord();
+    const warn = await post('/report', { world: w, phase: 'warn' }, PLUG);
+    expect(warn.status).toBe(200);
+    const mid = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    expect(mid.events[w]).toBeDefined();          // 網站上看得到
+    expect(calls.length).toBe(0);                 // 但沒有人被吵到
+
+    // 天氣真的翻轉 → 這時才送
+    await post('/report', { world: w, weatherId: 196, missionIds: [518], phase: 'start' }, PLUG);
+    expect(calls.length).toBeGreaterThan(0);
+
+    const st = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    await revoke(st.events[w].id);
+    await put('/sub', { uuid: uuid1, worlds: [], webhookUrl: '' });
+  });
+
   it('phase 拼錯不再被靜默當成 start', async () => {
     const r = await post('/report',
       { world, weatherId: 196, missionIds: [518], phase: 'strat' }, PLUG);

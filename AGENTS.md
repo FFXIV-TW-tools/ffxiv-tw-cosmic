@@ -53,6 +53,11 @@ ICE 插件偵測到 `ActiveWeather ∈ 194–197` 自動回報，加上玩家手
 覆蓋率＝回報者人數，一個插件只看得到它所在的那一台伺服器，**沒亮不代表沒事件**。
 兩種來源在畫面上要分別標示（`插件偵測`／`玩家通報`），不得混為一談。
 
+**預告（`warn`）一律不推播**（2026-08-03，一晚三筆假預告之後訂）。預告是所有訊號裡最不可靠的
+——它來自畫面通告文字比對，而那個彈窗同時放著分頁標籤（`EMERGENCY`）、秒級倒數與三種不同
+事件的文案；誤判成本卻是「已經吵到所有人，而且收不回來」。事件本身立刻就在網站上看得到，
+延後的只有推播。該觸發通知的是**確定發生**：天氣真的翻轉（`start`）或有人附議。
+
 **手動通報靜置 30 秒才推播**（2026-08-03）：誤按可在此期間撤回，撤回了就一則都不送。
 **插件通報不適用**——它回報的是遊戲天氣本身，不存在誤按。靜置期在「別人附議」或
 「通報者自己按確定」時提前結束：它擋的是沒人確認的孤例，不是已經有第二個人看到的事件。
@@ -89,7 +94,7 @@ ICE 插件偵測到 `ActiveWeather ∈ 194–197` 自動回報，加上玩家手
 |---|---|---|
 | **任何改動（canonicalTest；`process/fleet.json` 逐字對照本行）** | `node tools/validate.mjs` | 資料不變量全過（544 任務／63 有條件／88 連續／11 條工具鏈）；不需遊戲 client，任何機器可跑 |
 | `tools/cosmic-dump/**` 或台服改版 | `dotnet run -c Release --project tools/cosmic-dump` | 內建健全性閘全過（544 任務／天氣總和 100%／11 條 9 階工具鏈），任一不過**不寫檔**；地圖底圖匯不出來也**整批不寫**（`img/map/sinus-ardorum.png`，512²） |
-| `worker/**`（緊急事件後端） | cwd=`worker/`：`pnpm test`＋`pnpm test:logic`＋`pnpm cf:deploy:dry` | 53 整合（vitest-pool-workers）＋26 純函式（node --test）全綠；dry-run 0 error。**測試絕不打真 Discord**（fetch 被 stub） |
+| `worker/**`（緊急事件後端） | cwd=`worker/`：`pnpm test`＋`pnpm test:logic`＋`pnpm cf:deploy:dry` | 54 整合（vitest-pool-workers）＋26 純函式（node --test）全綠；dry-run 0 error。**測試絕不打真 Discord**（fetch 被 stub） |
 | `modules/emergency-*.js` | 本機 `wrangler dev` ＋瀏覽器走一次通報→附議→訂閱 | console 零 error；後端關掉時該分頁降級為唯讀、其他分頁不受影響 |
 | 任何 CSS／HTML | `node C:/FFXIVProject/tools/check-design-drift.js --files <改動檔> --strict` | exit 0 |
 | 任何前端改動 | 瀏覽器開 `http://127.0.0.1:8774/ffxiv-tw-cosmic/`（`svc start portal`） | console 零 error；四個分頁都出得來；`documentElement.scrollWidth - clientWidth === 0` |

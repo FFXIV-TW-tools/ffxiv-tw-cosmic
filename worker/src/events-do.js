@@ -288,7 +288,15 @@ export class CosmicEventsDO extends DurableObject {
       );
       const wid = this.sql.exec('SELECT last_insert_rowid() AS id').toArray()[0].id;
       this._bump('warn_ok');
-      this.ctx.waitUntil(this._fanout(this._activeEvent(world, now), now));
+      // ⚠️ **預告一律不推播**（Owner 2026-08-03：「預告也不要先通知，大約 1~3 分鐘內確定了才通知」）。
+      //
+      // 由來：2026-08-03 一晚出現三筆假預告，全部**立刻**推播給訂閱者，而通知送出去就收不回來
+      // （撤銷只影響網站顯示）。預告是所有訊號裡**最不可靠**的一種——它來自畫面上的通告文字比對，
+      // 而那個彈窗同時放著分頁標籤（`EMERGENCY`）、倒數與三種不同事件的文案，誤判成本卻是
+      // 「已經吵到所有人」。
+      //
+      // 事件本身**立刻**就在網站上看得到，延後的只有推播。真正該觸發通知的是**確定發生**：
+      // 天氣真的翻轉（`start`）或有第二個人附議 —— 那兩條路徑各自會送。
       return { ok: true, eventId: wid, duplicate: false };
     }
 
