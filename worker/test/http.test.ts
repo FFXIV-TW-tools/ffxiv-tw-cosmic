@@ -227,6 +227,49 @@ describe('插件通報', () => {
   });
 });
 
+describe('事件變體（α／β）', () => {
+  const world = devStages.worlds[3];
+
+  it('插件帶 variant → 存下來並在 /state 帶出；未知值退 400', async () => {
+    stubDiscord();
+    await clearWorld(world);
+    const bad = await post('/report',
+      { world, weatherId: 196, missionIds: [518], phase: 'start', variant: 'storm-z' }, PLUG);
+    expect(bad.status).toBe(400);
+
+    const ok = await post('/report',
+      { world, weatherId: 196, missionIds: [518], phase: 'start', variant: 'storm-a' }, PLUG);
+    expect(ok.status).toBe(200);
+    const st = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    expect(st.events[world].variant).toBe('storm-a');
+    await revoke(st.events[world].id);
+  });
+
+  it('phase 拼錯不再被靜默當成 start', async () => {
+    const r = await post('/report',
+      { world, weatherId: 196, missionIds: [518], phase: 'strat' }, PLUG);
+    expect(r.status).toBe(400);
+    expect((await r.json() as any).error).toBe('bad_phase');
+  });
+
+  it('預告時沒有變體，開始通告才補上（COALESCE 不會用 null 蓋掉）', async () => {
+    stubDiscord();
+    const w = devStages.worlds[5];
+    await clearWorld(w);
+    const warn = await post('/report', { world: w, phase: 'warn' }, PLUG);
+    expect(warn.status).toBe(200);
+    const mid = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    expect(mid.events[w].variant).toBeNull();
+
+    await post('/report',
+      { world: w, weatherId: 196, missionIds: [518], phase: 'start', variant: 'spore-b' }, PLUG);
+    const after = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    expect(after.events[w].variant).toBe('spore-b');
+    expect(after.events[w].id).toBe(mid.events[w].id);   // 同一筆，不是新開的
+    await revoke(after.events[w].id);
+  });
+});
+
 describe('投票', () => {
   it('3 否認 0 附議 → disputed，且不再出現在 /state', async () => {
     stubDiscord();

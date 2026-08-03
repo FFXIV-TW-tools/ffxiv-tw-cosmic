@@ -136,7 +136,7 @@ export default {
         const v = L.validatePluginReport(body, now);
         if (!v.ok) return json(request, { error: v.reason }, 400);
         const r = await stub(env).report(
-          { source: 'plugin', world: v.world, startAt: v.startAt, phase: v.phase },
+          { source: 'plugin', world: v.world, startAt: v.startAt, phase: v.phase, variant: v.variant },
           now,
         );
         // 與手動路徑同一套語意：409＝已有進行中事件（本筆只把來源升級成 plugin，不開新的）

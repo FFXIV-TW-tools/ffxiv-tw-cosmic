@@ -50,6 +50,13 @@ export class CosmicEventsDO extends DurableObject {
     // `CREATE TABLE IF NOT EXISTS` 不會補欄位到既有表，所以用 ALTER；已經有了就會丟錯，吞掉即可
     // （父層鐵則例外 a：窄的、預期內的 schema 既存檢查）。
     // `notifyAt`：待推播的時間戳；0 ＝ 沒有待推播的東西（已送出或不需延遲）。
+    try {
+      // 事件變體（storm-a／meteor-b…）。插件比對 client 的開始通告得來；
+      // 沒偵測到就維持 NULL——空字串會讓「沒偵測到」與「偵測到但空」分不開（鐵則 §2）。
+      this.sql.exec('ALTER TABLE events ADD COLUMN variant TEXT');
+    } catch {
+      // 欄位已存在
+    }
     for (const col of ['nConfirm', 'nDispute', 'warnedAt', 'notifyAt']) {
       try {
         this.sql.exec(`ALTER TABLE events ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0`);
@@ -148,6 +155,7 @@ export class CosmicEventsDO extends DurableObject {
       confirms: JSON.parse(r.confirms),
       disputes: JSON.parse(r.disputes),
       status: r.status,
+      variant: r.variant ?? null,
     };
   }
 
@@ -183,9 +191,9 @@ export class CosmicEventsDO extends DurableObject {
     if (input.phase === 'warn') {
       if (existing) return { ok: true, eventId: existing.id, duplicate: true };
       this.sql.exec(
-        `INSERT INTO events (world, source, startAt, endAt, startExact, createdAt, reporter, warnedAt)
-         VALUES (?, ?, 0, ?, 0, ?, '', ?)`,
-        world, source, now + L.WARN_TTL, now, now,
+        `INSERT INTO events (world, source, startAt, endAt, startExact, createdAt, reporter, warnedAt, variant)
+         VALUES (?, ?, 0, ?, 0, ?, '', ?, ?)`,
+        world, source, now + L.WARN_TTL, now, now, input.variant ?? null,
       );
       const wid = this.sql.exec('SELECT last_insert_rowid() AS id').toArray()[0].id;
       this._bump('warn_ok');
@@ -207,8 +215,10 @@ export class CosmicEventsDO extends DurableObject {
     // 這是唯一會對同一筆事件推播第二次的情況，而且是刻意的：預告與開始是兩則不同的資訊。
     if (existing && source === 'plugin' && input.phase === 'start' && !existing.startAt) {
       this.sql.exec(
-        'UPDATE events SET startAt = ?, endAt = ?, startExact = 1 WHERE id = ?',
-        now, now + L.EVENT_DURATION, existing.id,
+        // 變體只有**開始通告**帶得出來（預告階段兩個變體共用同一句），所以是在升級這一刻
+        // 才寫得進去。`COALESCE` ＝插件沒偵測到就保持原值，不要用 null 蓋掉已知的。
+        'UPDATE events SET startAt = ?, endAt = ?, startExact = 1, variant = COALESCE(?, variant) WHERE id = ?',
+        now, now + L.EVENT_DURATION, input.variant ?? null, existing.id,
       );
       this._bump('warn_to_start');
       this.ctx.waitUntil(this._fanout(this._activeEvent(world, now), now));
@@ -251,10 +261,11 @@ export class CosmicEventsDO extends DurableObject {
     const startAt = input.startAt;
     const delay = L.notifyDelayFor(source);
     this.sql.exec(
-      `INSERT INTO events (world, source, startAt, endAt, startExact, createdAt, reporter, notifyAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO events (world, source, startAt, endAt, startExact, createdAt, reporter, notifyAt, variant)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       world, source, startAt, startAt + L.EVENT_DURATION,
       source === 'plugin' ? 1 : 0, now, reporter, delay ? now + delay : 0,
+      input.variant ?? null,
     );
     const id = this.sql.exec('SELECT last_insert_rowid() AS id').toArray()[0].id;
     this._bump(source === 'plugin' ? 'report_ok_plugin' : 'report_ok_manual');
@@ -394,6 +405,7 @@ export class CosmicEventsDO extends DurableObject {
         // 還在靜置期＝通知尚未送出。前端靠它決定要不要給「我確定，馬上通知」，
         // 以及撤回時該說「沒有人會收到」還是「無法收回」。不回這欄前端只能猜。
         pendingNotify: (r.notifyAt ?? 0) > 0,
+        variant: r.variant ?? null,
       };
     }
     // 前端要在事件列上顯示「否認 2／3 就下架」。門檻是後端的判斷依據，
@@ -463,6 +475,7 @@ export class CosmicEventsDO extends DurableObject {
         // 提前量＝預告到實際開始的秒數。累積幾筆之後這才是有依據的數字，
         // 而不是拿單一觀察去猜（本 repo 已為此吃過一次虧）。
         leadSeconds: (r.warnedAt && r.startAt) ? r.startAt - r.warnedAt : null,
+        variant: r.variant ?? null,
         confirms: r.nConfirm ?? 0,
         disputes: r.nDispute ?? 0,
       })),

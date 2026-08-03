@@ -20,6 +20,20 @@ export const EVENT_DURATION = 1200;
  */
 export const EMERGENCY_WEATHER = [194, 195, 196, 197];
 
+/**
+ * 事件變體。每種緊急天氣有**兩則不同的開始通告**，對應兩組不同的任務與地點
+ * （上游 ICE 稱 α／β）。字串來自台服 client 的 `MassivePcContentTextData`
+ * （2026-08-03 離線解出 1025/1077・1078/1079・1080/1081）。
+ *
+ * **預告階段分不出來**：每種天氣的預告只有一則，兩個變體共用 ⇒ 只有開始通告帶得出這個資訊。
+ *
+ * 這裡只做白名單。「哪個變體對應哪些職業／地點」的對照**不放後端**——那是網站的展示層資料，
+ * 而且目前只有上游手刻的一份、尚未用台服 client 核對過（AGENTS §2：未定性的不當事實用）。
+ */
+export const VARIANTS = [
+  'storm-a', 'storm-b', 'meteor-a', 'meteor-b', 'spore-a', 'spore-b',
+];
+
 /** critical（緊急）任務的 id 區間——插件回報的證據自洽檢查用。 */
 export const CRITICAL_MISSION_MIN = 512;
 export const CRITICAL_MISSION_MAX = 544;
@@ -179,11 +193,20 @@ export function validateManualReport(body, now) {
 export function validatePluginReport(body, now) {
   if (!body || typeof body !== 'object') return { ok: false, reason: 'bad_body' };
   if (!isKnownWorld(body.world)) return { ok: false, reason: 'bad_world' };
-  const phase = ['end', 'warn'].includes(body.phase) ? body.phase : 'start';
+  // phase 必須是明確的三選一。原本寫「不是 end/warn 就當 start」，於是**拼錯或漏給
+  // 都會被靜默升級成 start**——把格式錯誤變成可信度最高的來源，正是本 repo 反覆吃虧的形狀
+  // （2026-08-03 後閘 finding ⑦）。
+  const phase = body.phase === undefined ? 'start' : body.phase;
+  if (!['start', 'warn', 'end'].includes(phase)) return { ok: false, reason: 'bad_phase' };
   // `warn` 來自**聊天欄的預告訊息**，那一刻天氣還沒翻轉 ⇒ 不可能有緊急天氣 id，
   // 硬要求它就等於永遠收不到預告。start/end 仍然要求，因為那兩個確實是看著天氣送的。
   if (phase !== 'warn' && !EMERGENCY_WEATHER.includes(body.weatherId)) {
     return { ok: false, reason: 'bad_weather' };
+  }
+  // 事件變體（α／β）：插件比對 client 的開始通告得來，沒比對到就整個不送這個欄位。
+  // **只認已知的六個值**——未知字串一律退件，不要收下一個沒人看得懂的標記。
+  if (body.variant !== undefined && !VARIANTS.includes(body.variant)) {
+    return { ok: false, reason: 'bad_variant' };
   }
   const ids = Array.isArray(body.missionIds) ? body.missionIds : [];
   if (ids.length > 0) {
@@ -192,7 +215,7 @@ export function validatePluginReport(body, now) {
     );
     if (!hasCritical) return { ok: false, reason: 'no_critical_evidence' };
   }
-  return { ok: true, world: body.world, phase, startAt: now };
+  return { ok: true, world: body.world, phase, startAt: now, variant: body.variant ?? null };
 }
 
 /**
