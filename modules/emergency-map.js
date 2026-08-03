@@ -34,11 +34,14 @@ const WEATHER_NAMES = { storm: '磁暴', meteor: '流星雨', spore: '孢子霧'
 const MIN_GAP = 6;
 
 /**
- * 兩則**開始**通告（預告那則 A／B 共用，分不出來所以不列在這）。
+ * 兩則**開始**通告，順序＝client 內的順序（預告那則兩組共用，分不出來所以不列在這）。
  *
- * ⚠️ **刻意不標「這則＝α」**：通告分得出兩則、任務分得出兩組，但兩者之間**沒有任何證據**
- * （見 docs/BACKLOG.md B-023）。硬標就是擲硬幣，而猜錯的人會被送到地圖的另一半——
- * 比不標更糟。等插件抓到一筆同時有通告與任務板的紀錄就解出來了。
+ * ⚠️ **索引 0→α、1→β 是「排列順序相同」的假設，不是已證實的對應**（Owner 2026-08-03
+ * 兩次要求分開顯示後採用）。真正的證據要等插件抓到一筆**同時**有開始通告與任務板的紀錄
+ * ——那時任務 id 落在哪一組就直接定案（docs/BACKLOG.md B-023）。
+ *
+ * 在那之前 UI 上必須留「待實測」記號：這一欄錯了會把人送到地圖的另一半，
+ * 而錯的形式是**完全沒有訊號**（畫面照常、通告也照常，只是指錯地方）。
  */
 const START_ANNOUNCEMENTS = {
   storm: ['已確認磁暴造成惡劣影響…收集救災所需的物資', '磁暴造成渴望灣多個地區受災…展開救災活動'],
@@ -154,15 +157,19 @@ export function createEmergencyMap(root, data) {
     const groups = [selected];
     const kind = selected.split('-')[0];
 
-    // 只留**聊天欄那兩句**（Owner 2026-08-03：「只要把職業跟天氣是怎麼通知的顯示出來就好了，
-    // 一堆字幹嘛」）。前一版把整套推理過程寫在這裡——那些屬於註解與 ❓ 說明卡，不屬於畫面。
+    // **只顯示這一組自己的那一則**（Owner 2026-08-03：「磁暴 A 只顯示 A 的對話，不要混一起」）。
+    // 對應依 client 排列順序推定（見 START_ANNOUNCEMENTS 註解），所以後面掛一個短記號——
+    // 沒有記號的話，這條假設會在畫面上看起來像已知事實。
+    const idx = selected.endsWith('α') ? 0 : 1;
     el.note.replaceChildren();
-    for (const line of START_ANNOUNCEMENTS[kind]) {
-      const p = document.createElement('span');
-      p.className = 'cos-map__ann';
-      p.textContent = `「${line}」`;
-      el.note.append(p);
-    }
+    const line = document.createElement('span');
+    line.className = 'cos-map__ann';
+    line.textContent = `「${START_ANNOUNCEMENTS[kind][idx]}」`;
+    el.note.append(line);
+    const mark = document.createElement('span');
+    mark.className = 'cos-map__ann cos-map__pending';
+    mark.textContent = '※ 通告與任務組的對應待實測確認';
+    el.note.append(mark);
 
     el.pins.replaceChildren();
     el.legend.replaceChildren();

@@ -851,3 +851,10 @@ body {
 
 /* 地圖在彈窗裡置中：彈窗比 440px 寬時，靠左會在右邊留一塊莫名的空白 */
 .cos-map { margin-inline: auto; }
+
+/* 「待實測」記號：看得見但不搶戲。它標的是一條**還沒被證實的對應**——
+   拿掉它，畫面上就分不出哪些是 client 事實、哪些是推定的（B-023 解決後移除）。 */
+.cos-map__pending {
+  color: var(--color-warn, #e8a45a);
+  margin-top: var(--space-1, 4px);
+}
