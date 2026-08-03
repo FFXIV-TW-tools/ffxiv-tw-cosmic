@@ -284,8 +284,11 @@ export function validatePluginReport(body, now) {
     variant: body.variant ?? null,
     // 天氣種類由 `weatherId` 查表得出（見 WEATHER_ID_KIND）——插件送的是 id，
     // 而 `variant` 常常是 null（沒抓到開始通告），只靠 variant 推導會讓天氣欄空著。
-    // `warn` 相位沒有 weatherId（天氣還沒翻轉）⇒ 回 null，不編一個。
-    weather: kindOfWeatherId(body.weatherId),
+    //
+    // ⚠️ **`warn` 相位一律回 null**：預告時天氣還沒翻轉，插件送上來的 `weatherId` 是
+    // **上一次事件的殘留**（初始值還是 196＝磁暴）。2026-08-03 實測踩到：利維坦的預告
+    // 因此被標成「磁暴」，而那個值沒有任何觀測支撐——鐵則 §2 說的「看起來合理但沒有訊號」。
+    weather: phase === 'warn' ? null : kindOfWeatherId(body.weatherId),
     // **存下來**（原本只驗不存）：`variant` 是通告文字解出來的、`missionIds` 是任務板看到的，
     // 兩者**同時**出現的那一筆就是「哪則通告對應哪一組任務」的唯一證據（B-023）。
     // 每次丟掉它，就等於每次事件都把那個答案扔了。

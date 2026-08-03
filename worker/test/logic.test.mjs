@@ -306,3 +306,13 @@ test('插件通報的天氣種類由 weatherId 查表得出（不靠 variant）'
   // warn 相位沒有 weatherId（天氣還沒翻轉）⇒ 不編一個
   assert.equal(L.validatePluginReport({ world: W, phase: 'warn' }, NOW).weather, null);
 });
+
+test('warn 相位不吃 weatherId（那是上一次事件的殘留值）', () => {
+  // 插件在預告時照樣會送 weatherId（lastEmergencyWeather 的殘留，初始值 196＝磁暴）。
+  // 天氣還沒翻轉 ⇒ 沒有任何觀測支撐，必須留空。
+  const r = L.validatePluginReport({ world: W, phase: 'warn', weatherId: 196 }, NOW);
+  assert.equal(r.ok, true);
+  assert.equal(r.weather, null, '預告不得帶出天氣');
+  // start 仍然要填得出來
+  assert.equal(L.validatePluginReport({ world: W, phase: 'start', weatherId: 196 }, NOW).weather, 'storm');
+});
