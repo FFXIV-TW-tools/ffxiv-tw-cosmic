@@ -86,6 +86,14 @@ body {
   color: var(--color-text-muted, #c0c9da);
   white-space: nowrap;
 }
+
+/* 列上的一鍵通報。沒有「上次結束」那一格時，靠 margin-left:auto 自己貼右邊；
+   有的話就接在它後面（`.cos-em__last` 已經把空間吃掉了）。 */
+.cos-em__quick {
+  margin-left: auto;
+  white-space: nowrap;
+}
+.cos-em__last + .cos-em__quick { margin-left: var(--space-3, 12px); }
 .cos-panel__lead { margin: 0 0 var(--space-4, 16px); }
 .cos-panel p { margin: 0 0 var(--space-2, 8px); }
 .cos-panel p:last-child { margin-bottom: 0; }

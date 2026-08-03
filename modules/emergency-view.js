@@ -169,10 +169,21 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
 
   el.submit.addEventListener('click', submit);
 
+  /** 列上的一鍵通報＝該伺服器、「剛剛開始」。伺服器不由使用者選，所以選不錯。 */
+  async function quickReport(world, btn) {
+    btn.disabled = true;
+    await sendReport(world, 0);
+    // 不把 btn 開回來：成功的話這一列會被重畫成「已回報」，那顆按鈕本來就該消失；
+    // 失敗（冷卻／限流）時 poll 也會重畫，重畫後的新按鈕是可按的
+  }
+
   async function submit() {
     el.submit.disabled = true;
-    const world = el.world.value;
-    const lead = Number(el.lead.value);
+    await sendReport(el.world.value, Number(el.lead.value));
+    syncSubmitState();   // 不能無條件開回來——沒選伺服器時它本來就該是關的
+  }
+
+  async function sendReport(world, lead) {
     const r = await emergencyApi.report(world, lead);
     if (r.ok) {
       if (!r.duplicate && Number.isInteger(r.data?.eventId)) rememberMine(r.data.eventId);
@@ -189,7 +200,6 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
     } else {
       say(r.message, 'warn');
     }
-    syncSubmitState();   // 不能無條件開回來——沒選伺服器時它本來就該是關的
   }
 
   function say(text, tone) {
@@ -286,7 +296,17 @@ export function createEmergencyView(root, { worlds, onState, onChanged }) {
       const none = document.createElement('span');
       none.className = 'codex-small cos-em__none';
       none.textContent = '目前沒有人回報';
-      li.append(none, lastEndedEl(world, now));
+
+      // 就地通報：**按鈕長在那一列上，伺服器就是那一列**（Owner 2026-08-03）。
+      // 這消掉的是一整類錯誤——原本的表單要人自己選伺服器，而 2026-08-02 實測過
+      // 「預設選到第一台」會造成報錯伺服器；強迫明確選擇只是把問題丟給使用者記得。
+      // 只有「剛剛開始」走這裡（最常見）；預告或已開始 N 分鐘仍用下方表單。
+      const quick = document.createElement('button');
+      quick.type = 'button';
+      quick.className = 'codex-btn codex-btn--ghost codex-small cos-em__quick';
+      quick.textContent = '我看到了，通報';
+      quick.addEventListener('click', () => quickReport(world, quick));
+      li.append(none, lastEndedEl(world, now), quick);
       return li;
     }
 
