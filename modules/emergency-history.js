@@ -1,23 +1,4 @@
 /**
- * 補上「距上次」：同一台伺服器上，這一筆與**前一次**事件相隔多久。
- *
- * <b>只在同一台之間算</b>——七台各自獨立發事件，跨伺服器的「間隔」不對應任何真實的東西。
- * 用開始時間（只有預告沒等到開始的那種就用預告時刻，與表格其他欄一致）。
- * 找不到更舊的一筆就是 `null`，不補 0——那是「沒有資料」，不是「間隔 0」。
- */
-function withIntervals(rows) {
-  const lastByWorld = new Map();
-  // 後端回的是新到舊；由舊往新掃才拿得到「前一次」
-  for (const r of [...rows].reverse()) {
-    const t = r.startAt || r.warnedAt;
-    const prev = lastByWorld.get(r.world);
-    r.gapSeconds = prev && t > prev ? t - prev : null;
-    if (t) lastByWorld.set(r.world, t);
-  }
-  return rows;
-}
-
-/**
  * 緊急事件歷史紀錄——已結束或已撤銷的回報，新到舊。
  *
  * **這是本站唯一會累積的緊急事件資料。** 其他所有東西都是時間的純函數（重算即可得），
@@ -33,6 +14,33 @@ function withIntervals(rows) {
 
 import { emergencyApi } from './emergency-api.js';
 import { clockText, dateText, formatDuration } from './eorzea-time.js';
+
+/**
+ * 補上「距上次」：同一台伺服器上，這一筆與**前一次真的發生過的事件**相隔多久。
+ *
+ * <b>只算「已結束」的</b>（Owner 2026-08-04）——撤銷／撤回／存疑的**不是事件**，
+ * 拿它們當端點算出來的間隔不對應任何真實發生過的事。判準與後端的「上次結束時間」一致：
+ * `status='active'` 且已過 `endAt`（過期是 lazy 判定，真實跑完的那些狀態仍是 active）。
+ * 不算數的那幾列自己也不顯示間隔——它們沒有「距上次」這回事。
+ *
+ * <b>只在同一台之間算</b>：七台各自獨立發事件，跨伺服器的「間隔」不對應任何真實的東西。
+ * 找不到更舊的一筆就是 `null`，不補 0——那是「沒有資料」，不是「間隔 0」。
+ */
+function withIntervals(rows, now) {
+  const lastByWorld = new Map();
+  // 後端回的是新到舊；由舊往新掃才拿得到「前一次」
+  for (const r of [...rows].reverse()) {
+    if (displayStatus(r, now) !== 'ended') {
+      r.gapSeconds = null;   // 撤銷／撤回／存疑：不是事件，既不顯示也不當端點
+      continue;
+    }
+    const t = r.startAt || r.warnedAt;
+    const prev = lastByWorld.get(r.world);
+    r.gapSeconds = prev && t > prev ? t - prev : null;
+    if (t) lastByWorld.set(r.world, t);
+  }
+  return rows;
+}
 
 const STATUS_LABEL = {
   ended: ['已結束', ''],
@@ -65,6 +73,7 @@ export function createEmergencyHistory(root, { worlds }) {
     empty: root.querySelector('#em-hist-empty'),
     note: root.querySelector('#em-hist-note'),
     limit: root.querySelector('#em-hist-limit'),
+    hideCancelled: root.querySelector('#em-hist-hide-cancelled'),
   };
 
   el.world.append(new Option('全部伺服器', ''));
@@ -72,6 +81,7 @@ export function createEmergencyHistory(root, { worlds }) {
   el.world.addEventListener('change', () => load());
   // 只改顯示筆數不必重抓——資料已經在手上（而且間隔要靠完整那份才算得出來）
   el.limit?.addEventListener('change', () => { if (last) render(last); });
+  el.hideCancelled?.addEventListener('change', () => { if (last) render(last); });
 
   /** 最近一次抓到的完整結果。**間隔一定要用完整那份算**，否則被截掉的那筆就沒有前一筆可比。 */
   let last = null;
@@ -83,9 +93,14 @@ export function createEmergencyHistory(root, { worlds }) {
     const all = data?.rows ?? [];
     // **先用完整清單算間隔，再截**。反過來的話，被截掉的那一筆會少一個「前一次」而顯示 —，
     // 看起來像「沒有前一次事件」，但真相只是它被畫面上的筆數上限藏起來了。
-    const withGap = withIntervals(all);
+    const withGap = withIntervals(all, data.now);
+    // 隱藏已取消（預設開）。**只影響顯示，不影響間隔計算**——間隔上面已經算完了，
+    // 而且本來就只拿「已結束」的當端點，所以勾不勾都不會改變任何一個數字。
+    const visible = el.hideCancelled?.checked
+      ? withGap.filter((r) => displayStatus(r, data.now) === 'ended')
+      : withGap;
     const cap = Number(el.limit?.value ?? 20);
-    const rows = withGap.slice(0, cap);
+    const rows = visible.slice(0, cap);
 
     el.empty.hidden = rows.length > 0;
     el.table.hidden = rows.length === 0;
@@ -122,7 +137,7 @@ export function createEmergencyHistory(root, { worlds }) {
       return tr;
     }));
 
-    const hidden = withGap.length - rows.length;
+    const hidden = visible.length - rows.length;
     el.note.textContent = rows.length
       ? `顯示 ${rows.length} 筆${hidden > 0 ? `（另有 ${hidden} 筆未顯示）` : ''}；`
         + `保留 ${data.retentionDays} 天，滿 7 天的紀錄只留時間與數量，回報者身份會被清掉。`

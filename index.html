@@ -409,15 +409,26 @@
             這裡列什麼 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
           </span>
         </h2>
-        <div class="codex-field cos-em__histfilter">
-          <label class="codex-field__label" for="em-hist-world">伺服器</label>
-          <select class="codex-select" id="em-hist-world"></select>
-          <label class="codex-field__label" for="em-hist-limit">顯示</label>
-          <select class="codex-select" id="em-hist-limit">
-            <option value="20" selected>最近 20 筆</option>
-            <option value="50">最近 50 筆</option>
-            <option value="100">最近 100 筆</option>
-          </select>
+        <!-- 三個篩選排成一列。原本是垂直堆疊（label 一行、select 一行 ×2），
+             在一張本來就很寬的表上方佔掉三行高度而右邊全空（Owner 2026-08-04 截圖）。 -->
+        <div class="cos-em__histfilter">
+          <div class="codex-field">
+            <label class="codex-field__label" for="em-hist-world">伺服器</label>
+            <select class="codex-select" id="em-hist-world"></select>
+          </div>
+          <div class="codex-field">
+            <label class="codex-field__label" for="em-hist-limit">顯示</label>
+            <select class="codex-select" id="em-hist-limit">
+              <option value="20" selected>最近 20 筆</option>
+              <option value="50">最近 50 筆</option>
+              <option value="100">最近 100 筆</option>
+            </select>
+          </div>
+          <label class="codex-switch cos-em__histtoggle">
+            <input type="checkbox" class="codex-switch__input" id="em-hist-hide-cancelled" checked>
+            <span class="codex-switch__track" aria-hidden="true"></span>
+            <span>隱藏已取消</span>
+          </label>
         </div>
         <div class="codex-empty cos-hideable" id="em-hist-empty" hidden>
           <div class="codex-empty__icon" aria-hidden="true">🗒</div>

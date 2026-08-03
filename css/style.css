@@ -672,11 +672,6 @@ body {
   align-items: start;
 }
 
-/* 歷史紀錄的伺服器篩選：獨立一行，不跟表格擠 */
-.cos-em__histfilter {
-  max-width: 16em;
-  margin-bottom: var(--space-3, 12px);
-}
 
 /* ══ 緊急任務地點圖 ══════════════════════════════════════════════════════
    底圖是正方形 ⇒ 容器用 aspect-ratio 撐住，pin 以百分比定位就會跟著縮放，
@@ -873,3 +868,15 @@ body {
   flex: 0 0 4.5em;
   color: var(--color-text-muted, #c0c9da);
 }
+
+/* 歷史篩選排成一列：原本垂直堆疊在一張很寬的表上方佔三行、右邊全空（Owner 2026-08-04）。
+   `.codex-field` 自己是直向（label 在上），所以外層橫排、內層維持原樣即可。 */
+.cos-em__histfilter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-4, 16px);
+  margin-bottom: var(--space-3, 12px);
+}
+.cos-em__histfilter .codex-field { min-width: 11em; }
+.cos-em__histtoggle { padding-bottom: var(--space-1, 4px); }
