@@ -19,7 +19,7 @@
 
 const DEV = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 // dev 路徑沿用 index.html 的 portal bootstrap 慣例（:8774 服務整個 external/ 目錄）
-const BASE = DEV ? 'http://localhost:8774/ffxiv-crafter/' : 'https://ffxiv-crafter.pages.dev/';
+const BASE = DEV ? 'http://localhost:8774/ffxiv-crafter/' : 'https://crafter.xivtc.com/';
 
 /** 跨工具共用同一個具名分頁（生態內互跳慣例，同 crafter → marketboard 的做法）。 */
 const TARGET = 'ffxiv-crafter';
