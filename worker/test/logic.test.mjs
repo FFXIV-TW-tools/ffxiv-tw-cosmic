@@ -98,11 +98,10 @@ test('插件通報：證據自洽（missionIds 選填）', () => {
     L.validatePluginReport({ ...good, weatherId: 49 }, NOW).reason,
     'bad_weather',
   );
-  // 有給任務清單卻一個 critical 都沒有 → 自相矛盾，退
-  assert.equal(
-    L.validatePluginReport({ ...good, missionIds: [362, 363] }, NOW).reason,
-    'no_critical_evidence',
-  );
+  // 有給任務清單卻一個 critical 都沒有 → **不退件**（2026-08-04 改）。
+  // 任務板顯示什麼取決於玩家當下的職業，而緊急事件只涉及部分職業 ⇒ 「板上沒有 critical」
+  // 是常態，不是矛盾。實測退件會讓整筆 start 消失（見下方專門的案例）。
+  assert.equal(L.validatePluginReport({ ...good, missionIds: [362, 363] }, NOW).ok, true);
   // **沒給任務清單是合法的**：任務板沒開著時插件讀不到，而事件不會等人開板
   assert.equal(L.validatePluginReport({ ...good, missionIds: [] }, NOW).ok, true);
   assert.equal(L.validatePluginReport({ world, weatherId: 196, phase: 'start' }, NOW).ok, true);
@@ -291,7 +290,8 @@ test('插件通報會把 missionIds 帶出來（原本只驗不存＝每次都�
   const r = L.validatePluginReport(
     { world: W, weatherId: 196, missionIds: [518, 522, 1], phase: 'start', variant: 'storm-a' }, NOW,
   );
-  assert.deepEqual(r.missionIds, [518, 522, 1]);
+  // 只留緊急任務區間的：`1` 是雜訊，留著只會讓判組多一個不會命中的候選
+  assert.deepEqual(r.missionIds, [518, 522]);
 });
 
 test('插件通報的天氣種類由 weatherId 查表得出（不靠 variant）', () => {
@@ -315,4 +315,19 @@ test('warn 相位不吃 weatherId（那是上一次事件的殘留值）', () =>
   assert.equal(r.weather, null, '預告不得帶出天氣');
   // start 仍然要填得出來
   assert.equal(L.validatePluginReport({ world: W, phase: 'start', weatherId: 196 }, NOW).weather, 'storm');
+});
+
+test('任務板只有一般任務時不退件（緊急任務不涉及該職業是常態）', () => {
+  // 2026-08-04 實測：伊弗利特流星雨，玩家是裁縫師（兩組 meteor 都沒有裁縫師）
+  // ⇒ 板上只有一般任務 [175,248] ⇒ 舊版整筆 start 被 400 退掉，事件開始完全沒被記錄。
+  const r = L.validatePluginReport(
+    { world: W, weatherId: 194, phase: 'start', missionIds: [175, 248] }, NOW,
+  );
+  assert.equal(r.ok, true, '不得退件');
+  assert.deepEqual(r.missionIds, [], '非緊急任務一律濾掉，不當證據');
+  // 混合時只留緊急區間的
+  const mix = L.validatePluginReport(
+    { world: W, weatherId: 194, phase: 'start', missionIds: [175, 519, 248, 523] }, NOW,
+  );
+  assert.deepEqual(mix.missionIds, [519, 523]);
 });

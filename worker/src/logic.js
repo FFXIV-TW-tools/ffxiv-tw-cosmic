@@ -269,13 +269,16 @@ export function validatePluginReport(body, now) {
   if (body.variant !== undefined && !VARIANTS.includes(body.variant)) {
     return { ok: false, reason: 'bad_variant' };
   }
-  const ids = Array.isArray(body.missionIds) ? body.missionIds : [];
-  if (ids.length > 0) {
-    const hasCritical = ids.some(
-      (i) => Number.isInteger(i) && i >= CRITICAL_MISSION_MIN && i <= CRITICAL_MISSION_MAX,
-    );
-    if (!hasCritical) return { ok: false, reason: 'no_critical_evidence' };
-  }
+  // 任務板上的 id **只取緊急任務區間**，其餘忽略。
+  //
+  // ⚠️ **不因為「沒有 critical」而退件**（2026-08-04 修）。原本的檢查是
+  // 「有給 missionIds 卻一個 critical 都沒有 ⇒ 400」，看似在抓接線錯誤，實際上：
+  // 任務板顯示的內容**取決於玩家當下的職業**，而緊急事件只涉及部分職業。實測 12:18
+  // 伊弗利特流星雨——玩家是裁縫師，兩組 meteor 都沒有裁縫師 ⇒ 板上只有一般任務
+  // `[175, 248]` ⇒ **整筆 start 被退掉，事件開始完全沒被記錄**。
+  // 這正是這段註解原本警告過的那件事：用一個擋不住偽造者的檢查，換掉真實訊號。
+  const ids = (Array.isArray(body.missionIds) ? body.missionIds : [])
+    .filter((i) => Number.isInteger(i) && i >= CRITICAL_MISSION_MIN && i <= CRITICAL_MISSION_MAX);
   return {
     ok: true,
     world: body.world,
@@ -291,8 +294,8 @@ export function validatePluginReport(body, now) {
     weather: phase === 'warn' ? null : kindOfWeatherId(body.weatherId),
     // **存下來**（原本只驗不存）：`variant` 是通告文字解出來的、`missionIds` 是任務板看到的，
     // 兩者**同時**出現的那一筆就是「哪則通告對應哪一組任務」的唯一證據（B-023）。
-    // 每次丟掉它，就等於每次事件都把那個答案扔了。
-    missionIds: ids.filter((i) => Number.isInteger(i)),
+    // 每次丟掉它，就等於每次事件都把那個答案扔了。已在上面濾成只剩緊急任務區間。
+    missionIds: ids,
   };
 }
 

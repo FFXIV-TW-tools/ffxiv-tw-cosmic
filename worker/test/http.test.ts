@@ -217,11 +217,16 @@ describe('插件通報', () => {
     const good = { world, weatherId: 196, missionIds: [518], phase: 'start' };
     expect((await post('/report', good, { 'X-Plugin-Token': 'wrong' })).status).toBe(401);
     expect((await post('/report', { ...good, weatherId: 49 }, { 'X-Plugin-Token': 'plugin-secret' })).status).toBe(400);
-    expect((await post('/report', { ...good, missionIds: [362] }, { 'X-Plugin-Token': 'plugin-secret' })).status).toBe(400);
+    // 板上沒有 critical **不是**不自洽（2026-08-04 改）：任務板顯示什麼取決於玩家當下的
+    // 職業，而緊急事件只涉及部分職業。退件會讓整筆 start 消失（實測踩到）。
+    expect((await post('/report', { ...good, missionIds: [362] }, { 'X-Plugin-Token': 'plugin-secret' })).status).toBe(200);
+    const st = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    if (st.events[world]) await revoke(st.events[world].id);
   });
 
   it('start 建立事件、end 把 endAt 收到現在', async () => {
     stubDiscord();
+    await clearWorld(world);
     const start = await post('/report',
       { world, weatherId: 196, missionIds: [518], phase: 'start' }, { 'X-Plugin-Token': 'plugin-secret' });
     expect(start.status).toBe(200);
