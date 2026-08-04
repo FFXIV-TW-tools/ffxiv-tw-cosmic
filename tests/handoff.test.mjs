@@ -45,6 +45,14 @@ ok(hit({ url: `${NEW_ORIGIN}/` }) === false,
 ok(hit({ url: `https://evil-${OLD_HOST}/` }) === false, '③④ 前綴混淆 → 放行（不攔＝不是我們的站）');
 ok(hit({ url: `https://${OLD_HOST}.attacker.net/` }) === false, '③④ 後綴混淆 → 放行');
 
+// ── ②b 資料救援門：?ftw_stay=1 必須完全不攔 ──
+// 舊 origin 的 localStorage（巨集庫／配裝／清單）沒有任何跨 origin 共享機制，只能回舊站自己匯出；
+// 交接頁一上線舊站首頁就進不去了 ⇒ 這道門是「資料還在但拿不到」的唯一正式解法，壞了無聲。
+ok(hit({ url: `https://${OLD_HOST}/?ftw_stay=1` }) === false, '②b ?ftw_stay=1 → 放行（資料救援門）');
+ok(hit({ url: `https://${OLD_HOST}/some/page?a=1&ftw_stay=1` }) === false, '②b 救援門在任何路徑與參數順序都成立');
+ok(hit({ url: `https://${OLD_HOST}/?ftw_stay=0` }) === true, '②b 只認 "1"，其他值照常交接（避免任意值意外關閉導流）');
+ok(hit({ url: `https://${OLD_HOST}/?ftw_stayx=1` }) === true, '②b 參數名須全等，前綴相符不算');
+
 // ── ③ 回應標頭與內容 ──
 const res = handoffPage(new URL(`https://${OLD_HOST}/?a=1`));
 const h = res.headers;

@@ -31,6 +31,15 @@ const UUID_KEY = 'ffxiv-tools-settings-uuid';
 const LINKEDAT_KEY = 'ffxiv-tools-settings-uuid-linkedat';
 const FTW_PARAMS = ['ftw_uuid', 'ftw_uuid_t', 'ftw_link'];
 
+// 資料救援門：帶這個參數就完全不攔，直接把舊站原樣送出。
+// 【為什麼需要】新網域＝新 origin ⇒ **存在瀏覽器裡的資料（巨集庫、配裝、清單）留在舊 origin**，
+// 它們不像 UUID 能靠 cookie／URL 帶過去（localStorage 沒有任何跨 origin 共享機制）。
+// 使用者要救資料就得回舊站用各工具自己的匯出功能，但交接頁一上線，舊站首頁再也進不去 ——
+// 於是「資料還在、只是拿不到」，而使用者看到的是「東西不見了」。2026-08-04 由實際回報觸發。
+// 【為什麼不是靠未列入 _routes.json 的路徑】那是 CF Pages「未知路徑回 index.html」的副作用，
+// 不是我們宣告的行為：哪天 CF 改掉就靜默失效，而且無法寫進公告當正式指引。
+const STAY_PARAM = 'ftw_stay';
+
 // 攔截條件——**四個同時成立才攔**，任何一個不成立就 next()：
 //   ① GET（POST／HEAD 等一律放行）
 //   ② Accept 含 text/html（只攔「人在導覽」，資產與 fetch 一律放行）
@@ -41,6 +50,7 @@ const FTW_PARAMS = ['ftw_uuid', 'ftw_uuid_t', 'ftw_link'];
 function shouldHandoff(request, url) {
   if (request.method !== 'GET') return false;
   if (!(request.headers.get('accept') || '').includes('text/html')) return false;
+  if (url.searchParams.get(STAY_PARAM) === '1') return false;   // 救援門，見上
   return url.hostname === OLD_HOST;
 }
 
