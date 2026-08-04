@@ -36,9 +36,11 @@ const FTW_PARAMS = ['ftw_uuid', 'ftw_uuid_t', 'ftw_link'];
 // 它們不像 UUID 能靠 cookie／URL 帶過去（localStorage 沒有任何跨 origin 共享機制）。
 // 使用者要救資料就得回舊站用各工具自己的匯出功能，但交接頁一上線，舊站首頁再也進不去 ——
 // 於是「資料還在、只是拿不到」，而使用者看到的是「東西不見了」。2026-08-04 由實際回報觸發。
+// 【參數為什麼這麼短】它要能口頭或在公告裡一句話講完（「網址後面加 ?stay」）。只看參數在不在、
+// 不看值，因為「還要記得等於 1」是救援指引最容易被講錯的地方。
 // 【為什麼不是靠未列入 _routes.json 的路徑】那是 CF Pages「未知路徑回 index.html」的副作用，
 // 不是我們宣告的行為：哪天 CF 改掉就靜默失效，而且無法寫進公告當正式指引。
-const STAY_PARAM = 'ftw_stay';
+const STAY_PARAM = 'stay';
 
 // 攔截條件——**四個同時成立才攔**，任何一個不成立就 next()：
 //   ① GET（POST／HEAD 等一律放行）
@@ -50,7 +52,7 @@ const STAY_PARAM = 'ftw_stay';
 function shouldHandoff(request, url) {
   if (request.method !== 'GET') return false;
   if (!(request.headers.get('accept') || '').includes('text/html')) return false;
-  if (url.searchParams.get(STAY_PARAM) === '1') return false;   // 救援門，見上
+  if (url.searchParams.has(STAY_PARAM)) return false;   // 救援門，見上
   return url.hostname === OLD_HOST;
 }
 
