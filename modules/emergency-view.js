@@ -5,15 +5,28 @@
  * 對就是對；這一頁的東西是**別人回報的**，沒人回報就是空的，而空的**不代表沒有事件**。
  * 任何會讓人誤以為「這裡沒亮＝安全」的措辭都是 bug。
  *
- * 倒數用本地時鐘算，只有每 60 秒才真的打一次後端——事件長 20 分鐘，不需要更即時，
- * 而每秒打 API 會把免費額度燒在沒有資訊增益的地方。
+ * 倒數用本地時鐘算，後端只在必要時才打——事件長 20 分鐘，不需要更即時，
+ * 而閒置時猛打 API 會把免費額度燒在沒有資訊增益的地方（輪詢節奏見下方常數）。
  */
 
 import { formatDuration, clockText } from './eorzea-time.js';
 import { emergencyApi } from './emergency-api.js';
 
-/** 後端輪詢間隔（秒）。 */
-const POLL_SECONDS = 60;
+/**
+ * 輪詢節奏（2026-08-04 額度事故後改成三檔；鐵則 §5）。
+ *
+ * **主要的「有事了」通道是 Discord，不是輪詢**：後端 DO 收到通報就自己發 webhook，
+ * 使用者看到通知 → 打開／切回分頁 → `visibilitychange` 立刻 poll → 進 ACTIVE。
+ * 所以輪詢只需要接住「沒訂 Discord、又剛好開著頁面」的人，那用心跳就夠。
+ *
+ * ⚠️ 為什麼閒置不能直接歸零：瀏覽器沒有任何管道能自己發現「別人通報了」——
+ * 那個訊號在伺服器側。歸零＝除非你自己按按鈕，否則永遠不會被觸發。
+ */
+const POLL_ACTIVE_SECONDS = 60;    // 我關心的伺服器有進行中事件（或我剛動作過）
+const POLL_IDLE_SECONDS = 300;     // 心跳。事件本身長 20 分鐘，5 分鐘的落後可接受
+
+/** 自己通報／附議後維持 ACTIVE 的時間（秒）——你剛表達過關心，這段時間值得即時。 */
+const SELF_ACTIVE_SECONDS = 1800;
 
 /** 上次通報選的伺服器。純檢視狀態，不進跨工具設定。 */
 
@@ -153,6 +166,39 @@ export function createEmergencyView(root, { worlds, onState, onChanged, onShowMa
   let fetchedAt = 0;
   let lastPoll = 0;
   let offline = false;
+  /** 自己動作過之後維持 ACTIVE 到這個時間戳（秒）。 */
+  let selfActiveUntil = 0;
+
+  /**
+   * 「我關心的伺服器」。用跨工具身份的 `character.mainWorld`（同步讀、不花請求）。
+   *
+   * **沒設定就回全部**：不能因為使用者沒填過設定，就讓他漏看自己那台的事件——
+   * 這一頁最嚴重的失效模式是「畫面沒亮被當成沒事」（鐵則 §4）。少省一點無所謂。
+   * 刻意不去讀 Discord 訂閱清單：那住在 emergency-notify，為它拉一條跨模組管線
+   * 換到的精準度有限，而多一條耦合就多一個會漂的地方。
+   */
+  function watchedWorlds() {
+    const mine = window.FFXIVSettings?.get?.('character.mainWorld') ?? '';
+    return worlds.includes(mine) ? [mine] : worlds;
+  }
+
+  /**
+   * 這一刻該用哪一檔。判準只看**已經拿到的 state**，不額外發請求。
+   */
+  function pollIntervalFor(now) {
+    if (now < selfActiveUntil) return POLL_ACTIVE_SECONDS;
+    if (!state) return POLL_IDLE_SECONDS;
+    const hot = watchedWorlds().some((w) => {
+      const ev = state.events[w];
+      return ev && ev.endAt > now;
+    });
+    return hot ? POLL_ACTIVE_SECONDS : POLL_IDLE_SECONDS;
+  }
+
+  /** 自己通報／附議／否認之後叫它——你剛表達過關心，這 30 分鐘值得即時。 */
+  function markSelfActive() {
+    selfActiveUntil = Math.floor(Date.now() / 1000) + SELF_ACTIVE_SECONDS;
+  }
 
   // 天氣是**選填**。第一項就是「不確定」而且是預設——填錯的天氣會讓之後的地圖把人導去
   // 錯的地點，比沒填更糟（鐵則 §2 的同一個道理：寧可標成未知，不要拿看起來合理的值充數）。
@@ -255,6 +301,7 @@ export function createEmergencyView(root, { worlds, onState, onChanged, onShowMa
   }
 
   async function sendReport(world, lead, choice) {
+    markSelfActive();   // 你剛通報 ⇒ 接下來 30 分鐘值得即時（鐵則 §5）
     const r = await emergencyApi.report(world, lead, choice);
     if (r.ok) {
       if (!r.duplicate && Number.isInteger(r.data?.eventId)) rememberMine(r.data.eventId);
@@ -280,6 +327,7 @@ export function createEmergencyView(root, { worlds, onState, onChanged, onShowMa
   }
 
   async function vote(eventId, kind) {
+    markSelfActive();
     const r = await emergencyApi.vote(eventId, kind);
     say(
       r.ok
@@ -292,6 +340,7 @@ export function createEmergencyView(root, { worlds, onState, onChanged, onShowMa
   }
 
   async function withdraw(eventId) {
+    markSelfActive();
     const r = await emergencyApi.withdraw(eventId);
     // 後端知道通知到底送出去了沒（靜置期內撤回＝根本沒送），直接用它回的那句話。
     // 自己在前端猜會猜錯：靜置期是伺服器時鐘算的，而且插件證實會提前送出。
@@ -301,6 +350,7 @@ export function createEmergencyView(root, { worlds, onState, onChanged, onShowMa
   }
 
   async function notifyNow(eventId) {
+    markSelfActive();
     const r = await emergencyApi.notifyNow(eventId);
     say(r.ok ? (r.data?.note || '已送出通知。') : r.message, r.ok ? 'ok' : 'warn');
     await poll(true);
@@ -508,7 +558,7 @@ function weatherLabel(ev) {
     // ≈ 39 個長期掛著的分頁，佔掉帳號免費額度 100k/日 的一大半。
     // **代價只有「沒在看時畫面是舊的」**——推播完全不靠這裡（後端 DO 自己發 Discord webhook），
     // 回到前景時下面的 visibilitychange 會立刻補一次。
-    if (!document.hidden && now - lastPoll >= POLL_SECONDS) {
+    if (!document.hidden && now - lastPoll >= pollIntervalFor(now)) {
       lastPoll = now;
       poll();
     }
