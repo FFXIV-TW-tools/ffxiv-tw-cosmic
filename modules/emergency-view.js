@@ -234,6 +234,15 @@ export function createEmergencyView(root, { worlds, onState, onChanged, onShowMa
     if (e.key === 'Escape' && !el.overlay.hidden) closeReport();
   });
 
+  // 回到前景立刻補一次（配合 render() 的背景不輪詢）。
+  // ⚠️ 必須 force：使用者剛把分頁切回來，看到的第一眼就該是新的，
+  //    不能等下一個 60 秒週期——那正是「畫面是舊的」會被誤讀成「沒有事件」的時刻。
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    lastPoll = Math.floor(Date.now() / 1000);
+    poll(true);
+  });
+
   el.submit.addEventListener('click', submit);
 
   async function submit() {
@@ -494,7 +503,12 @@ function weatherLabel(ev) {
   }
 
   function render(now) {
-    if (now - lastPoll >= POLL_SECONDS) {
+    // 背景分頁不輪詢（2026-08-04）：`setInterval` 在隱藏分頁**照跑**（只被節流到 ≥1s），
+    // 所以一個開著不看的分頁一天仍打 1440 次。實測那天 cosmic-api 24h 內 56k 次
+    // ≈ 39 個長期掛著的分頁，佔掉帳號免費額度 100k/日 的一大半。
+    // **代價只有「沒在看時畫面是舊的」**——推播完全不靠這裡（後端 DO 自己發 Discord webhook），
+    // 回到前景時下面的 visibilitychange 會立刻補一次。
+    if (!document.hidden && now - lastPoll >= POLL_SECONDS) {
       lastPoll = now;
       poll();
     }
