@@ -122,6 +122,9 @@ ICE 插件偵測到 `ActiveWeather ∈ 194–197` 自動回報，加上玩家手
 ---
 
 ## VERIFY（改動後必跑）
+- **canonicalTest（safe-push 實跑的那一條；`process/fleet.json` 逐字對照本行）**：`node tools/validate.mjs && node tests/run-all.mjs && cd worker && pnpm test`
+  > 2026-08-04 併入 `tests/run-all.mjs`：`tests/` 底下的測試檔先前沒有任何自動入口會跑到（跨 repo 稽核＝claude-skills `process/tools/check-orphan-tests.mjs`）。run-all 自動掃描`tests/*.test.{js,mjs}`，新增測試檔不必再記得掛進來。
+
 
 <!-- B-048-HANDOFF -->
 > **交接頁契約（B-048 Task 4）**——改 `functions/_middleware.js`／`_routes.json`／`tests/route-manifest.json` 後必跑：

@@ -8,7 +8,7 @@
     "cf:deploy": "wrangler deploy",
     "cf:deploy:dry": "wrangler deploy --dry-run --outdir dist",
     "dev": "wrangler dev",
-    "test": "vitest run",
+    "test": "vitest run && node --test test/logic.test.mjs",
     "test:logic": "node --test test/logic.test.mjs",
     "tail": "wrangler tail"
   },
