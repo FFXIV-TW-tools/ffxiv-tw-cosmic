@@ -279,7 +279,11 @@ export class CosmicEventsDO extends DurableObject {
     // endAt 先給一個寬鬆的兜底期限，等真的開始再改寫成精確值。
     // 刻意不猜倒數：只有一個提前量樣本，寫個看起來精確的數字只會在下次不準時失去信任。
     if (input.phase === 'warn') {
-      if (existing) return { ok: true, eventId: existing.id, duplicate: true };
+      if (existing) {
+        // 預告階段也可能帶著任務板內容進來（插件在那 5 分鐘內讀到的）⇒ 一樣補空欄
+        this._fillFromBoard(existing.id, input, now);
+        return { ok: true, eventId: existing.id, duplicate: true };
+      }
       this.sql.exec(
         `INSERT INTO events (world, source, startAt, endAt, startExact, createdAt, reporter, warnedAt, variant, weather)
          VALUES (?, ?, 0, ?, 0, ?, '', ?, ?, ?)`,
@@ -288,6 +292,8 @@ export class CosmicEventsDO extends DurableObject {
       );
       const wid = this.sql.exec('SELECT last_insert_rowid() AS id').toArray()[0].id;
       this._bump('warn_ok');
+      // 預告就帶著任務板內容的話，事件還沒開始就知道是哪一組
+      this._fillFromBoard(wid, input, now);
       // ⚠️ **預告一律不推播**（Owner 2026-08-03：「預告也不要先通知，大約 1~3 分鐘內確定了才通知」）。
       //
       // 由來：2026-08-03 一晚出現三筆假預告，全部**立刻**推播給訂閱者，而通知送出去就收不回來

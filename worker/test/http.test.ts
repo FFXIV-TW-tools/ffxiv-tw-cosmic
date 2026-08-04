@@ -388,6 +388,20 @@ describe('事件變體（α／β）', () => {
     await put('/sub', { uuid: uuid1, worlds: [], webhookUrl: '' });
   });
 
+  it('預告就帶任務板內容 → 事件還沒開始就判得出組', async () => {
+    stubDiscord();
+    const w = devStages.worlds[5];
+    await clearWorld(w);
+    // 插件在預告那 5 分鐘內讀到任務板（Owner 2026-08-04：玩家可以提前知道地點）
+    const warn = await post('/report',
+      { world: w, phase: 'warn', missionIds: [518, 522, 530] }, PLUG);
+    expect(warn.status).toBe(200);
+    const st = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    expect(st.events[w].startAt).toBe(0);          // 還是預告，沒有假裝已經開始
+    expect(st.events[w].group).toBe('storm-α');    // 但組別已經知道了
+    await revoke(st.events[w].id);
+  });
+
   it('phase 拼錯不再被靜默當成 start', async () => {
     const r = await post('/report',
       { world, weatherId: 196, missionIds: [518], phase: 'strat' }, PLUG);
