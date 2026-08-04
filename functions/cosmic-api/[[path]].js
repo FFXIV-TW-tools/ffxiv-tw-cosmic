@@ -37,9 +37,43 @@
 // 也讓「這個站連到哪個後端」grep 得到。
 const UPSTREAM = 'https://ffxiv-tw-cosmic-api.ffxiv-tw-tools.workers.dev';
 
+/**
+ * `/state` 的邊緣微快取秒數（2026-08-04 額度事故當天加）。
+ *
+ * 【為什麼】本站的輪詢在**這一跳被計兩次**（Pages Function 一次、service binding 打到
+ * 上游 Worker 又一次）。當天 `ffxiv-tw-cosmic-api` 24h 打了 56k、帳號 100k/日的免費額度
+ * 見底。前端已改成三檔輪詢（鐵則 §5），但**那救不了已經開著的分頁**——它們跑的是舊 JS，
+ * 除非使用者重新載入。這一層是唯一能對**舊分頁立即生效**的槓桿。
+ *
+ * 【為什麼安全】`/state` 是**全域資料**：不含任何使用者專屬欄位（`reporter` 刻意不回），
+ * 所以同一個 PoP 的所有人本來就該看到同一份。事件長 20 分鐘，20 秒的落後在畫面上
+ * 是倒數少跳幾格，不改變任何判斷。
+ *
+ * 【邊界，勿放寬】
+ *  - **只快取 GET `/state`**。`/history` 帶 query 變體多、命中率低；其餘全是寫入或帶 uuid。
+ *  - 只快取 200。錯誤與 429 一律穿透，否則會把一次限流放大成整個 PoP 的限流。
+ *  - 命中時**不呼叫上游** ⇒ 省的就是被計第二次的那一次。
+ *  - 回給瀏覽器的 `Cache-Control` 仍是 `no-store`：這是**邊緣**快取，不是瀏覽器快取。
+ *    瀏覽器端快取會讓「我剛通報完，重新整理卻看不到自己那筆」——那是會被當成 bug 的行為。
+ */
+const STATE_EDGE_TTL = 20;
+
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
+
+  const cacheable = request.method === 'GET' && url.pathname === '/cosmic-api/state';
+  // key 只用 pathname：/state 不吃 query，帶不帶參數都是同一份資料。
+  const cacheKey = new Request(url.origin + '/cosmic-api/state', { method: 'GET' });
+  if (cacheable) {
+    const hit = await caches.default.match(cacheKey);
+    if (hit) {
+      const h = new Headers(hit.headers);
+      h.set('Cache-Control', 'no-store');       // 邊緣快取，不讓瀏覽器也存
+      h.set('X-Edge-Cache', 'HIT');
+      return new Response(hit.body, { status: hit.status, headers: h });
+    }
+  }
 
   if (!env || !env.COSMIC_API) {
     // 本機 dev（wrangler pages dev 未帶 binding）或忘了在 dashboard 綁 —— 明講，不降級。
@@ -73,7 +107,20 @@ export async function onRequest(context) {
 
   const out = new Headers(res.headers);
   out.set('Server-Timing', `upstream;dur=${hop}`);
-  out.set('Cache-Control', 'no-store');   // 即時事件狀態，任何快取都不對（上游自己也是 no-store）
+
+  if (cacheable && res.status === 200) {
+    // 存進邊緣：這一份帶 s-maxage 給 CF 看；回給瀏覽器的另一份維持 no-store。
+    const body = await res.arrayBuffer();
+    const forEdge = new Headers(out);
+    forEdge.set('Cache-Control', `public, s-maxage=${STATE_EDGE_TTL}`);
+    context.waitUntil(caches.default.put(cacheKey, new Response(body, { status: 200, headers: forEdge })));
+
+    out.set('Cache-Control', 'no-store');
+    out.set('X-Edge-Cache', 'MISS');
+    return new Response(body, { status: 200, headers: out });
+  }
+
+  out.set('Cache-Control', 'no-store');   // 即時事件狀態，瀏覽器端任何快取都不對
   return new Response(res.body, { status: res.status, headers: out });
 }
 
