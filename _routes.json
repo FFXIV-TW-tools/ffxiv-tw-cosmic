@@ -1,9 +1,7 @@
 {
   "version": 1,
-  "description": "Pages Functions 攔：① 舊網址交接頁（B-048，導覽路徑）② /settings-api/* 設定 API 同源代理（後端 PoP 修復）③ /cosmic-api/* 本站緊急事件 API 同源代理（同上）。其餘全走純靜態 CDN。⚠️ include 的唯一事實源＝tests/route-manifest.json，契約是 include ≡ paths ＋ extraRoutes（全等，由 tests/handoff.test.mjs 守）。刻意不用 /* —— 那會讓每個 CSS/JS/圖片請求都變成一次 Functions invocation。",
+  "description": "Pages Functions 只攔：/settings-api/*、/cosmic-api/*。⚠️ 舊網址交接（B-061）已於 2026-08-04 從 Function 搬進 index.html 的 <head> 第一支 inline 腳本 —— 原本為它列進來的 / 與 /index.html 會讓「每個訪客的每次開頁」都變成一次計費 Function 呼叫，而交接只對還在用舊網址的少數人有作用。include 唯一事實源＝tests/route-manifest.json（include ≡ paths ＋ extraRoutes，tests/handoff.test.mjs 守全等）。刻意不用 /* —— 那會讓每個資產請求都變成一次 Functions invocation。",
   "include": [
-    "/",
-    "/index.html",
     "/settings-api/*",
     "/cosmic-api/*"
   ],

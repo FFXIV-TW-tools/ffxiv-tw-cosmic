@@ -2,6 +2,54 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
+  <!-- ═══ 舊網址交接（B-061）—— 必須是 <head> 裡第一支腳本，位置就是規格 ═══
+       【做什麼】帶著舊 `*.pages.dev` 書籤進來的人，連同他的跨工具身份一起送到 xivtc.com。
+       【為什麼從 Pages Function 搬到這裡】原本這段跑在 functions/_middleware.js，代價是
+         `/` 與 `/index.html` 必須列進 _routes.json ⇒ **每一個訪客的每一次開頁都是一次計費
+         Function 呼叫，而它只對還在用舊網址的那一小部分人有作用**。搬成靜態頁裡的 inline
+         腳本後，行為一模一樣，但新網域上的訪客一次 Function 都不用付。
+       【為什麼原本說「不能用頁面裡的 JS」現在不成立】原註解列三條理由，逐條已解：
+         ① 舊站自己的 JS 會先跑（mit-planner 會先連上房間才跳走）
+            → 本腳本是 <head> 第一支同步腳本，早於所有 defer/async 與下方的 document.write。
+         ② Referrer-Policy: no-referrer 由我們控制（UUID 會進 URL）
+            → 跳轉前自己插一個 <meta name="referrer">，且只在舊 host 上插，不影響新站。
+         ③ portal CDN 掛掉也照常運作 → 本腳本零外部相依，比 Function 更獨立。
+       ⚠️ **不要移動它的位置、不要加 defer/async**。挪到任何一支腳本之後，①就破了，
+          而症狀是「舊站的功能先跑了一半才跳走」——在新網域上完全看不出來。
+       ⚠️ 判斷式與 functions/_middleware.js 必須同語意（hostname 全等、?stay 放行、
+          ftw_uuid_t 必帶）；13 站一致性由 tests/handoff.test.mjs 守。 -->
+  <script>(function(){
+    var OLD_HOST = 'ffxiv-tw-cosmic.pages.dev';
+    var NEW_ORIGIN = 'https://cosmic.xivtc.com';
+    // 全等而非 endsWith：`<hash>.<OLD_HOST>` 的 CF preview 部署天然不匹配而被放行
+    // （攔了會讓預覽部署無法驗證），新網域也不會自我攔截成迴圈。
+    if (location.hostname !== OLD_HOST) return;
+    if (new URLSearchParams(location.search).has('stay')) return;   // 資料救援門
+    try {
+      // UUID 會出現在 URL ⇒ 不得把它當 Referer 送給任何人。只在舊 host 插，不影響新站。
+      document.head.insertAdjacentHTML('afterbegin', '<meta name="referrer" content="no-referrer">');
+    } catch (e) { /* 插不進去也要照樣跳轉，帶身份比隱藏 referer 重要 */ }
+    try {
+      var u = new URL(NEW_ORIGIN + location.pathname + location.search);
+      u.hash = location.hash;
+      var p = u.searchParams;
+      // 先清再設：直接 append 的話 URLSearchParams.get() 只取第一個值，舊書籤或刻意構造的參數會勝出
+      ['ftw_uuid', 'ftw_uuid_t', 'ftw_link'].forEach(function (k) { p.delete(k); });
+      var id = null;
+      try { id = localStorage.getItem('ffxiv-tools-settings-uuid'); } catch (e2) {}
+      if (id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+        p.set('ftw_uuid', id.toLowerCase());
+        var t = 0;
+        try {
+          var raw = parseInt(localStorage.getItem('ffxiv-tools-settings-uuid-linkedat'), 10);
+          // 上界同 settings-client 的 withinClockBound：未來時間戳會讓該身份永遠勝過真實時間戳
+          if (isFinite(raw) && raw > 0 && raw <= Date.now() + 300000) t = raw;
+        } catch (e3) {}
+        p.set('ftw_uuid_t', String(t));   // 必帶：省略會讓帶入身份在 decideAdopt 裡變成最弱檔
+      }
+      location.replace(u.toString());     // replace 不用 assign：否則返回鍵會跳回舊站再跳一次
+    } catch (e4) { location.replace(NEW_ORIGIN + location.pathname + location.search); }
+  })();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- GSC 帳號共用驗證碼（勿改） -->
 <meta name="google-site-verification" content="d5WDZwqeL4aAN0vGxMvg4mAi1OtpBhcr_xLJJ-3sXBI">

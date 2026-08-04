@@ -111,5 +111,45 @@ const allow = readFileSync(join(ROOT, 'deploy-allow.txt'), 'utf8').split('\n').m
 ok(allow.includes('functions'), 'deploy-allow.txt 含 functions（fail-closed：漏了 build 直接失敗）');
 ok(allow.includes('_routes.json'), 'deploy-allow.txt 含 _routes.json');
 
+// ── ⑧ inline 交接腳本（B-061，2026-08-04 由 Pages Function 搬進靜態頁）──
+//
+// ⚠️ **本段是 ⑥ 的配套，不可分開看**。把 `/` 與 `/index.html` 移出 _routes.json 之後，
+//    ⑥ 那條「include ≡ paths ＋ extraRoutes」仍然全綠，但交接功能已經不在 Function 上了
+//    ⇒ 若沒有本段，整份交接邏輯從 index.html 消失也不會有任何測試變紅，
+//    而症狀是「舊書籤的人靜默失去雲端身份」——線上完全看不出來（頁面正常、無錯誤）。
+const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
+
+// 位置就是規格：必須是文件裡第一支 <script>。挪到任何一支腳本之後，
+// 舊站自己的 JS 就會先跑（那正是當初選 Function 而非 inline 的理由 ①）。
+const firstScript = html.indexOf('<script');
+const handoffAt = html.indexOf('OLD_HOST');
+ok(handoffAt > -1, 'index.html 必須含 inline 交接腳本（OLD_HOST 常數）');
+ok(handoffAt > firstScript && handoffAt < html.indexOf('<script', firstScript + 1),
+  '交接腳本必須是 <head> 裡的第一支 <script> —— 排在其他腳本之後，舊站的 JS 會先跑掉一半才跳走');
+
+const snippet = html.slice(firstScript, html.indexOf('</script>', firstScript));
+ok(snippet.includes(`'${OLD_HOST}'`), `inline 腳本的 OLD_HOST 必須是 ${OLD_HOST}`);
+ok(snippet.includes(`'${NEW_ORIGIN}'`), `inline 腳本的 NEW_ORIGIN 必須是 ${NEW_ORIGIN}`);
+ok(/location\.hostname !== OLD_HOST/.test(snippet),
+  'hostname 必須全等比對 —— endsWith/includes 會攔到 CF preview 子網域（預覽部署無法驗證）並可能自我攔截成迴圈');
+ok(/has\('stay'\)/.test(snippet), '必須保留 ?stay 資料救援門（舊 origin 的 localStorage 只能回舊站自己匯出）');
+ok(snippet.includes("p.set('ftw_uuid_t'"),
+  '必帶 ftw_uuid_t —— 省略會讓帶入身份在 decideAdopt 裡變成最弱檔，等於白帶');
+ok(!/p\.set\('ftw_link'/.test(snippet),
+  '不得附加 ftw_link=1（那是 QR／邀請語意＝凌駕資料保護）');
+ok(snippet.includes('location.replace('),
+  '用 replace 不用 assign（否則返回鍵會跳回舊站再跳一次）');
+ok(snippet.includes('name="referrer" content="no-referrer"'),
+  'UUID 會進 URL ⇒ 跳轉前必須自己插 no-referrer（Function 版是靠 response header，靜態頁沒有那條路）');
+ok(!/\bdefer\b|\basync\b/.test(html.slice(firstScript, firstScript + 40)),
+  '交接腳本不得加 defer/async —— 那會讓它排到其他腳本之後執行');
+
+// inlineHandoffPaths 宣告的每條路徑都要真的落在帶有交接腳本的 HTML 上
+for (const p of (manifest.inlineHandoffPaths || [])) {
+  const f = p === '/' ? 'index.html' : p.replace(/^\//, '');
+  ok(readFileSync(join(ROOT, f), 'utf8').includes('OLD_HOST'),
+    `inlineHandoffPaths 宣告了 ${p}，但 ${f} 裡沒有交接腳本（宣告與實作不符＝那條路徑靜默失去交接）`);
+}
+
 console.log(fail ? `\n✗ ${fail} 項失敗` : `\n✓ handoff: 全綠`);
 process.exit(fail ? 1 : 0);
