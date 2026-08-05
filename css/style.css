@@ -627,7 +627,7 @@ body {
   padding: var(--space-2, 8px) var(--space-3, 12px);
   border: 1px solid var(--color-accent, #e6c068);
   border-radius: var(--radius-md, 8px);
-  background: var(--color-surface-raised, #16202e);
+  background: var(--color-surface-hover, #18222f);
 }
 
 /* 沒有事件的那幾台降一階：資訊要留著（「查過了，沒有」≠「不知道」），
