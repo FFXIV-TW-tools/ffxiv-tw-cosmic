@@ -28,6 +28,12 @@ const POLL_IDLE_SECONDS = 300;     // 心跳。事件本身長 20 分鐘，5 分
 /** 自己通報／附議後維持 ACTIVE 的時間（秒）——你剛表達過關心，這段時間值得即時。 */
 const SELF_ACTIVE_SECONDS = 1800;
 
+/**
+ * app.js 那一發預抓的保鮮期（毫秒）。正常路徑上它是幾百毫秒前才發的；
+ * 超過就寧可重打一次——這一頁最貴的錯誤是把舊資料標成新的。
+ */
+const PREFETCH_MAX_AGE_MS = 10_000;
+
 /** 上次通報選的伺服器。純檢視狀態，不進跨工具設定。 */
 
 /**
@@ -144,9 +150,10 @@ const LEAD_GROUPS = [
 
 /**
  * @param {HTMLElement} root #panel-emergency
- * @param {{worlds: string[], onState?: (state:object)=>void}} opts
+ * @param {{worlds: string[], prefetch?: {at:number, promise:Promise<object>}|null,
+ *          onState?: (state:object)=>void}} opts app.js 在載靜態 JSON 前先發的那一發現況
  */
-export function createEmergencyView(root, { worlds, onState, onChanged, onShowMap }) {
+export function createEmergencyView(root, { worlds, prefetch = null, onState, onChanged, onShowMap }) {
   const el = {
     list: root.querySelector('#em-list'),
     deeplink: root.querySelector('#em-deeplink'),
@@ -281,13 +288,13 @@ export function createEmergencyView(root, { worlds, onState, onChanged, onShowMa
     if (e.key === 'Escape' && !el.overlay.hidden) closeReport();
   });
 
-  // 回到前景立刻補一次（配合 render() 的背景不輪詢）。
-  // ⚠️ 必須 force：使用者剛把分頁切回來，看到的第一眼就該是新的，
-  //    不能等下一個 60 秒週期——那正是「畫面是舊的」會被誤讀成「沒有事件」的時刻。
+  // 回到前景立刻補一次（配合 render() 的背景不輪詢）。使用者剛把分頁切回來，看到的第一眼
+  // 就該是新的，不能等下一個 60 秒週期——那正是「畫面是舊的」會被誤讀成「沒有事件」的時刻。
+  // （`poll()` 本身拿到就重畫，這裡不必再另外要求。）
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) return;
     lastPoll = Math.floor(Date.now() / 1000);
-    poll(true);
+    poll();
   });
 
   el.submit.addEventListener('click', submit);
@@ -314,7 +321,7 @@ export function createEmergencyView(root, { worlds, onState, onChanged, onShowMa
           : `已通報 ${world}。通知會在 30 秒後送出 — 按錯了現在按「取消」，就不會有人收到。`,
         'ok',
       );
-      await poll(true);
+      await poll();
       onChanged?.();   // 新事件要進歷史紀錄（撤銷／結束後才會出現在那張表）
       return true;
     }
@@ -448,7 +455,7 @@ export function createEmergencyView(root, { worlds, onState, onChanged, onShowMa
         : r.message,
       r.ok ? 'ok' : 'warn',
     );
-    await poll(true);
+    await poll();
     if (r.ok) onChanged?.();   // 票數會進歷史紀錄，讓它跟著更新
   }
 
@@ -458,7 +465,7 @@ export function createEmergencyView(root, { worlds, onState, onChanged, onShowMa
     // 後端知道通知到底送出去了沒（靜置期內撤回＝根本沒送），直接用它回的那句話。
     // 自己在前端猜會猜錯：靜置期是伺服器時鐘算的，而且插件證實會提前送出。
     say(r.ok ? (r.data?.note || '已取消。') : r.message, r.ok ? 'ok' : 'warn');
-    await poll(true);
+    await poll();
     if (r.ok) onChanged?.();
   }
 
@@ -466,11 +473,22 @@ export function createEmergencyView(root, { worlds, onState, onChanged, onShowMa
     markSelfActive();
     const r = await emergencyApi.notifyNow(eventId);
     say(r.ok ? (r.data?.note || '已送出通知。') : r.message, r.ok ? 'ok' : 'warn');
-    await poll(true);
+    await poll();
   }
 
-  async function poll(force = false) {
-    const r = await emergencyApi.getState();
+  async function poll() {
+    // 首次用 app.js 在載靜態 JSON**之前**就發出的那一發（`prefetch`）——現況跟那四份離線資料
+    // 沒有依賴關係，排在它們後面等於白等三層 round-trip（2026-08-05 實測：後端只花 25ms，
+    // 但要到頁面載入後 400ms 才輪得到它發請求）。同步清掉，兩次 poll 撞在一起也只會用一次。
+    //
+    // ⚠️ 過期就不要：載入後馬上切走、幾分鐘後才切回來的分頁，那一發早已是舊的，
+    // 而 `fetchedAt` 蓋的是**取用當下**的時間 ⇒ 會把舊現況標成「剛更新」。
+    // 在這一頁那不是顯示瑕疵，是把「我們不知道」講成「查過了沒有」（鐵則 §4）。
+    const p = prefetch && Date.now() - prefetch.at < PREFETCH_MAX_AGE_MS
+      ? prefetch.promise
+      : emergencyApi.getState();
+    prefetch = null;
+    const r = await p;
     if (!r.ok) {
       offline = true;
       renderStatus();
@@ -480,7 +498,10 @@ export function createEmergencyView(root, { worlds, onState, onChanged, onShowMa
     state = r.data;
     fetchedAt = Math.floor(Date.now() / 1000);
     onState?.(state);
-    if (force) render(fetchedAt);
+    // **拿到就畫，不等下一個 tick**：原本非 force 的輪詢只更新資料不重畫，七列要等到下一秒
+    // 才出現（首次載入最明顯——畫面停在「載入中…」，而資料其實早就到了）。
+    // 不會遞迴：render() 是先設 lastPoll 才呼叫 poll()，重畫時間隔判斷必定不成立。
+    render(fetchedAt);
   }
 
   function renderStatus() {

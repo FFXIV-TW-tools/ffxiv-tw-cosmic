@@ -16,6 +16,7 @@ import { createToolsView } from './tools-view.js';
 import { createDevStageView } from './dev-stage-view.js';
 import { createJobPicker } from './job-prefs.js';
 import { createAlarm } from './alarm.js';
+import { emergencyApi } from './emergency-api.js';
 import { createEmergencyView } from './emergency-view.js';
 import { createEmergencyMap } from './emergency-map.js';
 import { createEmergencyNotify } from './emergency-notify.js';
@@ -42,6 +43,21 @@ async function main() {
   let missionData;
   let toolData;
   let devData;
+
+  /**
+   * 緊急事件的現況**先發，不排隊**（2026-08-05）。
+   *
+   * 它跟下面四份離線 JSON 沒有任何依賴關係，卻因為寫在 `await` 之後而被排到
+   * 「HTML → app.js → 20 支 module → 4 份 JSON（含 470 KB missions）」這條串行鏈的最尾端：
+   * 實測後端只花 25ms，但要到頁面載入 400ms 後才輪得到它發請求，冷快取／手機網路下每一層
+   * 都是一個 RTT ⇒ 「各伺服器現況」要等很久才展開。這一發之後由 view 接手（`prefetch`）。
+   *
+   * **背景分頁不發**（鐵則 §5）：切回前景時 `visibilitychange` 會補一次，
+   * 沒有人在看的時候不該花額度。
+   */
+  const statePrefetch = document.hidden
+    ? null
+    : { at: Date.now(), promise: emergencyApi.getState() };
 
   try {
     [weatherData, missionData, toolData, devData] = await Promise.all([
@@ -101,6 +117,7 @@ async function main() {
   const emMap = createEmergencyMap(emPanel, missionData);
   const emView = createEmergencyView(emPanel, {
     worlds: devData.worlds,
+    prefetch: statePrefetch,
     onState: (state) => emNotify.onState(state),
     onChanged: () => emHistory.refresh(),
     onShowMap: (world, kind, group) => emMap.open(world, kind, group),
