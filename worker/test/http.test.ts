@@ -56,15 +56,23 @@ async function clearWorld(world: string) {
   if (st.events[world]) await revoke(st.events[world].id);
 }
 
-/** 攔截 fan-out 用的 fetch；回傳收到的 webhook 呼叫清單。 */
-function stubDiscord(status = 204) {
+/**
+ * 攔截 fan-out 用的 fetch；回傳收到的 webhook 呼叫清單。
+ *
+ * `status` 可給單一值，或給**序列**（`[400, 204]`＝第一次拒收、第二次成功）測退回路徑；
+ * 序列用完就沿用最後一個值。單參數呼叫維持原語意。
+ */
+function stubDiscord(status: number | number[] = 204) {
   const calls: { url: string; body: any }[] = [];
+  const seqStatus = Array.isArray(status) ? status : [status];
+  let n = 0;
   const real = globalThis.fetch;
   vi.stubGlobal('fetch', async (input: any, init: any) => {
     const url = typeof input === 'string' ? input : input.url;
     if (url.includes('discord')) {
       calls.push({ url, body: JSON.parse(init.body) });
-      return new Response(null, { status });
+      const s = seqStatus[Math.min(n++, seqStatus.length - 1)];
+      return new Response(null, { status: s });
     }
     return real(input, init);
   });
@@ -537,6 +545,9 @@ describe('訂閱', () => {
   });
 });
 
+/** Container payload 的文字區（Text Display）。 */
+const textOf = (p: any) => p.components[0].components[0].content;
+
 describe('fan-out', () => {
   it('只送給訂了該伺服器的人', async () => {
     const calls = stubDiscord();
@@ -547,7 +558,8 @@ describe('fan-out', () => {
     // 用插件通報：這個案例測的是「只送給訂了這台的人」，不該被手動通報的靜置期干擾
     await pluginReport(world);
     await vi.waitFor(() => expect(calls.length).toBe(1));
-    expect(calls[0].body.embeds[0].title).toContain(world);
+    // 訊息 2026-08-05 起是 Components V2 Container，沒有 embeds
+    expect(textOf(calls[0].body)).toContain(world);
   });
 
   it('連續失敗 4 次 → 該訂閱標 broken 並停送', async () => {
@@ -574,13 +586,86 @@ describe('fan-out', () => {
     await new Promise((r) => setTimeout(r, 50));
     expect(calls.length).toBe(n);   // 熔斷後不再送
   });
+
+  // ── Components V2 的送出與退回（B-024）──
+
+  // ⚠️ 這三支各自**收拾自己的訂閱與事件**（`unsub` + `revoke`）。DO 狀態同檔共用，
+  // 留下的訂閱者會讓後面「靜置 30 秒」那支精確計數的案例多數到一條
+  // （實際踩到：我在 worlds[3] 留了一筆，那支就從 1 變 2）。
+
+  it('送出網址必須帶 with_components=true，否則按鈕被靜默忽略', async () => {
+    const calls = stubDiscord();
+    const world = devStages.worlds[2];
+    await clearWorld(world);
+    const u = uuid();
+    await put('/sub', { uuid: u, worlds: [world], webhookUrl: HOOK });
+
+    const rep = await pluginReport(world);
+    const { eventId } = await rep.json() as any;
+    await vi.waitFor(() => expect(calls.length).toBeGreaterThanOrEqual(1));
+    // 2026-08-05 實測：不帶這個 query，整組 components 被 Discord **靜默忽略**
+    // ——訊息照樣 204 送出，但按鈕全部消失、零錯誤訊號。
+    expect(calls[0].url).toContain('with_components=true');
+    expect(calls[0].body.flags).toBe(32768);
+    expect(calls[0].body.components[0].type).toBe(17);
+    expect(calls[0].body.embeds).toBeUndefined();
+
+    await put('/sub', { uuid: u, worlds: [], webhookUrl: '' });
+    await revoke(eventId);
+  });
+
+  it('Discord 拒收 V2（400）→ 退回純 embed 重送一次，且不算失敗', async () => {
+    const calls = stubDiscord([400, 204]);
+    const world = devStages.worlds[3];
+    await clearWorld(world);
+    const u = uuid();
+    await put('/sub', { uuid: u, worlds: [world], webhookUrl: HOOK });
+
+    const rep = await pluginReport(world);
+    const { eventId } = await rep.json() as any;
+    await vi.waitFor(() => expect(calls.length).toBe(2));
+
+    // 第二發＝退回版：純 embed、無 components、且不帶 query（legacy 沒有元件可放行）
+    expect(calls[1].body.embeds[0].title).toContain(world);
+    expect(calls[1].body.components).toBeUndefined();
+    expect(calls[1].url).not.toContain('with_components');
+    // 退回版仍要有三條投票連結（它平常不執行，壞了要等最需要它的那天才發現）
+    expect(calls[1].body.embeds[0].description).toContain('vote=confirm');
+    expect(calls[1].body.embeds[0].description).toContain('vote=dispute');
+
+    // **關鍵**：退回成功不得計失敗。否則 Discord 一改政策，全體訂閱者會被誤標成
+    // 「webhook 壞掉」，而他們的 webhook 根本沒問題。
+    const got = await (await SELF.fetch(`https://x/sub?uuid=${u}`, { headers: { Origin: ALLOWED } })).json() as any;
+    expect(got.broken).toBe(false);
+
+    await put('/sub', { uuid: u, worlds: [], webhookUrl: '' });
+    await revoke(eventId);
+  });
+
+  it('非 400 的失敗不退回（退回只針對「payload 被拒」）', async () => {
+    const calls = stubDiscord(500);
+    const world = devStages.worlds[2];
+    await clearWorld(world);
+    const u = uuid();
+    await put('/sub', { uuid: u, worlds: [world], webhookUrl: HOOK });
+
+    const rep = await pluginReport(world);
+    const { eventId } = await rep.json() as any;
+    await vi.waitFor(() => expect(calls.length).toBeGreaterThanOrEqual(1));
+    await new Promise((r) => setTimeout(r, 50));
+    // 500＝對方暫時性故障，不是「payload 形狀不被接受」⇒ 送第二份沒有道理
+    expect(calls.every((c) => c.body.flags === 32768)).toBe(true);
+
+    await put('/sub', { uuid: u, worlds: [], webhookUrl: '' });
+    await revoke(eventId);
+  });
 });
 
 describe('手動通報靜置 30 秒才推播', () => {
   // DO 狀態同檔共用：別的案例留下的訂閱者也會收到自己那台的推播。
   // 所以一律只數「標題裡是本案例那台伺服器」的那幾條，不數總量。
   const sentFor = (calls: { body: any }[], world: string) =>
-    calls.filter((c) => String(c.body.embeds[0].title).includes(world)).length;
+    calls.filter((c) => String(textOf(c.body)).includes(world)).length;
 
   it('按下去當下不推播，事件本身立刻就在 /state 上', async () => {
     const calls = stubDiscord();

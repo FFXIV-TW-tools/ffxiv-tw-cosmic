@@ -717,13 +717,16 @@ export class CosmicEventsDO extends DurableObject {
     if (targets.length === 0) return;
 
     const payload = JSON.stringify(L.discordPayload(ev, now));
+    // 退回用的純 embed 版本（Discord 若拒收 Components V2 才會用到，見 _send）。
+    // 在這裡先組好：同一則事件送給 N 個訂閱者，沒必要每人各組一次。
+    const legacy = JSON.stringify(L.legacyEmbedPayload(ev, now));
     for (let i = 0; i < targets.length; i += FANOUT_CONCURRENCY) {
       const batch = targets.slice(i, i + FANOUT_CONCURRENCY);
-      await Promise.all(batch.map((t) => this._send(t, payload)));
+      await Promise.all(batch.map((t) => this._send(t, payload, legacy)));
     }
   }
 
-  async _send(target, payload) {
+  async _send(target, payload, legacy) {
     // 白名單在寫入時已驗過一次，這裡再驗一次：DB 若被別的路徑寫髒，這是最後一道 SSRF 防線
     if (!L.isAllowedWebhook(target.webhookUrl)) {
       this.sql.exec("UPDATE subs SET broken = 1 WHERE uuid = ?", target.uuid);
@@ -732,7 +735,7 @@ export class CosmicEventsDO extends DurableObject {
     const ctrl = new AbortController();
     const tid = setTimeout(() => ctrl.abort(), WEBHOOK_TIMEOUT_MS);
     try {
-      const res = await fetch(target.webhookUrl, {
+      const res = await fetch(`${target.webhookUrl}?with_components=true`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: payload,
@@ -741,6 +744,24 @@ export class CosmicEventsDO extends DurableObject {
       if (res.ok) {
         this.sql.exec('UPDATE subs SET failCount = 0 WHERE uuid = ?', target.uuid);
         return;
+      }
+      // Components V2 對 non-application-owned webhook **沒有官方明文保證**（我們是靠
+      // 2026-08-05 實測知道它可行的）。哪天 Discord 收緊，這裡會連續 400 → 熔斷 →
+      // 使用者被告知「你的 webhook 已被暫停」，**而它根本沒壞**，症狀完全指向錯的方向。
+      // 退回純 embed：**版面退化，通知不中斷**。
+      // 只退一次、不做指數重試——400 是確定性拒絕，重送同一份 payload 沒有意義。
+      if (res.status === 400 && legacy) {
+        this._bump('fanout_v2_reject');
+        const res2 = await fetch(target.webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: legacy,
+          signal: ctrl.signal,
+        });
+        if (res2.ok) {
+          this.sql.exec('UPDATE subs SET failCount = 0 WHERE uuid = ?', target.uuid);
+          return;
+        }
       }
       this._fail(target);
     } catch (err) {
