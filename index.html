@@ -366,6 +366,11 @@
           緊急事件算不出來，這一頁完全靠回報。
           <strong>沒亮不代表沒事件</strong> —— 只代表那台現在沒有人回報。
         </p>
+        <!-- Discord 通知按鈕點進來時的確認列（`?ev=<id>&vote=…`）。
+             刻意**不自動投票**：Discord 會替連結預抓、手機上按鈕很近，
+             而否認達標是單向下架不回頭 ⇒ 一定要人在畫面上再按一次。
+             ⚠️ 顯隱走 `.cos-hideable[hidden]`：本站設了 display 的元素會蓋掉 UA 的 [hidden]。 -->
+        <div class="cos-em__deeplink cos-hideable" id="em-deeplink" hidden></div>
         <ul class="cos-em" id="em-list"></ul>
         <p class="codex-small cos-em__status" id="em-status">載入中…</p>
       </section>

@@ -149,6 +149,7 @@ const LEAD_GROUPS = [
 export function createEmergencyView(root, { worlds, onState, onChanged, onShowMap }) {
   const el = {
     list: root.querySelector('#em-list'),
+    deeplink: root.querySelector('#em-deeplink'),
     status: root.querySelector('#em-status'),
     lead: root.querySelector('#em-lead'),
     weather: root.querySelector('#em-weather'),
@@ -326,6 +327,118 @@ export function createEmergencyView(root, { worlds, onState, onChanged, onShowMa
     el.msg.dataset.tone = tone;
   }
 
+  // ── Discord 通知的深連結收端（`?ev=<id>&vote=confirm|dispute`）──
+
+  /**
+   * 深連結意圖存成**狀態**，不是一次性 DOM 操作——`render()` 每秒重建整份事件列，
+   * 直接改 DOM 的高亮下一秒就被 `replaceChildren` 抹掉。
+   * @type {{evId:number, vote:string|null, scrolled:boolean}|null}
+   */
+  let deepLink = null;
+
+  function readDeepLink() {
+    let p;
+    try {
+      p = new URLSearchParams(location.search);
+    } catch {
+      return;   // 極少數嵌入情境拿不到 search，不影響其他功能
+    }
+    const raw = p.get('ev') ?? '';
+    if (!/^\d+$/.test(raw)) return;                       // 只認正整數，其餘一律忽略
+    const vote = p.get('vote');
+    deepLink = {
+      evId: Number(raw),
+      vote: vote === 'confirm' || vote === 'dispute' ? vote : null,
+      scrolled: false,
+    };
+    // 讀完立刻把自己的參數清掉（保留別人的參數與 hash）：
+    // 不清的話使用者一重整就又跳一次確認列，而他可能已經投過了
+    try {
+      p.delete('ev');
+      p.delete('vote');
+      const q = p.toString();
+      history.replaceState(null, '', `${location.pathname}${q ? `?${q}` : ''}${location.hash}`);
+    } catch {
+      // 不允許改 URL 的情境：確認列照樣運作，只是重整會再出現一次
+    }
+  }
+
+  function closeDeepLink() {
+    deepLink = null;
+    el.deeplink.replaceChildren();
+    el.deeplink.hidden = true;
+  }
+
+  /** 依 `deepLink` 狀態重畫確認列。每次 render 都呼叫（狀態驅動，不做一次性 DOM）。 */
+  function renderDeepLink(now) {
+    if (!deepLink) return;
+    // ⚠️ 還沒拿到現況（首次載入中／後端離線）時**什麼都不要說**：
+    // 這時候找不到事件不代表它結束了，講「已經結束」會把「我們連不上」誤報成
+    // 「那筆通報沒了」——方向完全相反，而使用者無從分辨。
+    if (!state) return;
+    const ev = Object.values(state.events ?? {}).find((e) => e && e.id === deepLink.evId);
+    const live = ev && ev.endAt > now;
+
+    el.deeplink.hidden = false;
+    if (!live) {
+      // 已結束／已下架／id 不存在——不白屏、不報錯，講一句人話就收起
+      el.deeplink.replaceChildren(
+        Object.assign(document.createElement('span'), {
+          className: 'codex-small',
+          textContent: '這則通報已經結束了，看看其他伺服器的現況。',
+        }),
+      );
+      setTimeout(closeDeepLink, 5000);
+      deepLink = null;    // 先清狀態，避免下一次 render 又重畫一次同一句
+      return;
+    }
+    // 只帶 `?ev`＝從「看事件」按鈕來的，沒有要投票 ⇒ 不出確認列。
+    // ⚠️ 但**狀態要留著**：高亮靠它才知道要標哪一列。這裡若順手 `closeDeepLink()`，
+    // 「看事件」就變成點了什麼都沒發生——七列長得一樣，人還是得自己找。
+    if (!deepLink.vote) { el.deeplink.replaceChildren(); el.deeplink.hidden = true; return; }
+
+    const world = Object.keys(state.events).find((w) => state.events[w]?.id === ev.id) ?? '';
+    const when = ev.startAt > now
+      ? `${formatDuration(ev.startAt - now)}後開始`
+      : `進行中 · 剩 ${formatDuration(ev.endAt - now)}`;
+    const isConfirm = deepLink.vote === 'confirm';
+
+    const text = document.createElement('span');
+    text.className = 'codex-small';
+    text.textContent = `要對「${world} · ${when}」${isConfirm ? '附議' : '按下否認'}嗎？`;
+
+    const ok = document.createElement('button');
+    ok.type = 'button';
+    // 否認＝把別人的通報推向下架，屬破壞性操作 ⇒ danger 變體（與列上的 voteBtn 一致）
+    ok.className = `codex-btn codex-small ${isConfirm ? 'codex-btn--primary' : 'codex-btn--danger'}`;
+    ok.textContent = isConfirm ? '確認附議' : '確認否認';
+    ok.addEventListener('click', () => {
+      const kind = deepLink.vote;
+      closeDeepLink();
+      vote(ev.id, kind);        // 走既有那支，不另寫送出邏輯
+    });
+
+    const cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.className = 'codex-btn codex-btn--ghost codex-small';
+    cancel.textContent = '取消';
+    cancel.addEventListener('click', closeDeepLink);
+
+    el.deeplink.replaceChildren(text, ok, cancel);
+  }
+
+  /** 把深連結指到的那一列標起來。捲動**只做一次**——每秒重捲會把使用者鎖在原地。 */
+  function highlightDeepLink() {
+    if (!deepLink) return;
+    const li = el.list.querySelector(`[data-ev-id="${deepLink.evId}"]`);
+    if (!li) return;
+    li.classList.add('cos-em__row--hl');
+    if (!deepLink.scrolled) {
+      deepLink.scrolled = true;
+      li.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  }
+
   async function vote(eventId, kind) {
     markSelfActive();
     const r = await emergencyApi.vote(eventId, kind);
@@ -415,6 +528,8 @@ function weatherLabel(ev) {
   function row(world, ev, now) {
     const li = document.createElement('li');
     li.className = 'cos-em__row';
+    // Discord 通知的深連結靠這個找到自己那一列（`highlightDeepLink`）
+    if (ev) li.dataset.evId = String(ev.id);
 
     // 狀態點：一眼掃出哪幾台有事，不必逐列讀字（進行中會擴散、預告是靜態警示色）
     const dot = document.createElement('span');
@@ -572,7 +687,12 @@ function weatherLabel(ev) {
         return row(w, ev && ev.endAt > now ? ev : null, now);
       }),
     );
+    // 列重建之後才套：高亮是狀態的投影，不是一次性 DOM 操作
+    renderDeepLink(now);
+    highlightDeepLink();
   }
+
+  readDeepLink();   // 進站當下就讀，`render()` 之後每次都依狀態重畫
 
   return { render };
 }

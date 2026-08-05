@@ -609,6 +609,27 @@ body {
   background: var(--color-surface, #101824);
 }
 
+/* 從 Discord 通知點進來時，指到的那一列標起來：整頁七列長得都一樣，
+   不標的話使用者還是要自己找「剛剛按的是哪一台」 */
+.cos-em__row--hl {
+  border-color: var(--color-accent, #e6c068);
+  box-shadow: 0 0 0 1px var(--color-accent, #e6c068);
+}
+
+/* 通知點進來的確認列。刻意放在列表**上方**：它是要人做決定的東西，
+   不能藏在要捲動才看得到的位置 */
+.cos-em__deeplink {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  margin-bottom: var(--space-2, 8px);
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  border: 1px solid var(--color-accent, #e6c068);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface-raised, #16202e);
+}
+
 /* 沒有事件的那幾台降一階：資訊要留著（「查過了，沒有」≠「不知道」），
    但不該和真的有事件的列爭同樣的視覺重量 */
 .cos-em__row--idle {
