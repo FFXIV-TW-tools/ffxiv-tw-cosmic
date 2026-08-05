@@ -446,6 +446,25 @@ export function createEmergencyView(root, { worlds, prefetch = null, onState, on
     }
   }
 
+  /**
+   * 把後端回的票數就地寫進現況。
+   *
+   * **不是樂觀更新**（不猜、不預設成功）——後端 `vote()` 的回應**本來就帶著**新的
+   * `confirms`／`disputes`／`status`，這裡只是把它用掉。原本丟掉不用、改等第二趟 `/state`
+   * 才更新畫面 ⇒ 按下到數字改變要**兩趟往返**（台灣→CF 各約 250ms）。
+   * 2026-08-05 Owner 回報「按了但沒即時 +1」；本機把 `/state` 延遲 1.5s 重現，實測 **2003ms**。
+   */
+  function applyVoteResult(eventId, data) {
+    if (!state?.events || !data) return false;
+    const world = Object.keys(state.events).find((w) => state.events[w]?.id === eventId);
+    if (!world) return false;
+    const ev = state.events[world];
+    if (typeof data.confirms === 'number') ev.confirms = data.confirms;
+    if (typeof data.disputes === 'number') ev.disputes = data.disputes;
+    if (data.status) ev.status = data.status;
+    return true;
+  }
+
   async function vote(eventId, kind) {
     markSelfActive();
     const r = await emergencyApi.vote(eventId, kind);
@@ -455,6 +474,9 @@ export function createEmergencyView(root, { worlds, prefetch = null, onState, on
         : r.message,
       r.ok ? 'ok' : 'warn',
     );
+    // 先用回應裡的票數把畫面更新掉，再去對帳——順序反過來就等於沒修
+    if (r.ok && applyVoteResult(eventId, r.data)) render(Math.floor(Date.now() / 1000));
+    // 仍然重抓一次：別人這段期間的投票、事件狀態變化靠它補齊（畫面已經動過，不影響體感）
     await poll();
     if (r.ok) onChanged?.();   // 票數會進歷史紀錄，讓它跟著更新
   }

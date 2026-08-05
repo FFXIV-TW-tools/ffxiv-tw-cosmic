@@ -27,7 +27,9 @@ function makeEl(tag = 'div') {
     hidden: false,
     append(...kids) { el.children.push(...kids); },
     replaceChildren(...kids) { el.children = kids; },
-    addEventListener() {},
+    // 記住 handler：測按鈕要按得下去，否則只能開後門 API 給測試用（那就不是在測真實接線）
+    listeners: {},
+    addEventListener(type, fn) { el.listeners[type] = fn; },
     setAttribute() {},
     querySelector: () => null,
     scrollIntoView() {},
@@ -57,7 +59,11 @@ globalThis.Option = function Option(label, value) { return { label, value }; };
 globalThis.location = { hostname: 'cosmic.xivtc.com', origin: 'https://cosmic.xivtc.com', search: '', hash: '', pathname: '/' };
 globalThis.history = { replaceState() {} };
 globalThis.localStorage = { getItem: () => null, setItem() {} };
-globalThis.window = {};
+globalThis.window = {
+  // 投票路徑會先要 UUID（emergency-api.currentUuid → window.FFXIVSettings.getUuid）；
+  // 沒有它 vote() 會在送出前就以 no_uuid 退回，測到的就不是我們要測的那段
+  FFXIVSettings: { ready: Promise.resolve(), getUuid: () => '11111111-1111-4111-8111-111111111111' },
+};
 
 const WORLDS = ['伊弗利特', '迦樓羅', '利維坦', '巴哈姆特', '奧汀', '泰坦', '鳳凰'];
 const STATE = { events: {}, lastEnded: {}, disputeThreshold: 3 };
@@ -121,6 +127,60 @@ const settle = () => new Promise((r) => setTimeout(r, 0));
 
   assert.equal(fetches, 0, '背景分頁不該發任何請求（額度事故的那條）');
   console.log('✓ 背景分頁：零請求');
+}
+
+// ── 4. 投票：用回應裡的票數當場更新，不必等第二趟 /state ────────────────────
+{
+  // Owner 2026-08-05 回報「按了但沒即時 +1」。根因＝後端 vote() 的回應**本來就帶著**新票數，
+  // 前端丟掉不用、改去打第二趟 /state 才更新畫面 ⇒ 兩趟往返（實測重現 2003ms）。
+  // 這裡讓 /state **永不 resolve**：若畫面仍能顯示新票數，就證明它不依賴第二趟。
+  const world = WORLDS[0];
+  const live = {
+    events: { [world]: { id: 900, world, startAt: 0, endAt: Math.floor(Date.now() / 1000) + 600,
+      status: 'active', confirms: 1, disputes: 0, weather: null, variant: null, source: 'manual',
+      pendingNotify: false, missionIds: [] } },
+    lastEnded: {}, disputeThreshold: 3,
+  };
+  const { root, map } = makeRoot();
+  fetches = 0;
+  globalThis.fetch = async (url, init) => {
+    fetches++;
+    if (String(url).includes('/vote')) {
+      return { ok: true, status: 200, json: async () => ({ ok: true, confirms: 7, disputes: 0, status: 'active' }) };
+    }
+    return new Promise(() => {});   // /state 永遠不回：卡住第二趟
+  };
+  const view = createEmergencyView(root, {
+    worlds: WORLDS,
+    prefetch: { at: Date.now(), promise: Promise.resolve({ ok: true, data: live }) },
+  });
+  view.render(Math.floor(Date.now() / 1000));
+  await settle();
+
+  const votesOf = () => (map['#em-list'].children.find((li) => li.dataset.evId === '900')
+    ?.children ?? []).map((c) => c.textContent).join(' ');
+  assert.match(votesOf(), /附議 1/, '前置：畫面先是 1 票');
+
+  // 走真正的按鈕：遞迴找到「我也看到了」那顆，呼叫它自己註冊的 click handler
+  const findBtn = (node, text) => {
+    if (node?.textContent === text && node.listeners?.click) return node;
+    for (const kid of node?.children ?? []) {
+      const hit = findBtn(kid, text);
+      if (hit) return hit;
+    }
+    return null;
+  };
+  const btn = findBtn(map['#em-list'], '我也看到了');
+  assert.ok(btn, '該列必須有「我也看到了」按鈕');
+  btn.listeners.click();
+  await settle();
+  await settle();
+
+  assert.match(
+    votesOf(), /附議 7/,
+    '投票回應已帶新票數 ⇒ 不得等第二趟 /state 才更新（那趟在本案例永不回應）',
+  );
+  console.log('✓ 投票：用回應值當場更新，不等第二趟 /state');
 }
 
 console.log('emergency-view 時序測試全過');
