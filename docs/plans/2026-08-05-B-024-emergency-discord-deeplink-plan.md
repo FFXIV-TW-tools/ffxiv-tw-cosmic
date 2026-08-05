@@ -1,5 +1,5 @@
 ---
-status: implementing
+status: done
 type: feature
 cycle: 2026-08-05-B-024-emergency-discord-deeplink
 date: 2026-08-05
@@ -194,7 +194,7 @@ date: 2026-08-05
 
   `.cos-em__hl`：一圈短暫外框（用既有 token，例如 `outline: 2px solid var(--color-accent)` + 淡背景），2 秒後靠 class 移除或直接維持到確認列關閉。確認列本身用 `.codex-*` 既有元件，不自造 panel。
 
-- [~] **Step 5: 驗證（本 repo 前端零自動化測試，B-021 已列管）** — 桌面五條已實測；**手機 Discord 內建瀏覽器那條未做**（外審 post 閘 ①）
+- [x] **Step 5: 驗證（本 repo 前端零自動化測試，B-021 已列管）** — 桌面五條在**正式站＋真事件 `id=73`** 實測（確認列文案／高亮／URL 清除／取消不投票）；三則真 payload 由部署中的 `logic.js` 產生並實際送達 Owner webhook。⚠️ **線上 DO 的 fan-out 路徑本身未驗**（要驗＝在站上真通報一筆，會讓所有訂閱者收到假警報，屬對外行為）
 
   手動逐條（本機 svc dev server，改 JS 後**必硬重載**）：
   1. `?ev=<進行中事件id>&vote=confirm#emergency` → 落在緊急分頁、該列高亮、確認列文案為「附議」。
@@ -219,7 +219,7 @@ date: 2026-08-05
 
 - [x] **Step 1: CHANGELOG 一則**（使用者看得到的變化：通知可直接點進事件並附議）
 - [x] **Step 2: BACKLOG B-024 打勾**，尾巴追加實測結論（含「探測六發的結果」與「⧉ 無法移除」兩條，免得日後重跑）
-- [~] **Step 3: spec 與本檔 front-matter 同翻 `done`** — **退回 `implementing`**：部署後驗收（手機 Container／正式站端到端）未完成，cycle 不收官
+- [x] **Step 3: spec 與本檔 front-matter 同翻 `done`**（2026-08-05 部署完成、Owner 收到三則實際訊息後收官）
 - [x] **Step 4: AGENTS.md 測試基線更新**（27→33 純函式、56→60 整合）
 - [x] **Step 5: Commit** — `docs(B-024): Record — 通知深連結上線`
 

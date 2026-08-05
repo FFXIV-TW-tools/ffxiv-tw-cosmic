@@ -17,7 +17,7 @@
 - 送出網址**必須帶 `?with_components=true`**：不帶的話整組按鈕被 Discord **靜默忽略**——訊息照樣 204、按鈕全部消失、零錯誤訊號。
 - 三件實測過**做不到**的事，別再試：彩色按鈕（`style:4`+`url` → 400 `{"components":["0"]}`；彩色 style 一律要 `custom_id`＝互動元件，非 application-owned webhook 禁送）／按鈕文字上色（`label` 是純文字欄位，不吃 markdown）／拿掉按鈕右邊的外連圖示 ⧉（Button 物件 9 個欄位沒有一個控制它，由客戶端固定渲染）。
 - Components V2 對非 application-owned webhook **沒有官方明文保證**，我們是靠實測知道可行的——退回路徑就是為這件事準備的：**版面退化，通知不中斷**。
-- ⚠️ **尚未驗**：手機 Discord app 的 Container 渲染（樣本都是桌面截圖）、以及正式站端到端（要先部署才能由真通知點進來）。桌面側的深連結五條路徑已實測。
+- **部署與驗收（2026-08-05）**：Pages＋worker 皆已上線（worker version `ddec1859`）；深連結收端在正式站以真事件 `id=73` 實測（確認列／高亮／URL 清除／取消不投票）。⚠️ **線上 DO 的 fan-out 路徑沒有端到端實測**——驗它得在站上真通報一筆，那會讓所有訂閱者收到假警報 ⇒ 不自行觸發；該路徑由整合測試守（signal 隔離、`fanout_v2_reject` 分桶、含 query 的 webhook）。
 
 ## 2026-08-03 — 舊網址交接頁（monorepo B-048 Task 4，第 9 站）
 

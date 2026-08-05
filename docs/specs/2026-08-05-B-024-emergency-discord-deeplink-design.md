@@ -1,5 +1,5 @@
 ---
-status: implementing
+status: done
 type: feature
 cycle: 2026-08-05-B-024-emergency-discord-deeplink
 date: 2026-08-05
