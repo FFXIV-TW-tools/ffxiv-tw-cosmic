@@ -80,6 +80,22 @@ export class CosmicEventsDO extends DurableObject {
       }
     }
 
+    // 訂閱者的 @ 對象（B-062）。同樣**一個 ALTER 一個 try**，理由見上方那段。
+    // 存的是**正規化後**的 {type,id}：訂閱裡沒有 userId，「mentionType 空但有 userId」
+    // 那條舊值相容在瀏覽器端（discordMentionTarget）就解完了。
+    // 既有訂閱升級後兩欄為預設值 ⇒ 語意是「不提及」，與升級前的行為一致（本工具從來沒有 @ 過）。
+    const subColumns = [
+      ['mentionType', "TEXT NOT NULL DEFAULT 'none'"],
+      ['mentionTargetId', "TEXT NOT NULL DEFAULT ''"],
+    ];
+    for (const [col, type] of subColumns) {
+      try {
+        this.sql.exec(`ALTER TABLE subs ADD COLUMN ${col} ${type}`);
+      } catch {
+        // 欄位已存在（同上）
+      }
+    }
+
     // 「開始通告 ↔ 任務組」的定案表。**一個變體只寫一次**——第一次拿到證據就定下來，
     // 之後的事件不再改寫（改寫代表兩次證據互相矛盾，那要人去看，不該自動選一個）。
     this.sql.exec(`CREATE TABLE IF NOT EXISTS variant_map (
@@ -494,32 +510,37 @@ export class CosmicEventsDO extends DurableObject {
 
   // ── 訂閱 ──
 
-  putSub({ uuid, worlds, webhookUrl }, now) {
+  putSub({ uuid, worlds, webhookUrl, mentionType = 'none', mentionTargetId = '' }, now) {
     // 退訂＝實體刪列，不是留一列空的（保留期鐵則：不留不需要的識別資料）
     if (worlds.length === 0) {
       this.sql.exec('DELETE FROM subs WHERE uuid = ?', uuid);
       return { ok: true, worlds: [], webhookUrl: '' };
     }
     this.sql.exec(
-      `INSERT INTO subs (uuid, worlds, webhookUrl, failCount, broken, updatedAt)
-       VALUES (?, ?, ?, 0, 0, ?)
-       ON CONFLICT(uuid) DO UPDATE SET worlds = ?, webhookUrl = ?, failCount = 0, broken = 0, updatedAt = ?`,
-      uuid, JSON.stringify(worlds), webhookUrl, now,
-      JSON.stringify(worlds), webhookUrl, now,
+      `INSERT INTO subs (uuid, worlds, webhookUrl, failCount, broken, updatedAt, mentionType, mentionTargetId)
+       VALUES (?, ?, ?, 0, 0, ?, ?, ?)
+       ON CONFLICT(uuid) DO UPDATE SET worlds = ?, webhookUrl = ?, failCount = 0, broken = 0, updatedAt = ?,
+         mentionType = ?, mentionTargetId = ?`,
+      uuid, JSON.stringify(worlds), webhookUrl, now, mentionType, mentionTargetId,
+      JSON.stringify(worlds), webhookUrl, now, mentionType, mentionTargetId,
     );
     // 重存即解除熔斷：使用者換了 webhook 或確認過設定，本來就該重新開始算
-    return { ok: true, worlds, webhookUrl: L.maskWebhook(webhookUrl) };
+    return { ok: true, worlds, webhookUrl: L.maskWebhook(webhookUrl), mentionType, mentionTargetId };
   }
 
   getSub(uuid) {
     const rows = this.sql.exec('SELECT * FROM subs WHERE uuid = ?', uuid).toArray();
-    if (!rows.length) return { worlds: [], webhookUrl: '', broken: false };
+    if (!rows.length) return { worlds: [], webhookUrl: '', broken: false, mentionType: 'none', mentionTargetId: '' };
     const r = rows[0];
     // **只回遮罩值**：webhook 是能直接對外發訊息的憑證，讀路徑不該把它交出去
     return {
       worlds: JSON.parse(r.worlds),
       webhookUrl: L.maskWebhook(r.webhookUrl),
       broken: r.broken === 1,
+      // 舊列（ALTER 前寫入的）在 SQLite 補上的是 DEFAULT 值，但仍以 ?? 兜底：
+      // 這條讀路徑會餵回前端畫面，undefined 會讓「不提及」顯示成空白而不是選項
+      mentionType: r.mentionType ?? 'none',
+      mentionTargetId: r.mentionTargetId ?? '',
     };
   }
 
@@ -712,19 +733,23 @@ export class CosmicEventsDO extends DurableObject {
   async _fanout(ev, now) {
     if (!ev) return;
     const subs = this.sql
-      .exec('SELECT uuid, worlds, webhookUrl, failCount, broken FROM subs')
+      .exec('SELECT uuid, worlds, webhookUrl, failCount, broken, mentionType, mentionTargetId FROM subs')
       .toArray()
       .map((r) => ({ ...r, worlds: JSON.parse(r.worlds) }));
     const targets = L.fanoutTargets(subs, ev.world);
     if (targets.length === 0) return;
 
-    const payload = JSON.stringify(L.discordPayload(ev, now));
-    // 退回用的純 embed 版本（Discord 若拒收 Components V2 才會用到，見 _send）。
-    // 在這裡先組好：同一則事件送給 N 個訂閱者，沒必要每人各組一次。
-    const legacy = JSON.stringify(L.legacyEmbedPayload(ev, now));
+    // ⚠️ **payload 改成 per-target 組**（B-062）：@ 對象是每個訂閱者自己的設定，
+    // 沿用舊的「組一份大家共用」等於所有人都吃到某一個人的 @ 設定。
+    // 代價只是 N 次字串組裝——fan-out 的成本本來就在那 N 次 HTTP 上。
     for (let i = 0; i < targets.length; i += FANOUT_CONCURRENCY) {
       const batch = targets.slice(i, i + FANOUT_CONCURRENCY);
-      await Promise.all(batch.map((t) => this._send(t, payload, legacy)));
+      await Promise.all(batch.map((t) => this._send(
+        t,
+        JSON.stringify(L.discordPayload(ev, now, t)),
+        // 退回用的純 embed 版本（Discord 若拒收 Components V2 才會用到，見 _send）
+        JSON.stringify(L.legacyEmbedPayload(ev, now, t)),
+      )));
     }
   }
 

@@ -1,0 +1,227 @@
+{
+  "_readme": [
+    "Discord @ 對象的跨 runtime 共享測試向量（cycle 2026-08-05-B-062）。",
+    "為什麼需要它：組字邏輯在瀏覽器只有一份（settings-client.js 的 discordMention），",
+    "但 sub-timer worker（TS）與 cosmic worker 是獨立 runtime、無法共用程式碼 ⇒ 那兩處必然是",
+    "第二／第三份實作。與其宣稱「只有一份」，不如用同一組向量把三邊釘在一起：任一邊漂移即紅。",
+    "",
+    "用法：各消費 repo **vendoring 一份副本**（不跨 repo 讀檔——獨立 checkout／CI 正是最常掃不到的環境，",
+    "而『掃不到就跳過』等於哨兵在最需要它時消失）。測試讀自己那份，並斷言 digest 相符。",
+    "",
+    "每條 case 有兩層判準：`target` ＝正規化後的 {type,id}（`discordMentionTarget()` 的輸出，",
+    "cosmic 存的就是這一層——它的訂閱不含 userId，舊值相容在瀏覽器端就解完了）；",
+    "`expect` ＝最終的 Discord 欄位（`discordMention()` 的輸出，潛水艇與 marketboard 消費這層）。",
+    "",
+    "digest = 本檔去掉 `_readme` 與 `digest` 兩個 key 後、遞迴排序 key 的 canonical 序列化之 sha256。",
+    "⚠️ 不是 `JSON.stringify(o, Object.keys(o).sort())` —— 那第二參數是 replacer 陣列、會遞迴濾掉",
+    "所有巢狀鍵，實測改內容 digest 不變（2026-08-05）。",
+    "產生／更新：node tools/gen-mention-vectors-digest.mjs"
+  ],
+  "digest": "aa72b54ffea6e56f8d50a23a7ed72e452e8de23654f28b59b4e6333e95ce11bf",
+  "idRegex": "^\\d{17,20}$",
+  "cases": [
+    {
+      "name": "none — 未設定任何提及",
+      "settings": {
+        "mentionType": "",
+        "userId": "",
+        "mentionId": ""
+      },
+      "expect": {
+        "content": "",
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "why": "⚠️ 最重要的一條：不提及**也要**帶 parse: []。少了它，Discord 會解析訊息本文裡所有像提及的字串（潛水艇名／物品名／使用者自填備註都可能含 @everyone）⇒ 設定成不提及的人反而被炸。",
+      "target": {
+        "type": "none",
+        "id": ""
+      }
+    },
+    {
+      "name": "user — 明確選指定成員",
+      "settings": {
+        "mentionType": "user",
+        "userId": "123456789012345678",
+        "mentionId": ""
+      },
+      "expect": {
+        "content": "<@123456789012345678>",
+        "allowed_mentions": {
+          "parse": [],
+          "users": [
+            "123456789012345678"
+          ]
+        }
+      },
+      "why": "parse 必須是空陣列——只列 users 而把 parse 寫成 ['users'] 等於放行本文裡所有使用者提及。",
+      "target": {
+        "type": "user",
+        "id": "123456789012345678"
+      }
+    },
+    {
+      "name": "legacy — mentionType 空但 userId 有值（D4 相容）",
+      "settings": {
+        "mentionType": "",
+        "userId": "123456789012345678",
+        "mentionId": ""
+      },
+      "expect": {
+        "content": "<@123456789012345678>",
+        "allowed_mentions": {
+          "parse": [],
+          "users": [
+            "123456789012345678"
+          ]
+        }
+      },
+      "why": "本功能之前所有使用者都是這個狀態。判成 none 等於升級當天所有人的通知都不再 @ 自己。",
+      "target": {
+        "type": "user",
+        "id": "123456789012345678"
+      }
+    },
+    {
+      "name": "role — 身分組",
+      "settings": {
+        "mentionType": "role",
+        "userId": "123456789012345678",
+        "mentionId": "987654321098765432"
+      },
+      "expect": {
+        "content": "<@&987654321098765432>",
+        "allowed_mentions": {
+          "parse": [],
+          "roles": [
+            "987654321098765432"
+          ]
+        }
+      },
+      "why": "身分組即使沒開「允許任何人 @」，只要 id 列在 allowed_mentions.roles 就推得動；同時 userId 還在（D9：切離 user 不刪），不得誤用成 user。",
+      "target": {
+        "type": "role",
+        "id": "987654321098765432"
+      }
+    },
+    {
+      "name": "everyone",
+      "settings": {
+        "mentionType": "everyone",
+        "userId": "123456789012345678",
+        "mentionId": "987654321098765432"
+      },
+      "expect": {
+        "content": "@everyone",
+        "allowed_mentions": {
+          "parse": [
+            "everyone"
+          ]
+        }
+      },
+      "why": "不得帶任何 id（兩個 id 欄位都有殘值也一樣）。",
+      "target": {
+        "type": "everyone",
+        "id": ""
+      }
+    },
+    {
+      "name": "here",
+      "settings": {
+        "mentionType": "here",
+        "userId": "",
+        "mentionId": ""
+      },
+      "expect": {
+        "content": "@here",
+        "allowed_mentions": {
+          "parse": [
+            "everyone"
+          ]
+        }
+      },
+      "why": "Discord 沒有獨立的 here token——@here 與 @everyone 共用 parse 的 'everyone'。",
+      "target": {
+        "type": "here",
+        "id": ""
+      }
+    },
+    {
+      "name": "非法 id — 非數字",
+      "settings": {
+        "mentionType": "role",
+        "userId": "",
+        "mentionId": "not-a-number"
+      },
+      "expect": {
+        "content": "",
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "why": "讀取端 fail-closed 降級（不是 throw）：worker 的驗證只保護已同步的 snapshot，保護不到被改過／殘留的本機值。",
+      "target": {
+        "type": "none",
+        "id": ""
+      }
+    },
+    {
+      "name": "非法 id — 16 位（下界外）",
+      "settings": {
+        "mentionType": "user",
+        "userId": "1234567890123456",
+        "mentionId": ""
+      },
+      "expect": {
+        "content": "",
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "why": "邊界值：17 位才合法。只測「空字串」抓不到這種。",
+      "target": {
+        "type": "none",
+        "id": ""
+      }
+    },
+    {
+      "name": "非法 id — 21 位（上界外）",
+      "settings": {
+        "mentionType": "user",
+        "userId": "123456789012345678901",
+        "mentionId": ""
+      },
+      "expect": {
+        "content": "",
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "why": "同上，另一邊界。",
+      "target": {
+        "type": "none",
+        "id": ""
+      }
+    },
+    {
+      "name": "拼錯的 mentionType",
+      "settings": {
+        "mentionType": "admin",
+        "userId": "123456789012345678",
+        "mentionId": ""
+      },
+      "expect": {
+        "content": "",
+        "allowed_mentions": {
+          "parse": []
+        }
+      },
+      "why": "不得 throw——SDK 在啟動路徑 throw 會炸掉整個工具；也不得退回 userId（那會讓打錯字變成靜默的 @自己）。",
+      "target": {
+        "type": "none",
+        "id": ""
+      }
+    }
+  ]
+}

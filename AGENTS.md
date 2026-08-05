@@ -119,7 +119,27 @@ ICE 插件偵測到 `ActiveWeather ∈ 194–197` 自動回報，加上玩家手
 ⚠️ **驗這類改動時先確認 `document.hidden` 的真值**：headless／未聚焦的分頁本身就是 hidden，
 量到「都沒打」很可能只是撞到 hidden 閘、根本沒測到間隔邏輯（2026-08-04 我自己踩過一次）。
 
-### 6. 設計系統
+### 6. 通知的 @ 對象存在訂閱裡，不是即時讀設定（2026-08-05，B-062）
+
+fan-out 由 worker 送，那時使用者的瀏覽器可能根本沒開 ⇒ @ 對象**必須存進 `subs`**。
+兩個後果，兩者都不直觀：
+
+- **改了 portal 全域設定要回本頁再按一次「儲存訂閱」**才會生效（畫面上有寫）。不講的話症狀是
+  「我明明改了設定，通知還是 @ 舊的」，而使用者完全看不出要回哪裡按什麼。
+- **payload 必須 per-target 組**。原本 fan-out 是組一份大家共用（那時內容確實與收件人無關），
+  沿用等於所有訂閱者都吃到某一個人的 @ 設定——包含「設定成不提及的人被 `@everyone` 炸」。
+  每個人只看自己的頻道，永遠不會發現是別人的設定跑過來。哨兵＝`http.test.ts` 那條「兩份 body 不同」。
+
+存的是**正規化後**的 `{mentionType, mentionTargetId}`（`discordMentionTarget()` 的輸出）。
+**本 repo 不自己判斷「user 取 userId／role 取 mentionId」**——那份判斷漏掉「mentionType 空但
+userId 有值」的舊值分支，既有使用者重存訂閱就會靜默失去提及。判準＝`worker/test/mention-vectors.json`
+（portal 那份的 vendoring 副本，digest 相符才算數）。
+
+⚠️ **不提及時也一定要送 `allowed_mentions: { parse: [] }`**。Container（Components V2）不能有
+`content`，但**元件內的提及照樣會 ping**，管轄它的是訊息層的 `allowed_mentions`——省掉它等於
+回到 Discord 預設解析，日後任何一次文案調整引入像提及的字串就會炸整個頻道。
+
+### 7. 設計系統
 
 `../ffxiv-tw-tools-portal/_DESIGN-SYSTEM.md` 是權威。本 repo 私有 class 一律 `cos-` 前綴；
 不定義也不覆寫任何 `.codex-*` 根 selector；accent 統一 cyan；金色高亮**全頁只有一處**
@@ -145,7 +165,7 @@ ICE 插件偵測到 `ActiveWeather ∈ 194–197` 自動回報，加上玩家手
 |---|---|---|
 | **任何改動（canonicalTest；`process/fleet.json` 逐字對照本行）** | `node tools/validate.mjs` | 資料不變量全過（544 任務／63 有條件／88 連續／11 條工具鏈）；不需遊戲 client，任何機器可跑 |
 | `tools/cosmic-dump/**` 或台服改版 | `dotnet run -c Release --project tools/cosmic-dump` | 內建健全性閘全過（544 任務／天氣總和 100%／11 條 9 階工具鏈），任一不過**不寫檔**；地圖底圖匯不出來也**整批不寫**（`img/map/sinus-ardorum.png`，512²） |
-| `worker/**`（緊急事件後端） | cwd=`worker/`：`pnpm test`＋`pnpm test:logic`＋`pnpm cf:deploy:dry` | 60 整合（vitest-pool-workers）＋34 純函式（node --test）全綠；dry-run 0 error。**測試絕不打真 Discord**（fetch 被 stub） |
+| `worker/**`（緊急事件後端） | cwd=`worker/`：`pnpm test`＋`pnpm test:logic`＋`pnpm cf:deploy:dry` | 63 整合（vitest-pool-workers）＋40 純函式（node --test）全綠；dry-run 0 error。**測試絕不打真 Discord**（fetch 被 stub） |
 | `modules/emergency-*.js` | `node tests/run-all.mjs`（含 `emergency-view.test.mjs`＝**4 條時序斷言**）＋本機 `wrangler dev` ＋瀏覽器走一次通報→附議→訂閱 | 測試全綠；console 零 error；後端關掉時該分頁降級為唯讀、其他分頁不受影響。⚠️ **前景輪詢時序量不到**——自動化開的分頁本身就 `document.hidden`（見鐵則 §5 末），要驗間隔得用真人分頁 |
 | 任何 CSS／HTML | `node C:/FFXIVProject/tools/check-design-drift.js --files <改動檔> --strict` | exit 0 |
 | 任何前端改動 | 瀏覽器開 `http://127.0.0.1:8774/ffxiv-tw-cosmic/`（`svc start portal`） | console 零 error；四個分頁都出得來；`documentElement.scrollWidth - clientWidth === 0` |

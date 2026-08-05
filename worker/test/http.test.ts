@@ -264,6 +264,41 @@ describe('schema 遷移', () => {
       expect(cols).toContain(c);
     }
   });
+
+  it('subs 表的 @ 對象兩欄都存在（同樣一欄一個 ALTER）', async () => {
+    const cols = await runInDurableObject(doStub(), (inst: any) =>
+      [...inst.sql.exec('PRAGMA table_info(subs)')].map((r: any) => r.name));
+    expect(cols).toContain('mentionType');
+    expect(cols).toContain('mentionTargetId');
+  });
+
+  it('ALTER 之前寫入的舊訂閱：讀得出來、預設不提及、重存不遺失設定（B-062）', async () => {
+    // 模擬升級前的那一列——**只寫舊欄位**，讓 SQLite 用 DEFAULT 補新欄。
+    // 直接 INSERT 而不走 putSub：putSub 現在一定會帶新欄，那樣測不到遷移。
+    const u = uuid();
+    const world = devStages.worlds[5];
+    await runInDurableObject(doStub(), (inst: any) => {
+      inst.sql.exec(
+        'INSERT INTO subs (uuid, worlds, webhookUrl, failCount, broken, updatedAt) VALUES (?, ?, ?, 0, 0, ?)',
+        u, JSON.stringify([world]), HOOK, 1,
+      );
+    });
+    const old = await (await SELF.fetch(`https://x/sub?uuid=${u}`, { headers: { Origin: ALLOWED } })).json() as any;
+    expect(old.worlds).toEqual([world]);
+    expect(old.mentionType).toBe('none');       // 升級前本工具從不 @，語意必須一致
+    expect(old.mentionTargetId).toBe('');
+
+    // 再存一次（使用者回頁面按「儲存訂閱」）→ 設定進得去、讀得回
+    await put('/sub', {
+      uuid: u, worlds: [world], webhookUrl: HOOK,
+      mentionType: 'role', mentionTargetId: '987654321098765432',
+    });
+    const now = await (await SELF.fetch(`https://x/sub?uuid=${u}`, { headers: { Origin: ALLOWED } })).json() as any;
+    expect(now.mentionType).toBe('role');
+    expect(now.mentionTargetId).toBe('987654321098765432');
+
+    await put('/sub', { uuid: u, worlds: [], webhookUrl: '' });
+  });
 });
 
 describe('事件變體（α／β）', () => {
@@ -681,6 +716,38 @@ describe('fan-out', () => {
     expect(stats.fanout_v2_reject ?? stats.stats?.fanout_v2_reject).toBeGreaterThanOrEqual(1);
 
     await put('/sub', { uuid: u, worlds: [], webhookUrl: '' });
+    await revoke(eventId);
+  });
+
+  it('兩個訂閱者設不同 @ 對象 → 收到的兩份 body 不同（per-target，B-062）', async () => {
+    // **這條釘住的是「payload 不得共用」**。原本 fan-out 是組一份大家共用，那樣的症狀是
+    // 所有訂閱者都吃到某一個人的 @ 設定——包括「設定成不提及的人被 @everyone 炸」，
+    // 而每個人各自看自己的頻道，永遠不會發現是別人的設定跑過來。
+    const calls = stubDiscord();
+    const world = devStages.worlds[1];
+    await clearWorld(world);
+    const a = uuid(); const b = uuid();
+    await put('/sub', { uuid: a, worlds: [world], webhookUrl: HOOK, mentionType: 'here', mentionTargetId: '' });
+    await put('/sub', {
+      uuid: b, worlds: [world], webhookUrl: `${HOOK}2`,
+      mentionType: 'user', mentionTargetId: '123456789012345678',
+    });
+
+    const rep = await pluginReport(world);
+    const { eventId } = await rep.json() as any;
+    await vi.waitFor(() => expect(calls.filter((c) => String(textOf(c.body)).includes(world)).length).toBe(2));
+
+    const mine = calls.filter((c) => String(textOf(c.body)).includes(world));
+    const first = (c: any) => String(textOf(c.body)).split('\n')[0];
+    expect(new Set(mine.map(first)).size).toBe(2);
+    expect(mine.map(first).sort()).toEqual(['<@123456789012345678>', '@here']);
+    // allowed_mentions 也要各自對應（只比首行的話，把 allowed_mentions 寫死成共用值仍會全綠）
+    const byFirst = Object.fromEntries(mine.map((c) => [first(c), c.body.allowed_mentions]));
+    expect(byFirst['@here']).toEqual({ parse: ['everyone'] });
+    expect(byFirst['<@123456789012345678>']).toEqual({ parse: [], users: ['123456789012345678'] });
+
+    await put('/sub', { uuid: a, worlds: [], webhookUrl: '' });
+    await put('/sub', { uuid: b, worlds: [], webhookUrl: '' });
     await revoke(eventId);
   });
 

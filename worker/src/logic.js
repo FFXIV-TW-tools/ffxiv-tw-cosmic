@@ -345,7 +345,17 @@ export function validateSub(body) {
   if (!worlds.every(isKnownWorld)) return { ok: false, reason: 'bad_worlds' };
   const url = body.webhookUrl ?? '';
   if (url !== '' && !isAllowedWebhook(url)) return { ok: false, reason: 'bad_webhook' };
-  return { ok: true, uuid: body.uuid, worlds, webhookUrl: url };
+  // B-062 @ 對象。**寫入邊界一律拒絕**（不像送出端那樣降級）——這裡收下的東西會變成事實，
+  // 而讀取端的 fail-closed 只擋得住「已經進來的髒資料不再擴散」，防不了它被存進去。
+  const mentionType = body.mentionType ?? 'none';
+  const mentionTargetId = body.mentionTargetId ?? '';
+  if (!MENTION_TYPES.includes(mentionType)) return { ok: false, reason: 'bad_mention' };
+  if (mentionTargetId !== '' && !MENTION_ID_RE.test(mentionTargetId)) return { ok: false, reason: 'bad_mention' };
+  // 跨欄位檢查：user/role 缺 id ＝存進去只會變成「設了卻不會 @」的靜默失效；
+  // everyone/here/none 帶 id ＝送進來的東西不是 `discordMentionTarget()` 的輸出，兩者都擋。
+  if ((mentionType === 'user' || mentionType === 'role') && !mentionTargetId) return { ok: false, reason: 'bad_mention' };
+  if (mentionType !== 'user' && mentionType !== 'role' && mentionTargetId) return { ok: false, reason: 'bad_mention' };
+  return { ok: true, uuid: body.uuid, worlds, webhookUrl: url, mentionType, mentionTargetId };
 }
 
 /** 事件此刻是否算「進行中」。過期用 lazy 判定，不排 alarm。 */
@@ -397,6 +407,29 @@ export function fanoutTargets(subs, world) {
  */
 export function inCooldown(lastAt, now) {
   return lastAt > 0 && now - lastAt < REPORT_COOLDOWN;
+}
+
+// ── @ 對象（B-062）─────────────────────────────────────────────────────────
+// 判準與 portal `docs/mention-vectors.json`（vendoring 副本在 `worker/test/`）同源。
+// cosmic 存的是**正規化後**的 `{mentionType, mentionTargetId}`——訂閱裡沒有 userId，
+// 「mentionType 空但有 userId」那條舊值相容在瀏覽器端（`discordMentionTarget()`）就解完了。
+export const MENTION_TYPES = ['none', 'user', 'role', 'everyone', 'here'];
+export const MENTION_ID_RE = /^\d{17,20}$/;
+
+/**
+ * 訂閱的 @ 設定 → Discord 欄位。**第三份實作**（瀏覽器一份、sub-timer worker 一份）；
+ * 三邊靠共享向量釘在一起。讀取端一律 fail-closed 降級，不 throw——這裡跑在 fan-out 路徑上，
+ * throw 等於整批通知不送。
+ */
+export function mentionOf(sub) {
+  const type = (sub && sub.mentionType) || 'none';
+  const id = (sub && sub.mentionTargetId) || '';
+  if (type === 'everyone') return { content: '@everyone', allowed_mentions: { parse: ['everyone'] } };
+  // Discord 沒有獨立的 here token —— @here 與 @everyone 共用 parse 的 'everyone'
+  if (type === 'here') return { content: '@here', allowed_mentions: { parse: ['everyone'] } };
+  if (type === 'user' && MENTION_ID_RE.test(id)) return { content: `<@${id}>`, allowed_mentions: { parse: [], users: [id] } };
+  if (type === 'role' && MENTION_ID_RE.test(id)) return { content: `<@&${id}>`, allowed_mentions: { parse: [], roles: [id] } };
+  return { content: '', allowed_mentions: { parse: [] } };
 }
 
 /** 站台自訂網域。**不用 `pages.dev`**：舊網址會被交接頁轉走，多繞一跳。 */
@@ -476,17 +509,24 @@ function messageText(ev, now) {
  * ⚠️ Components V2 對 non-application-owned webhook **沒有官方明文保證**（我們是靠實測知道可行）。
  * 退回路徑見 `legacyEmbedPayload()`。
  */
-export function discordPayload(ev, now) {
+export function discordPayload(ev, now, sub) {
   const t = messageText(ev, now);
+  const m = mentionOf(sub);
   return {
     username: 'FFXIV 宇宙探索',
     flags: 32768,                          // IS_COMPONENTS_V2
+    // ⚠️ 不論提不提及都要帶：少了它 Discord 會解析訊息本文裡所有像提及的字串
+    // ⇒ 設定成不提及的人反而被炸。**這不能因為「Container 不能有 content」而省略**——
+    // 官方明載元件內的提及照樣 ping，管轄它的正是訊息層的這個欄位。
+    allowed_mentions: m.allowed_mentions,
     components: [
       {
         type: 17,                          // Container
         accent_color: t.color,             // 左側色條
         components: [
-          { type: 10, content: `### [${t.title}](${eventUrl(ev.id)})\n${t.body}\n-# ${t.note}` },
+          // 提及放 Text Display **第一行**（Container 不得有 `content`，一律 400）。
+          // 不提及時整段不加前綴——空字串會多出一個空行。
+          { type: 10, content: `${m.content ? `${m.content}\n` : ''}### [${t.title}](${eventUrl(ev.id)})\n${t.body}\n-# ${t.note}` },
           actionRow(ev.id),
         ],
       },
@@ -504,10 +544,15 @@ export function discordPayload(ev, now) {
  * ⚠️ 連結一律走 `eventUrl()`，不得在這裡另行拼字串——兩份 payload 的連結必須同源，
  * 否則這個平常不執行的版本會悄悄指到錯的地方，而且要等到最需要它的那天才會發現。
  */
-export function legacyEmbedPayload(ev, now) {
+export function legacyEmbedPayload(ev, now, sub) {
   const t = messageText(ev, now);
+  const m = mentionOf(sub);
   return {
     username: 'FFXIV 宇宙探索',
+    // 這一版有 `content` 可用（沒有 V2 flag）⇒ 提及走 content，與 Container 版走 Text Display
+    // 首行是同一件事的兩種載體；`allowed_mentions` 兩版一致。
+    ...(m.content ? { content: m.content } : {}),
+    allowed_mentions: m.allowed_mentions,
     embeds: [
       {
         title: t.title,

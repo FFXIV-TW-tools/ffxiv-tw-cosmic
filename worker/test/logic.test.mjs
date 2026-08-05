@@ -12,6 +12,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -420,5 +421,91 @@ test('深連結：標題本身也是連結（Text Display 裡的 markdown，按�
     const m = textOf(L.discordPayload(ev, NOW)).match(/^### \[[^\]]+\]\(([^)]+)\)/);
     assert.ok(m, '標題必須是 markdown 連結');
     assert.equal(m[1], `https://cosmic.xivtc.com/?ev=${ev.id}#emergency`);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// @ 對象（B-062）。判準來自 `worker/test/mention-vectors.json` ——
+// portal `docs/mention-vectors.json` 的 **vendoring 副本**（不跨 repo 讀檔：獨立 checkout／CI
+// 正是最常掃不到鄰居 repo 的環境，而「掃不到就跳過」等於哨兵在最需要它時消失）。
+//
+// 本 repo 消費的是**正規化後**的 `{type,id}`（向量的 `target` 欄）：訂閱裡沒有 userId，
+// 「mentionType 空但 userId 有值」那條舊值相容在瀏覽器端就解完了。
+// ─────────────────────────────────────────────────────────────────────
+
+const VECTORS = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'mention-vectors.json'), 'utf8'));
+
+test('@ 對象：向量副本的 digest 相符（副本被改壞／只 vendoring 一半即紅）', () => {
+  // ⚠️ 不要用 `JSON.stringify(o, Object.keys(o).sort())`：第二參數是 replacer 陣列（遞迴濾掉
+  // 所有巢狀鍵）不是排序器 —— 2026-08-05 實測，改動向量內容 digest 一個字元都不變。
+  const canon = (v) => Array.isArray(v) ? `[${v.map(canon).join(',')}]`
+    : (v && typeof v === 'object')
+      ? `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canon(v[k])}`).join(',')}}`
+      : JSON.stringify(v);
+  const { _readme, digest, ...rest } = VECTORS;
+  const want = createHash('sha256').update(canon(rest)).digest('hex');
+  assert.equal(digest, want, 'worker/test/mention-vectors.json 與 portal 那份不同步');
+  assert.equal(L.MENTION_ID_RE.source, VECTORS.idRegex, 'id 判準必須與向量同源');
+});
+
+test('@ 對象：五種目標的 Text Display 首行與 allowed_mentions 對得上向量', () => {
+  for (const c of VECTORS.cases) {
+    const sub = { mentionType: c.target.type, mentionTargetId: c.target.id };
+    const p = L.discordPayload(started(NOW), NOW, sub);
+    assert.deepEqual(p.allowed_mentions, c.expect.allowed_mentions, `allowed_mentions 不符：${c.name}`);
+    const first = textOf(p).split('\n')[0];
+    if (c.expect.content) {
+      assert.equal(first, c.expect.content, `提及必須在 Text Display 第一行：${c.name}`);
+    } else {
+      // 不提及時**不得多一個空行**——空字串前綴會讓每則通知都比別人多一行留白
+      assert.ok(first.startsWith('### ['), `不提及時首行應直接是標題，實得：${JSON.stringify(first)}`);
+    }
+  }
+});
+
+test('@ 對象：不提及也必須帶 allowed_mentions { parse: [] }', () => {
+  // 少了它 Discord 會解析訊息本文——伺服器名與文案是我們自己的，但這條路徑上的
+  // 任何一次文案調整都可能引入像提及的字串，而症狀是「整個頻道被炸」。
+  const p = L.discordPayload(started(NOW), NOW, undefined);
+  assert.deepEqual(p.allowed_mentions, { parse: [] });
+});
+
+test('@ 對象：Container 版仍不得有 content（加了整則 400，本地看不出來）', () => {
+  for (const t of [undefined, { mentionType: 'everyone', mentionTargetId: '' }]) {
+    const p = L.discordPayload(started(NOW), NOW, t);
+    assert.ok(!('content' in p), 'IS_COMPONENTS_V2 與 content 互斥，Discord 一律回 400');
+    assert.ok(!('embeds' in p), '同上，embeds 也不行');
+  }
+});
+
+test('@ 對象：退回版的提及走 content（那一版沒有 V2 flag，反而只能用 content）', () => {
+  const p = L.legacyEmbedPayload(started(NOW), NOW, { mentionType: 'role', mentionTargetId: '987654321098765432' });
+  assert.equal(p.content, '<@&987654321098765432>');
+  assert.deepEqual(p.allowed_mentions, { parse: [], roles: ['987654321098765432'] });
+  // 不提及時不得留一個空的 content（Discord 對空字串 content 會 400）
+  const none = L.legacyEmbedPayload(started(NOW), NOW, undefined);
+  assert.ok(!('content' in none));
+  assert.deepEqual(none.allowed_mentions, { parse: [] });
+});
+
+test('@ 對象：validateSub 跨欄位驗證（寫入邊界一律拒絕，不降級）', () => {
+  const base = { uuid: '00000000-0000-4000-8000-000000000000', worlds: [W], webhookUrl: '' };
+  const ok = L.validateSub({ ...base, mentionType: 'role', mentionTargetId: '987654321098765432' });
+  assert.equal(ok.ok, true);
+  assert.equal(ok.mentionTargetId, '987654321098765432');
+  // 舊 client（不送新欄）→ 預設 none，不得被判成壞掉
+  assert.deepEqual(
+    (({ mentionType, mentionTargetId }) => ({ mentionType, mentionTargetId }))(L.validateSub(base)),
+    { mentionType: 'none', mentionTargetId: '' },
+  );
+  for (const bad of [
+    { mentionType: 'admin', mentionTargetId: '' },                       // 列舉外
+    { mentionType: 'user', mentionTargetId: '' },                        // 缺 id＝設了卻不會 @
+    { mentionType: 'role', mentionTargetId: '1234567890123456' },        // 16 位（下界外）
+    { mentionType: 'user', mentionTargetId: '123456789012345678901' },   // 21 位（上界外）
+    { mentionType: 'everyone', mentionTargetId: '123456789012345678' },  // 不該有 id
+    { mentionType: 'none', mentionTargetId: '123456789012345678' },      // 同上
+  ]) {
+    assert.equal(L.validateSub({ ...base, ...bad }).reason, 'bad_mention', `應拒：${JSON.stringify(bad)}`);
   }
 });

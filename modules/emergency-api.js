@@ -149,9 +149,23 @@ export const emergencyApi = {
     return call(`/sub?uuid=${encodeURIComponent(uuid)}`);
   },
 
-  async putSub(worlds, webhookUrl) {
+  /**
+   * @param mention 呼叫端用 portal SDK 的 `discordMentionTarget()` 算好的 `{type,id}`（B-062）。
+   *   **不要在這裡自己判斷「user 取 userId／role 取 mentionId」** —— 那份判斷若漏掉
+   *   「mentionType 空但 userId 有值」的舊值分支，既有使用者重存訂閱就會靜默失去提及。
+   */
+  async putSub(worlds, webhookUrl, mention) {
     const uuid = await currentUuid();
     if (!uuid) return { ok: false, code: 'no_uuid', message: '尚未取得識別碼。' };
-    return call('/sub', { method: 'PUT', body: { uuid, worlds, webhookUrl } });
+    return call('/sub', {
+      method: 'PUT',
+      body: {
+        uuid,
+        worlds,
+        webhookUrl,
+        mentionType: mention?.type ?? 'none',
+        mentionTargetId: mention?.id ?? '',
+      },
+    });
   },
 };

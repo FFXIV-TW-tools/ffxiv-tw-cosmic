@@ -127,7 +127,10 @@ export function createEmergencyNotify(root, { worlds }) {
     // 同 load()：settings 還沒 hydrate 就存，會把空的 webhook 寫上去 ⇒ 訂閱成功卻收不到 Discord
     const s = await whenSettingsReady();
     const hook = s?.get?.('discord.webhookUrl') ?? '';
-    const r = await emergencyApi.putSub([...selected], hook);
+    // @ 對象（B-062）：取 SDK **正規化後**的 {type,id}，cosmic 不自己判斷（舊值相容在 SDK 裡）。
+    // SDK 還沒更新（使用者快取著舊 settings-client.js）時為 undefined → 後端存 none＝不提及。
+    const mention = s?.discordMentionTarget?.();
+    const r = await emergencyApi.putSub([...selected], hook, mention);
     el.status.textContent = r.ok
       ? selected.size === 0
         ? '已退訂 — 後端不再保留你的訂閱資料。'
@@ -154,10 +157,20 @@ export function createEmergencyNotify(root, { worlds }) {
     return s;
   }
 
+  /** @ 對象的中文標籤（B-062）。none 不顯示——沒設定的人不需要知道有這回事。 */
+  const MENTION_LABEL = { user: '指定成員', role: '身分組', everyone: '@everyone', here: '@here' };
+
   function renderDiscord() {
     const hook = window.FFXIVSettings?.get?.('discord.webhookUrl') ?? '';
     if (hook) {
-      el.discord.textContent = '✅ Discord 通知：已設定（關掉瀏覽器也收得到）';
+      const t = window.FFXIVSettings?.discordMentionTarget?.();
+      const label = t && MENTION_LABEL[t.type];
+      // ⚠️ 提示「要再按一次儲存」是必要的：@ 對象是**存在後端訂閱裡**的（fan-out 由 worker 送，
+      // 那時瀏覽器可能根本沒開）⇒ 改全域設定不會自動同步過去，而不講的話症狀是
+      // 「我明明改了設定，通知還是 @ 舊的」，完全看不出要回這頁按一下。
+      el.discord.textContent = label
+        ? `✅ Discord 通知：已設定（關掉瀏覽器也收得到）· @ 對象：${label} — 改了全域設定要再按一次「儲存訂閱」`
+        : '✅ Discord 通知：已設定（關掉瀏覽器也收得到）';
       return;
     }
     el.discord.replaceChildren(
@@ -187,6 +200,9 @@ export function createEmergencyNotify(root, { worlds }) {
     const s = await whenSettingsReady();
     // webhook 之後被改（設定 modal 存檔、其他分頁同步）也要跟著更新，不然畫面會停在舊判斷
     s?.onChange?.('discord.webhookUrl', renderDiscord);
+    // @ 對象改了也要重繪（否則畫面上的「@ 對象：…」會停在舊值，看起來像沒存到）
+    s?.onChange?.('discord.mentionType', renderDiscord);
+    s?.onChange?.('discord.mentionId', renderDiscord);
 
     const r = await emergencyApi.getSub();
     const subscribed = r.ok && Array.isArray(r.data?.worlds) && r.data.worlds.length > 0;
