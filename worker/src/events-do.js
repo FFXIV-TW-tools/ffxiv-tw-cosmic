@@ -701,6 +701,8 @@ export class CosmicEventsDO extends DurableObject {
   }
 
   // ── Discord fan-out ──
+  //
+  // 下面兩支是模組級 helper（見檔尾），刻意不掛在 class 上：它們不碰任何狀態。
 
   /**
    * **不重試、不做 outbox**。事件只有 20 分鐘，一則遲到的通知比沒有更糟
@@ -732,15 +734,8 @@ export class CosmicEventsDO extends DurableObject {
       this.sql.exec("UPDATE subs SET broken = 1 WHERE uuid = ?", target.uuid);
       return;
     }
-    const ctrl = new AbortController();
-    const tid = setTimeout(() => ctrl.abort(), WEBHOOK_TIMEOUT_MS);
     try {
-      const res = await fetch(`${target.webhookUrl}?with_components=true`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: payload,
-        signal: ctrl.signal,
-      });
+      const res = await postWebhook(withComponents(target.webhookUrl), payload);
       if (res.ok) {
         this.sql.exec('UPDATE subs SET failCount = 0 WHERE uuid = ?', target.uuid);
         return;
@@ -752,12 +747,10 @@ export class CosmicEventsDO extends DurableObject {
       // 只退一次、不做指數重試——400 是確定性拒絕，重送同一份 payload 沒有意義。
       if (res.status === 400 && legacy) {
         this._bump('fanout_v2_reject');
-        const res2 = await fetch(target.webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: legacy,
-          signal: ctrl.signal,
-        });
+        // ⚠️ **自己的 timer**，不能沿用第一發的（外審 2026-08-05 抓到）：
+        // 共用的話，第一發拖到 3.9 秒才回 400 時，退回這一發只剩 0.1 秒就被 abort
+        // ——正好在最需要它的時候失效，而且症狀是「退回也失敗」，看不出是逾時被砍。
+        const res2 = await postWebhook(target.webhookUrl, legacy);
         if (res2.ok) {
           this.sql.exec('UPDATE subs SET failCount = 0 WHERE uuid = ?', target.uuid);
           return;
@@ -768,8 +761,6 @@ export class CosmicEventsDO extends DurableObject {
       // 網路錯誤／逾時。不能靜默（父層鐵則），但也不能讓它影響通報者的回應
       console.warn('[fanout] webhook 送出失敗:', (err && err.name) || 'error');
       this._fail(target);
-    } finally {
-      clearTimeout(tid);
     }
   }
 
@@ -781,5 +772,41 @@ export class CosmicEventsDO extends DurableObject {
     );
     this._bump('fanout_fail');
     if (n >= L.BROKEN_AFTER) this._bump('sub_broken');
+  }
+}
+
+/**
+ * 把 `?with_components=true` 掛上去。**用 URL 物件不用字串相接**（外審 2026-08-05）：
+ * 相接的寫法假設 webhook URL 永遠沒有 query／fragment，而那個不變量我們並沒有強制
+ * （`isAllowedWebhook` 只驗 scheme／hostname／長度）。使用者貼進來的網址若帶了 `?`，
+ * 第二個 `?` 會讓參數解析不出來 ⇒ 退回「204 但按鈕全部消失」的靜默失敗。
+ */
+function withComponents(url) {
+  try {
+    const u = new URL(url);
+    u.searchParams.set('with_components', 'true');
+    return u.toString();
+  } catch {
+    // 走不到（白名單已驗過是合法 URL），但這裡不能 throw：fan-out 失敗要走既有計數路徑
+    return url;
+  }
+}
+
+/**
+ * 送一發 webhook，**每次呼叫自己一組 controller/timer**。
+ * 共用 timer 會讓退回那一發繼承第一發已經燒掉的時間（見 `_send` 內註解）。
+ */
+async function postWebhook(url, body) {
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), WEBHOOK_TIMEOUT_MS);
+  try {
+    return await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+      signal: ctrl.signal,
+    });
+  } finally {
+    clearTimeout(tid);
   }
 }

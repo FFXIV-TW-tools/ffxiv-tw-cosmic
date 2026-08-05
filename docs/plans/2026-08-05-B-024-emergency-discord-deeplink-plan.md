@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 type: feature
 cycle: 2026-08-05-B-024-emergency-discord-deeplink
 date: 2026-08-05
@@ -32,7 +32,7 @@ date: 2026-08-05
 
 **Blocked by:** 無
 
-- [ ] **Step 1: 加 `SITE_ORIGIN` 與 `eventUrl()`**
+- [x] **Step 1: 加 `SITE_ORIGIN` 與 `eventUrl()`**
 
   ```js
   /** 站台自訂網域。**不用 pages.dev**：舊網址會被交接頁轉走，多繞一跳。 */
@@ -48,24 +48,24 @@ date: 2026-08-05
   }
   ```
 
-- [ ] **Step 2: `discordPayload()` 改輸出 Container**（spec §3.2 逐欄照抄）
+- [x] **Step 2: `discordPayload()` 改輸出 Container**（spec §3.2 逐欄照抄）
 
   兩個分支（預告 `!ev.startAt` / 進行中）**共用同一個按鈕列**（D4 Owner 修正），差別只有文案與 `accent_color`：
-  - 進行中：`accent_color: 0x00b5d8`（46552）、標題 `⚡ {world}　緊急事件{進行中|預告}`、內文 `**{when}**，持續約 20 分鐘。`
-  - 預告：`accent_color: 0xb58900`（11886848）、標題 `⚡ {world}　緊急事件預告`、內文 `遊戲內已出現預兆通告，**再過幾分鐘就會開始**。`
+  - 進行中：`accent_color: 0x00b5d8`（＝46552）、標題 `⚡ {world}　緊急事件{進行中|預告}`、內文 `**{when}**，持續約 20 分鐘。`
+  - 預告：`accent_color: 0xb58900`（＝11897088；⚠️ 樣本腳本誤用 11886848＝`0xb56100`，實作以既有 embed 色 `0xb58900` 為準）、標題 `⚡ {world}　緊急事件預告`、內文 `遊戲內已出現預兆通告，**再過幾分鐘就會開始**。`
   - 第三行一律 `-# ` 開頭的 subtext（進行中＝`依回報顯示，實際以遊戲內為準`；預告＝`實際開始時會再通知一次`）
   - 按鈕列：`看事件`（無 emoji）／`✅ 我也看到了`／`🚫 查無此事`，全部 `style: 5`、**無 `custom_id`**
   - 訊息層 `flags: 32768`、**不得有 `embeds`／`content`**
 
   ⚠️ 既有的「不揭露 `source`」鐵則不變；`when` 的計算邏輯（`mins`／`已經開始`）原封不動搬過去，**不順手改文案**。
 
-- [ ] **Step 3: 新增 `legacyEmbedPayload(ev, now)`**
+- [x] **Step 3: 新增 `legacyEmbedPayload(ev, now)`**
 
   退回路徑（spec §3.3）。形狀＝原本的純 embed ＋ `embed.url` ＋ description 末尾三段 markdown 連結：
   `[看事件](…)　·　[✅ 我也看到了](…)　·　[🚫 查無此事](…)`。
   **URL 一律呼叫 `eventUrl()`**，不得另行拼字串——兩份 payload 的連結必須同源，否則退回版會悄悄指到錯的地方。
 
-- [ ] **Step 4: 測試（`worker/test/logic.test.mjs`，純函式層 +6）**
+- [x] **Step 4: 測試（`worker/test/logic.test.mjs`，純函式層 +6）**
 
   1. 三顆按鈕的 `url` 都含正確 `ev.id`，且 confirm／dispute **不相同**。
   2. 全部 URL 以 `https://cosmic.xivtc.com/` 開頭，**不出現 `pages.dev`**。
@@ -74,14 +74,14 @@ date: 2026-08-05
   5. **預告與進行中的按鈕列逐顆 url 相同**（只有文案／`accent_color` 不同）——不是只比數量。
   6. `legacyEmbedPayload()` 同樣含三條投票連結，且**與 `discordPayload()` 的 url 逐條相等**。
 
-- [ ] **Step 5: 驗證**
+- [x] **Step 5: 驗證**
 
   ```bash
   cd worker && pnpm test:logic        # 27 → 33，全綠
   ```
   **恆綠自我驗證**（本 repo 慣例）：把 `dispute` 的 `eventUrl` 參數改成 `confirm` → 斷言 1 必須轉紅並指名；還原即綠。
 
-- [ ] **Step 6: Commit** — `feat(worker): 緊急事件通知改 Components V2 Container ＋ 深連結（B-024 Task 1）`
+- [x] **Step 6: Commit** — `feat(worker): 緊急事件通知改 Components V2 Container ＋ 深連結（B-024 Task 1）`
 
 ---
 
@@ -97,7 +97,7 @@ date: 2026-08-05
 
 **Blocked by:** Task 1（消費它的兩支 payload 函式）
 
-- [ ] **Step 1: `_fanout` 準備兩份 payload**
+- [x] **Step 1: `_fanout` 準備兩份 payload**
 
   ```js
   const payload = JSON.stringify(L.discordPayload(ev, now));
@@ -105,13 +105,13 @@ date: 2026-08-05
   … this._send(t, payload, legacy)
   ```
 
-- [ ] **Step 2: `_send` 打帶 query 的網址**
+- [x] **Step 2: `_send` 打帶 query 的網址**
 
   `fetch(target.webhookUrl + '?with_components=true', …)`。
   ⚠️ **這個 query 是必要的**：probe 2 實測不帶就整組 components 被**靜默忽略**——訊息照樣 204 送出，但按鈕全部消失、零錯誤訊號。
   ⚠️ query 不影響 `isAllowedWebhook()`（它只比對 hostname），SSRF 防線不變；且**白名單驗的仍是原始 `target.webhookUrl`**，不要改成驗拼接後的字串。
 
-- [ ] **Step 3: 400 退回重送一次**
+- [x] **Step 3: 400 退回重送一次**
 
   ```js
   if (res.ok) { …清 failCount…; return; }
@@ -128,7 +128,7 @@ date: 2026-08-05
   **只退一次、不做指數重試**——400 是確定性拒絕，重送同一份 payload 沒有意義（且既有註解已言明本路徑刻意不重試，不要在這裡開例外）。
   退回時**不帶** `?with_components=true`（legacy 沒有 components，帶了無意義）。
 
-- [ ] **Step 4: 測試（`worker/test/http.test.ts`，整合層 +4）**
+- [x] **Step 4: 測試（`worker/test/http.test.ts`，整合層 +4）**
 
   沿用既有 `stubDiscord(status)`：
   1. 正常路徑：`stubDiscord(204)` → 收到的 `url` **含 `with_components=true`**、body 有 `flags: 32768`。
@@ -138,17 +138,17 @@ date: 2026-08-05
 
   > `stubDiscord` 目前只吃單一 status；需要「第一次 400、第二次 204」的話，Build 時擴充成可傳序列（`stubDiscord([400, 204])`），**保持既有單參數呼叫相容**。
 
-- [ ] **Step 5: 驗證**
+- [x] **Step 5: 驗證**
 
   ```bash
-  cd worker && pnpm test              # 56 → 60，全綠
+  cd worker && pnpm test              # 56 → 59，全綠
   pnpm cf:deploy:dry                 # 0 error
   ```
   **恆綠自我驗證**：把 `res.status === 400` 改成 `=== 999` → 斷言 2 必須轉紅；還原即綠。
 
-- [ ] **Step 6: Commit** — `feat(worker): fan-out 帶 with_components ＋ V2 被拒時退回 embed（B-024 Task 2）`
+- [x] **Step 6: Commit** — `feat(worker): fan-out 帶 with_components ＋ V2 被拒時退回 embed（B-024 Task 2）`
 
-- [ ] **Step 7: STOP — 由 Owner 執行 `pnpm cf:deploy`**（worker 與 Pages 部署脫鉤，不 deploy 則線上仍是舊 payload）
+- [x] **Step 7: STOP — 由 Owner 執行 `pnpm cf:deploy`**（worker 與 Pages 部署脫鉤，不 deploy 則線上仍是舊 payload）
 
 ---
 
@@ -164,7 +164,7 @@ date: 2026-08-05
 
 **Blocked by:** 無（可與 Task 1／2 平行；URL 形狀已由 spec §D3 固定）
 
-- [ ] **Step 1: 開場讀參數並記進狀態（不是直接動 DOM）**
+- [x] **Step 1: 開場讀參數並記進狀態（不是直接動 DOM）**
 
   ```js
   // 深連結意圖存成狀態，不是一次性 DOM 操作：render() 每秒重建列，
@@ -174,11 +174,11 @@ date: 2026-08-05
   來源＝`new URLSearchParams(location.search)`；`ev` 必須是**正整數**（`/^\d+$/`），`vote` 只認 `confirm`／`dispute`，其餘一律忽略。
   讀完立刻 `history.replaceState` 清掉 `?ev`／`?vote`（保留其他參數與 hash）——避免使用者重整時又跳一次確認列。
 
-- [ ] **Step 2: 事件列加 `data-ev-id` 並套高亮**
+- [x] **Step 2: 事件列加 `data-ev-id` 並套高亮**
 
   `renderRow()` 建立 `li` 時 `li.dataset.evId = ev.id`；`render()` 尾端依 `deepLink.evId` 找到該列加 `.cos-em__hl` class 並 `scrollIntoView({ block: 'center' })`（只在**第一次**找到時捲，之後只維持 class——每秒重捲會把使用者鎖在原地）。
 
-- [ ] **Step 3: 確認列**
+- [x] **Step 3: 確認列**
 
   在事件列表上方插入 `#em-deeplink`（`hidden` 由 class 控制，⚠️ 本 repo 踩過 `[hidden]` 被 `display:flex` 蓋掉，見 portal `_DESIGN-SYSTEM`）：
 
@@ -190,11 +190,11 @@ date: 2026-08-05
   - 「取消」只清 `deepLink`，不投票。
   - 找不到該事件（已結束／已下架／id 不存在）→ 顯示「這則通報已經結束了」並在 5 秒後自動收起，**不白屏、不報錯**。
 
-- [ ] **Step 4: CSS**
+- [x] **Step 4: CSS**
 
   `.cos-em__hl`：一圈短暫外框（用既有 token，例如 `outline: 2px solid var(--color-accent)` + 淡背景），2 秒後靠 class 移除或直接維持到確認列關閉。確認列本身用 `.codex-*` 既有元件，不自造 panel。
 
-- [ ] **Step 5: 驗證（本 repo 前端零自動化測試，B-021 已列管）**
+- [x] **Step 5: 驗證（本 repo 前端零自動化測試，B-021 已列管）**
 
   手動逐條（本機 svc dev server，改 JS 後**必硬重載**）：
   1. `?ev=<進行中事件id>&vote=confirm#emergency` → 落在緊急分頁、該列高亮、確認列文案為「附議」。
@@ -206,7 +206,7 @@ date: 2026-08-05
 
   把第 1、4 條寫進 B-021 條目當第一批自動化案例（不在本輪實作測試框架）。
 
-- [ ] **Step 6: Commit** — `feat(cosmic): Discord 通知按鈕的深連結收端 ＋ 就地確認投票（B-024 Task 3）`
+- [x] **Step 6: Commit** — `feat(cosmic): Discord 通知按鈕的深連結收端 ＋ 就地確認投票（B-024 Task 3）`
 
 ---
 
@@ -217,8 +217,215 @@ date: 2026-08-05
 
 **Blocked by:** Task 1、2、3
 
-- [ ] **Step 1: CHANGELOG 一則**（使用者看得到的變化：通知可直接點進事件並附議）
-- [ ] **Step 2: BACKLOG B-024 打勾**，尾巴追加實測結論（含「探測六發的結果」與「⧉ 無法移除」兩條，免得日後重跑）
-- [ ] **Step 3: spec 與本檔 front-matter 同翻 `done`**
-- [ ] **Step 4: AGENTS.md 測試基線更新**（27→33 純函式、56→60 整合）
-- [ ] **Step 5: Commit** — `docs(B-024): Record — 通知深連結上線`
+- [x] **Step 1: CHANGELOG 一則**（使用者看得到的變化：通知可直接點進事件並附議）
+- [x] **Step 2: BACKLOG B-024 打勾**，尾巴追加實測結論（含「探測六發的結果」與「⧉ 無法移除」兩條，免得日後重跑）
+- [x] **Step 3: spec 與本檔 front-matter 同翻 `done`**
+- [x] **Step 4: AGENTS.md 測試基線更新**（27→33 純函式、56→60 整合）
+- [x] **Step 5: Commit** — `docs(B-024): Record — 通知深連結上線`
+
+---
+
+## 外審 triage（前閘）
+
+<!-- external-gate:begin v=4 phase=pre cycle=2026-08-05-B-024-emergency-discord-deeplink fp=sha256:adcd9a3c42df71f6edf600b50c1d416d61e003f71bf53078f0e3aa4c9ec423c1 -->
+<!-- external-gate:meta
+{
+  "v": 4,
+  "phase": "pre",
+  "cycle": "2026-08-05-B-024-emergency-discord-deeplink",
+  "override": null,
+  "overrideActual": null,
+  "materialSha256": "e60d9ac8c7f6dd588f6ce54bc7d18bd4c93ee9528220c6c3c868fd16d90efdb9",
+  "diffBase": null,
+  "diffSha256": null,
+  "specSha256": "6077122e30ee66d8361fa010355fa92c178ea3a7120a956933a9c43a922aacc5",
+  "reviewedTree": "403fc737f1222bc150e16ead5824186e5fab27dc",
+  "remediation": null,
+  "round": null,
+  "sourceFp": null,
+  "baseSha": null,
+  "reviewHeadSha": null,
+  "rangeCommits": null,
+  "outputsFile": "docs/plans/2026-08-05-B-024-emergency-discord-deeplink-plan.reviews.md",
+  "reviewers": [
+    {
+      "cli": "codex",
+      "model": "gpt-5.6-sol",
+      "argv": [
+        "codex.EXE",
+        "exec",
+        "-m",
+        "gpt-5.6-sol",
+        "-c",
+        "model_reasoning_effort=high",
+        "-c",
+        "project_doc_max_bytes=0",
+        "--skip-git-repo-check",
+        "--sandbox",
+        "read-only",
+        "--cd",
+        "<tmp>"
+      ],
+      "startedAt": "2026-08-05T03:12:24.860Z",
+      "finishedAt": "2026-08-05T03:15:05.464Z",
+      "exitCode": 0,
+      "outputBytes": 4550,
+      "outputSha256": "951095a6e536891e598c892bcb3b0855956e98c68664a2858e2a8deb6e15f9cc"
+    }
+  ]
+}
+-->
+
+
+| # | CLI/模型 | 開始 (UTC) | 耗時 | exit | 輸出 bytes | sha256 |
+|---|---|---|---|---|---|---|
+| 1 | codex/gpt-5.6-sol | 2026-08-05T03:12:24.860Z | 161s | 0 | 4550 | `951095a6e536…` |
+
+命令逐字：
+```text
+codex: codex.EXE exec -m gpt-5.6-sol -c model_reasoning_effort=high -c project_doc_max_bytes=0 --skip-git-repo-check --sandbox read-only --cd <tmp>
+```
+
+- 1. codex 原文見 `docs/plans/2026-08-05-B-024-emergency-discord-deeplink-plan.reviews.md` §adcd9a3c42df-1（sha256:951095a6e536…）
+<!-- external-gate:end -->
+
+### triage 結論（執行者填，不由工具產生）
+
+> ⚠️ **本輪前閘是 post-hoc 補跑的**：Build 已完成、四個 commit 已落地，才被 pre-commit gate 5（R9）擋下 Record commit 而發現漏跑。**這是流程缺失，記在這裡不掩飾**——外審看到的因此是全部勾選、`status: done` 的版本，finding ① 正是被這個狀態誤導的產物。下次執行風險中／高的 cycle，Gate 1 拍板後、動第一行 code 前就要跑。
+
+- **① 【致命】plan 把未開始的工作標成已完成** — ❌ **駁回（前提不成立）**。外審被告知「實作尚未開始」，事實相反：勾選與 `status: done` 對應四個已落地的 commit（`4c0bbae`／`a6cf105`／`3beb3e1`／`403fc73`），不是預先勾選。**這條真正的價值在上面那段警語**：它精準指出「審的與做的不是同一個時間點」。
+
+- **② 【嚴重】部署順序：worker 先上會讓按鈕指向沒有收端的正式站** — ✅ **採納**。前端與 worker 部署完全脫鉤（Pages 走 git push、worker 走 `wrangler deploy`）⇒ 先 deploy worker 的話，使用者點按鈕會落在**沒有 `?ev` 收端**的線上版：畫面不會壞，但確認列不出現、高亮沒有，等於按鈕沒作用**且無錯誤訊號**。交付順序已明定：先 push（Pages 自動部署）→ 線上 smoke test 深連結 → 再 deploy worker → 發一則測試通知驗三顆按鈕。
+
+- **③ 【嚴重】資料未載入時把有效事件誤判為「已結束」** — ✅ **採納（Build 中已自行發現並修）**。`renderDeepLink()` 開頭有 `if (!state) return`。**殘留邊界**：曾成功載入、之後後端掛掉 ⇒ `state` 是舊快照，此時對「快照裡沒有的 id」仍會說已結束。判斷為**可接受**——那代表它在我們最後一次看到世界時就不存在，且狀態列本身會顯示連線異常。記為已知邊界，不另做。
+
+- **④ 【嚴重】確認列位置與捲動策略衝突** — ❌ **駁回（版面前提不同）**。本站事件列是**固定七列**（七個伺服器各一列，不會增長），整份表約 250px、與確認列同屏；瀏覽器實測截圖可證兩者同時在畫面內。外審假設的「目標事件在列表末段、確認列被捲出視窗」在七列固定版面下不會發生。日後若改成可增長列表，這條要重新評估。
+
+- **⑤ 【嚴重】「與樣本逐欄一致」無可執行驗證，且 plan 內顏色值矛盾** — ✅ **採納（實測確認外審算對）**：`0xb58900` ＝ **11897088**，我在 plan 與測試樣本寫的 `11886848` 其實是 `0xb56100`。**實作是對的**（`logic.js` 用 `0xb58900`＝原本 embed 的既有色，符合「原封不動搬過去」），錯的是 plan 註記與 Owner 驗收過的那則樣本 ⇒ **Owner 看到的預告橘色與正式版差一點點**，已於交付說明告知。plan 註記已修正。至於整包 golden test：**刻意不加**——那會把每次文案微調變成假紅，維護成本高於它擋到的東西；現有六條覆蓋 url／flags／形狀／兩分支按鈕列一致性。
+
+- **⑥ 【嚴重】退回路徑與第一發共用 AbortController／timer** — ✅ **採納，已修**。原寫法讓退回那一發繼承第一發燒掉的時間：第一發拖到 3.9 秒才回 400 時，退回只剩 0.1 秒就被 abort ⇒ **正好在最需要它的時候失效**，症狀還是「退回也失敗」，看不出是逾時被砍。改成 `postWebhook()` 每次呼叫自建 controller／timer。
+
+- **⑦ 【一般】字串相接 `?with_components=true` 會破壞含 query 的 webhook URL** — ✅ **採納，已修**。查證 `isAllowedWebhook()` 只驗 scheme／hostname／長度，**沒有**「不得含 query」這條不變量 ⇒ 使用者貼進帶 `?` 的網址時第二個 `?` 讓參數解析不出來，退化成「204 但按鈕全部消失」的靜默失敗。改用 `new URL()` + `searchParams.set()`（`withComponents()`）。
+
+- **⑧ 【一般】view-only 深連結的高亮沒有結束條件** — ❌ **駁回（有自然終止）**。`?ev` only 時保留 `deepLink` 是**刻意的**（狀態清掉就沒東西可標，「看事件」會變成點了什麼都沒發生）；高亮綁在 `[data-ev-id]` 上，事件結束後該列不再帶這個屬性 ⇒ 高亮自然消失。加計時器只會多一個會錯的條件。
+
+- **⑨ 【一般】`fanout_v2_reject` 無斷言；canonicalTest 未含 `test:logic`** — ✅ **前半採納，已補**（退回案例讀 `GET /admin/stats` 斷言該桶 ≥ 1，並以移除 `_bump` 反證轉紅）。❌ **後半駁回**：`pnpm test` 的定義就是 `vitest run && node --test test/logic.test.mjs`（`worker/package.json`），純函式測試本來就在裡面。
+
+---
+
+## 外審 triage（後閘）
+
+<!-- external-gate:begin v=4 phase=post cycle=2026-08-05-B-024-emergency-discord-deeplink fp=sha256:fd77bc2ff01a903edad9aab7871936ea8427831c971e3c5ff6d6c423b17082b6 -->
+<!-- external-gate:meta
+{
+  "v": 4,
+  "phase": "post",
+  "cycle": "2026-08-05-B-024-emergency-discord-deeplink",
+  "override": null,
+  "overrideActual": null,
+  "materialSha256": "7fc9679569019bf144e305a53b58db3325f99a89dd1bda3c3379696409c8386e",
+  "diffBase": "bc5de49",
+  "diffSha256": "6e5c664df8982df0aee2b796d41e03995fa114a410a910b70d23544bcee830e3",
+  "specSha256": "6077122e30ee66d8361fa010355fa92c178ea3a7120a956933a9c43a922aacc5",
+  "reviewedTree": "403fc737f1222bc150e16ead5824186e5fab27dc",
+  "remediation": null,
+  "round": null,
+  "sourceFp": null,
+  "baseSha": "bc5de49d13747b59972f53618dd7da30d3e86471",
+  "reviewHeadSha": "403fc737f1222bc150e16ead5824186e5fab27dc",
+  "rangeCommits": [
+    {
+      "sha": "403fc737f1222bc150e16ead5824186e5fab27dc",
+      "subject": "fix(cosmic): 確認列改用真的 token（--color-surface-raised 不存在，fallback 等於寫死色）",
+      "files": [
+        "css/style.css"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "3beb3e1efe6dcaa51c51db8ca49cc79529d1f91f",
+      "subject": "feat(cosmic): Discord 通知按鈕的深連結收端 ＋ 就地確認投票（B-024 Task 3）",
+      "files": [
+        "css/style.css",
+        "index.html",
+        "modules/emergency-view.js"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "a6cf10560c82b4431b83f5ee2d98484810813afe",
+      "subject": "feat(worker): fan-out 帶 with_components ＋ V2 被拒時退回 embed（B-024 Task 2）",
+      "files": [
+        "worker/src/events-do.js",
+        "worker/test/http.test.ts"
+      ],
+      "omittedCount": 0
+    },
+    {
+      "sha": "4c0bbae850d50f03a3bc2dccd0f73d8e52b7b9a0",
+      "subject": "feat(worker): 緊急事件通知改 Components V2 Container ＋ 深連結（B-024 Task 1）",
+      "files": [
+        "worker/src/logic.js",
+        "worker/test/logic.test.mjs"
+      ],
+      "omittedCount": 0
+    }
+  ],
+  "outputsFile": "docs/plans/2026-08-05-B-024-emergency-discord-deeplink-plan.reviews.md",
+  "reviewers": [
+    {
+      "cli": "codex",
+      "model": "gpt-5.6-sol",
+      "argv": [
+        "codex.EXE",
+        "exec",
+        "-m",
+        "gpt-5.6-sol",
+        "-c",
+        "model_reasoning_effort=high",
+        "-c",
+        "project_doc_max_bytes=0",
+        "--skip-git-repo-check",
+        "--sandbox",
+        "read-only",
+        "--cd",
+        "<tmp>"
+      ],
+      "startedAt": "2026-08-05T03:20:31.732Z",
+      "finishedAt": "2026-08-05T03:22:48.136Z",
+      "exitCode": 0,
+      "outputBytes": 3171,
+      "outputSha256": "edc4959bc22085269bb07f24b64fae4e264cdeddd5259ff9efb2fbcdace1b0c2"
+    }
+  ]
+}
+-->
+
+
+| # | CLI/模型 | 開始 (UTC) | 耗時 | exit | 輸出 bytes | sha256 |
+|---|---|---|---|---|---|---|
+| 1 | codex/gpt-5.6-sol | 2026-08-05T03:20:31.732Z | 136s | 0 | 3171 | `edc4959bc220…` |
+
+命令逐字：
+```text
+codex: codex.EXE exec -m gpt-5.6-sol -c model_reasoning_effort=high -c project_doc_max_bytes=0 --skip-git-repo-check --sandbox read-only --cd <tmp>
+```
+
+- 1. codex 原文見 `docs/plans/2026-08-05-B-024-emergency-discord-deeplink-plan.reviews.md` §fd77bc2ff01a-1（sha256:edc4959bc220…）
+<!-- external-gate:end -->
+
+### triage 結論（執行者填，不由工具產生）
+
+> ⚠️ **本次後閘的受審區間是 `bc5de49..HEAD`，而前閘採納的三處修正當時還在工作區（Record commit 被 gate 5 擋著，連帶把它們一起卡住）。** 所以 finding ①②「diff 裡沒有那些修正」**在受審材料上是對的**——它們現在隨本次 commit 一起落地。這正是後閘該做的事：只認提交，不認敘述。
+
+- **① 【嚴重】退回仍共用第一發的逾時計時** — ✅ **判定正確（受審區間內確實沒有），修正已於本次 commit 落地**。`_send()` 現在走 `postWebhook()`，每次 POST 自建 controller／timer。**另補了測試**：`stubDiscord` 收集 `init.signal`，斷言退回那一發的 signal **不是同一個物件**——比「真的等 4 秒」快且直接釘住不變量。回流注入（改回共用 signal）已驗證轉紅。
+
+- **② 【一般】`with_components=true` 仍以字串附加** — ✅ **同上，修正已落地**。`withComponents()` 用 `new URL()` + `searchParams.set()`。
+
+- **③ 【嚴重】400 fallback 的關鍵條件沒被測試真正證明** — ✅ **採納，已補**。外審說得對：**單次 `_fail()` 本來就不會把訂閱標成 broken**（要連續 4 次），所以原本只斷言 `broken === false` 等於什麼都沒證明。現在直接 `runInDurableObject` 讀 `failCount` 斷言 `=== 0`，並斷言 `fanout_v2_reject` 分桶 ≥ 1（移除 `_bump` 反證會轉紅）。**「延遲 400」的計時測試不做**——那會讓單一案例耗掉 4 秒實時，而 signal 身分斷言已經釘住同一個不變量。
+
+- **④ 【嚴重】前端與手機端手動驗收沒有完成證據** — ✅ **採納**。桌面深連結五條路徑我用假後端＋真瀏覽器實測過（附議／否認確認列、送出、取消、不存在事件、垃圾參數），但 **spec §5 要求的另外兩項確實沒有**：① **手機 Discord app 的 Container 渲染**（樣本是桌面截圖）② **正式站端到端**（部署後由真通知點進來）。**不宣稱這兩項已驗**——Record 與 §6 都明載未覆蓋，交付說明列為 Owner 部署後待辦。
+
+- **⑤ 【一般】view-only 高亮不是 spec 說的「短暫高亮」** — ✅ **採納文件面（改 spec，不改實作）**。實作維持到事件結束是刻意的：高亮綁 `[data-ev-id]`，事件一結束該屬性就沒了 ⇒ 自然終止；而 `?ev` only 沒有確認列可關，計時器一到就什麼痕跡都不剩＝點了沒反應。spec D2 已加更正區塊，措辭以實作為準。
+
+- **⑥ 【嚴重】Task 4／B-021 勾選但不在受審區間** — ✅ **判定正確**。Record 那批（CHANGELOG／BACKLOG／AGENTS 基線／spec／plan）是被 gate 5 R9 擋住才沒進 commit，本次一併落地。**B-021 的深連結案例仍未寫入**（那是另一個條目的工作），該勾選已取消，改記在 B-021 條目。

@@ -63,14 +63,15 @@ async function clearWorld(world: string) {
  * 序列用完就沿用最後一個值。單參數呼叫維持原語意。
  */
 function stubDiscord(status: number | number[] = 204) {
-  const calls: { url: string; body: any }[] = [];
+  const calls: { url: string; body: any; signal: any }[] = [];
   const seqStatus = Array.isArray(status) ? status : [status];
   let n = 0;
   const real = globalThis.fetch;
   vi.stubGlobal('fetch', async (input: any, init: any) => {
     const url = typeof input === 'string' ? input : input.url;
     if (url.includes('discord')) {
-      calls.push({ url, body: JSON.parse(init.body) });
+      // `signal` 一起收：退回那一發必須有**自己的**逾時器，否則會繼承第一發燒掉的時間
+      calls.push({ url, body: JSON.parse(init.body), signal: init.signal });
       const s = seqStatus[Math.min(n++, seqStatus.length - 1)];
       return new Response(null, { status: s });
     }
@@ -633,10 +634,29 @@ describe('fan-out', () => {
     expect(calls[1].body.embeds[0].description).toContain('vote=confirm');
     expect(calls[1].body.embeds[0].description).toContain('vote=dispute');
 
+    // 退回那一發必須帶**不同的** AbortSignal＝各自的 4 秒逾時器（外審 post 閘 ①）。
+    // 共用的話，第一發拖到 3.9 秒才回 400 時退回只剩 0.1 秒就被 abort——正好在最需要它時失效。
+    // 直接比 signal 身分，不必真的等 4 秒把測試變成計時器測試。
+    expect(calls[1].signal).toBeDefined();
+    expect(calls[1].signal).not.toBe(calls[0].signal);
+
     // **關鍵**：退回成功不得計失敗。否則 Discord 一改政策，全體訂閱者會被誤標成
     // 「webhook 壞掉」，而他們的 webhook 根本沒問題。
+    // ⚠️ 只斷言 `broken === false` **證不了這件事**（單次失敗本來就不會 broken，
+    // 要連續 4 次）——必須直接讀 `failCount`（外審 post 閘 ③）。
+    const failCount = await runInDurableObject(doStub(), (inst: any) =>
+      inst.sql.exec('SELECT failCount FROM subs WHERE uuid = ?', u).toArray()[0]?.failCount);
+    expect(failCount).toBe(0);
+
     const got = await (await SELF.fetch(`https://x/sub?uuid=${u}`, { headers: { Origin: ALLOWED } })).json() as any;
     expect(got.broken).toBe(false);
+
+    // 分桶要真的記下來：這是「Discord 改了政策」與「使用者 webhook 壞了」的唯一分辨點，
+    // 沒有它，退回路徑生效與否在營運上完全看不出來（外審 2026-08-05）
+    const stats = await (await SELF.fetch('https://x/admin/stats', {
+      headers: { Authorization: 'Bearer admin-secret' },
+    })).json() as any;
+    expect(stats.fanout_v2_reject ?? stats.stats?.fanout_v2_reject).toBeGreaterThanOrEqual(1);
 
     await put('/sub', { uuid: u, worlds: [], webhookUrl: '' });
     await revoke(eventId);
