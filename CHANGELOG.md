@@ -2,6 +2,22 @@
 
 > 日期段落制（cycle 收官為段）；條目含人話「為什麼」，不從 git log 自動生成。格式見 DEVLOOP §4.3。
 
+## 2026-08-05 — 展平 ES module 載入瀑布（B-025）
+
+接在同日「各伺服器現況」那則後面：那則拆掉的是**串行鏈的最後一段**（現況不必等四份 JSON），這則拆的是**中間那段**——「app.js → 20 支 module」本身也是逐層的。
+
+**病灶**：module 的依賴只有在父模組下載並解析完之後才會被發現，孫層又要等子層。同型病灶在 market 站量到 production 排成 5 波（0→300→360→420→540ms），同一批檔平行抓只要 150ms。
+
+**修法**：`index.html` 加 19 條 `<link rel="modulepreload">`（`modules/app.js` 的靜態 import 圖），瀏覽器解析 HTML 時就一次全部平行抓。純新增標籤，不動邏輯、不改模組求值順序。
+
+⚠️ **清單生成不手貼**：19 條 `<link>` 是依賴清單的第二份複本，漂掉的症狀是**開頁慢一點**——無錯誤、無警告、build 全綠。由 `tools/gen-modulepreload.mjs` 從 import 圖推導，哨兵機械比對。
+
+⚠️ **生成器與哨兵是 13 站樣板，各站只准差一行**（`export const ENTRY`，本站是 `modules/app.js`、market 是 `app.js`）。入口名由生成器 export 給測試用，不在測試裡再寫一次——寫兩次等於副本間差兩處，抄的時候會漏。哨兵檔本身與 market 版**逐字節相同**。
+
+### Added
+
+- `tools/gen-modulepreload.mjs`／`tests/modulepreload-drift.test.mjs` — 自 market（B-081）複製。四條反向斷言：集合雙向相等／入口不得自我預載／href 對應檔案須存在／區塊須與生成器輸出逐字節相同。
+
 ## 2026-08-05 — 「各伺服器現況」不再排在四份離線 JSON 後面
 
 **為什麼**：Owner 回報「緊急事件的各伺服器現況要等很久才展開」。實測後**後端不是慢的那個**——`/state` 只花 25–80 ms，但要到頁面載入 **400 ms 之後**才輪得到它發請求：它寫在 `await Promise.all([四份靜態 JSON])` 之後，於是被排到「HTML → app.js → 20 支 module → 4 份 JSON（含 470 KB missions）」這條**四層串行鏈**的最尾端，冷快取／手機網路下每一層都是一個 RTT。而現況跟那四份離線資料**沒有任何依賴關係**。
