@@ -98,6 +98,20 @@ export class CosmicEventsDO extends DurableObject {
    * `missionIds`，組別留空——寧可留白也不寫一個「比較像」的答案。
    */
   _fillFromBoard(eventId, input, now) {
+    // 變體已經有定案的對應 ⇒ **光靠通告就判得出組**，不必等任務板。
+    // 這是 B-023 解出來之後才可能的路：2026-08-05 伊弗利特磁暴同時拿到
+    // `storm-b` 與任務板的 α 組 ⇒ 對應定案 ⇒ 之後同天氣的事件只要抓到通告就夠了。
+    if (input.variant) {
+      const known = this.sql
+        .exec('SELECT groupKey FROM variant_map WHERE variant = ?', input.variant).toArray();
+      if (known.length) {
+        this.sql.exec(
+          'UPDATE events SET groupKey = COALESCE(groupKey, ?) WHERE id = ?',
+          known[0].groupKey, eventId,
+        );
+      }
+    }
+
     const ids = input.missionIds;
     if (!Array.isArray(ids) || ids.length === 0) return;
     const rows = this.sql

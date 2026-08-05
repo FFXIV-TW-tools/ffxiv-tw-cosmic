@@ -402,6 +402,24 @@ describe('事件變體（α／β）', () => {
     await revoke(st.events[w].id);
   });
 
+  it('對應定案後，光靠通告變體就判得出組（不必開任務板）', async () => {
+    stubDiscord();
+    const w = devStages.worlds[4];
+    await clearWorld(w);
+    // 先人工定案一次對應（等同 2026-08-05 伊弗利特那次由證據解出的結果）
+    await SELF.fetch('https://x/admin/variant-map', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer admin-secret', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ variant: 'storm-b', group: 'storm-α' }),
+    });
+    // 之後的事件只帶變體、**完全沒有 missionIds**
+    await post('/report',
+      { world: w, weatherId: 196, phase: 'start', variant: 'storm-b' }, PLUG);
+    const st = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    expect(st.events[w].group).toBe('storm-α');
+    await revoke(st.events[w].id);
+  });
+
   it('phase 拼錯不再被靜默當成 start', async () => {
     const r = await post('/report',
       { world, weatherId: 196, missionIds: [518], phase: 'strat' }, PLUG);
