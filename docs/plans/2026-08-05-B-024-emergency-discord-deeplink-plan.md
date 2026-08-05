@@ -1,5 +1,5 @@
 ---
-status: done
+status: implementing
 type: feature
 cycle: 2026-08-05-B-024-emergency-discord-deeplink
 date: 2026-08-05
@@ -194,7 +194,7 @@ date: 2026-08-05
 
   `.cos-em__hl`：一圈短暫外框（用既有 token，例如 `outline: 2px solid var(--color-accent)` + 淡背景），2 秒後靠 class 移除或直接維持到確認列關閉。確認列本身用 `.codex-*` 既有元件，不自造 panel。
 
-- [x] **Step 5: 驗證（本 repo 前端零自動化測試，B-021 已列管）**
+- [~] **Step 5: 驗證（本 repo 前端零自動化測試，B-021 已列管）** — 桌面五條已實測；**手機 Discord 內建瀏覽器那條未做**（外審 post 閘 ①）
 
   手動逐條（本機 svc dev server，改 JS 後**必硬重載**）：
   1. `?ev=<進行中事件id>&vote=confirm#emergency` → 落在緊急分頁、該列高亮、確認列文案為「附議」。
@@ -219,7 +219,7 @@ date: 2026-08-05
 
 - [x] **Step 1: CHANGELOG 一則**（使用者看得到的變化：通知可直接點進事件並附議）
 - [x] **Step 2: BACKLOG B-024 打勾**，尾巴追加實測結論（含「探測六發的結果」與「⧉ 無法移除」兩條，免得日後重跑）
-- [x] **Step 3: spec 與本檔 front-matter 同翻 `done`**
+- [~] **Step 3: spec 與本檔 front-matter 同翻 `done`** — **退回 `implementing`**：部署後驗收（手機 Container／正式站端到端）未完成，cycle 不收官
 - [x] **Step 4: AGENTS.md 測試基線更新**（27→33 純函式、56→60 整合）
 - [x] **Step 5: Commit** — `docs(B-024): Record — 通知深連結上線`
 
@@ -315,7 +315,7 @@ codex: codex.EXE exec -m gpt-5.6-sol -c model_reasoning_effort=high -c project_d
 
 ## 外審 triage（後閘）
 
-<!-- external-gate:begin v=4 phase=post cycle=2026-08-05-B-024-emergency-discord-deeplink fp=sha256:fd77bc2ff01a903edad9aab7871936ea8427831c971e3c5ff6d6c423b17082b6 -->
+<!-- external-gate:begin v=4 phase=post cycle=2026-08-05-B-024-emergency-discord-deeplink fp=sha256:e2786580d1010e66297594c1753375aa443946bc75e080bbfcdd2ba49920256a -->
 <!-- external-gate:meta
 {
   "v": 4,
@@ -325,15 +325,30 @@ codex: codex.EXE exec -m gpt-5.6-sol -c model_reasoning_effort=high -c project_d
   "overrideActual": null,
   "materialSha256": "7fc9679569019bf144e305a53b58db3325f99a89dd1bda3c3379696409c8386e",
   "diffBase": "bc5de49",
-  "diffSha256": "6e5c664df8982df0aee2b796d41e03995fa114a410a910b70d23544bcee830e3",
+  "diffSha256": "8d9585cbbc837b09e17d41215120b35170387d9ac41c2174b17175ca08f9dd67",
   "specSha256": "6077122e30ee66d8361fa010355fa92c178ea3a7120a956933a9c43a922aacc5",
-  "reviewedTree": "403fc737f1222bc150e16ead5824186e5fab27dc",
+  "reviewedTree": "7fd4a297d667b697321516bd5023e14fcb5ec1bd",
   "remediation": null,
   "round": null,
   "sourceFp": null,
   "baseSha": "bc5de49d13747b59972f53618dd7da30d3e86471",
-  "reviewHeadSha": "403fc737f1222bc150e16ead5824186e5fab27dc",
+  "reviewHeadSha": "7fd4a297d667b697321516bd5023e14fcb5ec1bd",
   "rangeCommits": [
+    {
+      "sha": "7fd4a297d667b697321516bd5023e14fcb5ec1bd",
+      "subject": "fix(worker): 退回路徑自帶逾時 ＋ URL 物件組 query ＋ Record（B-024 外審採納）",
+      "files": [
+        "AGENTS.md",
+        "CHANGELOG.md",
+        "docs/BACKLOG.md",
+        "docs/plans/2026-08-05-B-024-emergency-discord-deeplink-plan.md",
+        "docs/plans/2026-08-05-B-024-emergency-discord-deeplink-plan.reviews.md",
+        "docs/specs/2026-08-05-B-024-emergency-discord-deeplink-design.md",
+        "worker/src/events-do.js",
+        "worker/test/http.test.ts"
+      ],
+      "omittedCount": 0
+    },
     {
       "sha": "403fc737f1222bc150e16ead5824186e5fab27dc",
       "subject": "fix(cosmic): 確認列改用真的 token（--color-surface-raised 不存在，fallback 等於寫死色）",
@@ -391,11 +406,11 @@ codex: codex.EXE exec -m gpt-5.6-sol -c model_reasoning_effort=high -c project_d
         "--cd",
         "<tmp>"
       ],
-      "startedAt": "2026-08-05T03:20:31.732Z",
-      "finishedAt": "2026-08-05T03:22:48.136Z",
+      "startedAt": "2026-08-05T03:27:41.966Z",
+      "finishedAt": "2026-08-05T03:31:24.832Z",
       "exitCode": 0,
-      "outputBytes": 3171,
-      "outputSha256": "edc4959bc22085269bb07f24b64fae4e264cdeddd5259ff9efb2fbcdace1b0c2"
+      "outputBytes": 1826,
+      "outputSha256": "5289c58f0f62664733ed4cd6f754a5be9f452ef1195ed58e57a5c5a0bfc635ec"
     }
   ]
 }
@@ -404,28 +419,22 @@ codex: codex.EXE exec -m gpt-5.6-sol -c model_reasoning_effort=high -c project_d
 
 | # | CLI/模型 | 開始 (UTC) | 耗時 | exit | 輸出 bytes | sha256 |
 |---|---|---|---|---|---|---|
-| 1 | codex/gpt-5.6-sol | 2026-08-05T03:20:31.732Z | 136s | 0 | 3171 | `edc4959bc220…` |
+| 1 | codex/gpt-5.6-sol | 2026-08-05T03:27:41.966Z | 223s | 0 | 1826 | `5289c58f0f62…` |
 
 命令逐字：
 ```text
 codex: codex.EXE exec -m gpt-5.6-sol -c model_reasoning_effort=high -c project_doc_max_bytes=0 --skip-git-repo-check --sandbox read-only --cd <tmp>
 ```
 
-- 1. codex 原文見 `docs/plans/2026-08-05-B-024-emergency-discord-deeplink-plan.reviews.md` §fd77bc2ff01a-1（sha256:edc4959bc220…）
+- 1. codex 原文見 `docs/plans/2026-08-05-B-024-emergency-discord-deeplink-plan.reviews.md` §e2786580d101-1（sha256:5289c58f0f62…）
 <!-- external-gate:end -->
 
 ### triage 結論（執行者填，不由工具產生）
 
-> ⚠️ **本次後閘的受審區間是 `bc5de49..HEAD`，而前閘採納的三處修正當時還在工作區（Record commit 被 gate 5 擋著，連帶把它們一起卡住）。** 所以 finding ①②「diff 裡沒有那些修正」**在受審材料上是對的**——它們現在隨本次 commit 一起落地。這正是後閘該做的事：只認提交，不認敘述。
+> **本輪為 post 第 2 輪**（第 1 輪的三處採納已隨 `7fd4a29` 落地，該輪 findings 因此不再出現在受審 diff 裡）。三條新 findings 全屬**機械可修**（加斷言／改狀態），非架構級 ⇒ 依 DEVLOOP 紅線 8（輪數停損）修正落稿後直接落地，**不開第 3 輪**。
 
-- **① 【嚴重】退回仍共用第一發的逾時計時** — ✅ **判定正確（受審區間內確實沒有），修正已於本次 commit 落地**。`_send()` 現在走 `postWebhook()`，每次 POST 自建 controller／timer。**另補了測試**：`stubDiscord` 收集 `init.signal`，斷言退回那一發的 signal **不是同一個物件**——比「真的等 4 秒」快且直接釘住不變量。回流注入（改回共用 signal）已驗證轉紅。
+- **① 【嚴重】驗收未完成卻把 cycle／Task 3 驗證／B-024 全標完成** — ✅ **採納，已回退**。這條對：`CHANGELOG` 與前一輪 triage **自己就寫著**「手機 Container 與正式站端到端尚未驗」，卻同時把 spec/plan 翻 `done`、BACKLOG 打勾——自相矛盾，而且勾起來之後沒有人會再回頭看。已改：spec/plan 退回 `status: implementing`；Task 3 Step 5 與 Task 4 Step 3 改標 `[~]` 並註明缺什麼；BACKLOG 的 B-024 取消勾選、改寫成「程式碼與桌面驗收完成，待部署後驗收」。**cycle 由 Owner 部署並驗過手機／端到端之後才收官。**
 
-- **② 【一般】`with_components=true` 仍以字串附加** — ✅ **同上，修正已落地**。`withComponents()` 用 `new URL()` + `searchParams.set()`。
+- **② 【一般】標題深連結沒有測試證明** — ✅ **採納，已補**。原六條只看 `buttonsOf()`，而標題是 embed 時代唯一的入口、現在最大的點擊目標，它壞掉不會有任何斷言轉紅。新增案例解析 Text Display 的 `### [文字](url)`，斷言 id／origin／`#emergency`，預告與進行中兩分支都測。純函式 33→**34**。
 
-- **③ 【嚴重】400 fallback 的關鍵條件沒被測試真正證明** — ✅ **採納，已補**。外審說得對：**單次 `_fail()` 本來就不會把訂閱標成 broken**（要連續 4 次），所以原本只斷言 `broken === false` 等於什麼都沒證明。現在直接 `runInDurableObject` 讀 `failCount` 斷言 `=== 0`，並斷言 `fanout_v2_reject` 分桶 ≥ 1（移除 `_bump` 反證會轉紅）。**「延遲 400」的計時測試不做**——那會讓單一案例耗掉 4 秒實時，而 signal 身分斷言已經釘住同一個不變量。
-
-- **④ 【嚴重】前端與手機端手動驗收沒有完成證據** — ✅ **採納**。桌面深連結五條路徑我用假後端＋真瀏覽器實測過（附議／否認確認列、送出、取消、不存在事件、垃圾參數），但 **spec §5 要求的另外兩項確實沒有**：① **手機 Discord app 的 Container 渲染**（樣本是桌面截圖）② **正式站端到端**（部署後由真通知點進來）。**不宣稱這兩項已驗**——Record 與 §6 都明載未覆蓋，交付說明列為 Owner 部署後待辦。
-
-- **⑤ 【一般】view-only 高亮不是 spec 說的「短暫高亮」** — ✅ **採納文件面（改 spec，不改實作）**。實作維持到事件結束是刻意的：高亮綁 `[data-ev-id]`，事件一結束該屬性就沒了 ⇒ 自然終止；而 `?ev` only 沒有確認列可關，計時器一到就什麼痕跡都不剩＝點了沒反應。spec D2 已加更正區塊，措辭以實作為準。
-
-- **⑥ 【嚴重】Task 4／B-021 勾選但不在受審區間** — ✅ **判定正確**。Record 那批（CHANGELOG／BACKLOG／AGENTS 基線／spec／plan）是被 gate 5 R9 擋住才沒進 commit，本次一併落地。**B-021 的深連結案例仍未寫入**（那是另一個條目的工作），該勾選已取消，改記在 B-021 條目。
+- **③ 【一般】含 query 的 webhook URL 沒有回歸案例** — ✅ **採納，已補**。`withComponents()` 雖已改用 `URL`，但測試只斷言「字串包含 `with_components=true`」⇒ **退回字串相接照樣全綠**，等於那個修正沒有守衛。新增整合案例：訂閱 `…?wait=true` 的 webhook，解析實際呼叫 URL 斷言兩個參數同時存在。整合 59→**60**。回流注入（改回字串相接）已驗證精確轉紅。

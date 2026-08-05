@@ -412,3 +412,13 @@ test('深連結：退回版本與主版本的連結逐條相同', () => {
     assert.ok(legacy.embeds[0].description.includes(`(${u})`), `退回版漏了連結：${u}`);
   }
 });
+
+test('深連結：標題本身也是連結（Text Display 裡的 markdown，按鈕測不到它）', () => {
+  // 外審 post 閘 ②：原本六條只檢查 buttonsOf()，標題連結壞掉不會有任何斷言轉紅——
+  // 而標題是 embed 時代唯一的入口，也是現在最大的點擊目標。
+  for (const ev of [EV, started(NOW)]) {
+    const m = textOf(L.discordPayload(ev, NOW)).match(/^### \[[^\]]+\]\(([^)]+)\)/);
+    assert.ok(m, '標題必須是 markdown 連結');
+    assert.equal(m[1], `https://cosmic.xivtc.com/?ev=${ev.id}#emergency`);
+  }
+});

@@ -615,6 +615,28 @@ describe('fan-out', () => {
     await revoke(eventId);
   });
 
+  it('webhook URL 已含 query 時，with_components 用附加的、不覆蓋原本的', async () => {
+    // 外審 post 閘 ③：`isAllowedWebhook()` 沒有「不得含 query」這條不變量，
+    // 而字串相接的寫法會產生第二個 `?` ⇒ 參數解析不出來 ⇒ 退化成
+    // 「204 但按鈕全部消失」的靜默失敗。這個案例釘住不能退回字串相接。
+    const calls = stubDiscord();
+    const world = devStages.worlds[4];
+    await clearWorld(world);
+    const u = uuid();
+    await put('/sub', { uuid: u, worlds: [world], webhookUrl: `${HOOK}?wait=true` });
+
+    const rep = await pluginReport(world);
+    const { eventId } = await rep.json() as any;
+    await vi.waitFor(() => expect(calls.length).toBeGreaterThanOrEqual(1));
+
+    const sent = new URL(calls[calls.length - 1].url);
+    expect(sent.searchParams.get('with_components')).toBe('true');
+    expect(sent.searchParams.get('wait')).toBe('true');   // 原本的參數不得被吃掉
+
+    await put('/sub', { uuid: u, worlds: [], webhookUrl: '' });
+    await revoke(eventId);
+  });
+
   it('Discord 拒收 V2（400）→ 退回純 embed 重送一次，且不算失敗', async () => {
     const calls = stubDiscord([400, 204]);
     const world = devStages.worlds[3];

@@ -37,3 +37,13 @@
 
 【嚴重】Task 4 與 B-021 記錄工作被標成完成，但不在受審提交區間內。依據：plan Task 3 Step 5要求把深連結案例寫入 B-021，Task 4要求修改 `CHANGELOG.md`、`docs/BACKLOG.md`、spec、plan、`AGENTS.md` 並建立 Record commit；commit metadata 僅列出 `4c0bbae`、`a6cf105`、`3beb3e1`、`403fc73`，其變更檔案沒有任何上述文件，整合測試基線更新也未落地。建議動作：不要維持這些勾選；補齊 Record／B-021／基線提交後，以新的 HEAD 重新產生後閘材料。
 ```
+
+### e2786580d101-1 codex sha256:5289c58f0f62664733ed4cd6f754a5be9f452ef1195ed58e57a5c5a0bfc635ec
+
+```text
+【嚴重】驗收尚未完成卻已將 cycle、Task 3 驗證與 B-024 全部標為完成。依據：plan Task 3 Step 5 已勾選，但其中「手機 Discord app 內建瀏覽器」尚未執行；spec §5 還要求手機 Container 排版及正式通知三顆按鈕端到端驗收；`CHANGELOG.md` Notes 與 plan 後閘 triage ④更明載這兩項「尚未驗」。同時 spec／plan 已是 `status: done`、`docs/BACKLOG.md` 的 B-024 已勾選。建議動作：重新開啟驗收狀態；依序部署 Pages、正式站深連結 smoke test、部署 worker，再由手機 Discord 真通知逐顆驗證三個入口並保存結果，完成後才關閉 cycle。
+
+【一般】標題深連結這項明列的驗收條件沒有測試證明。依據：spec §5.1 要求「標題連結與三顆按鈕」都含正確 `ev.id`；`worker/test/logic.test.mjs` 的「三顆按鈕帶正確 id」及網域案例只檢查 `buttonsOf()`，沒有解析 Text Display 標題的 markdown URL。現行 `worker/src/logic.js::discordPayload()` 看起來使用了正確的 `eventUrl(ev.id)`，但相應回歸保護缺失。建議動作：對預告與進行中 payload 斷言標題 URL 的 id、origin 與 `#emergency`，並一併釘住標題、按鈕順序、label、emoji 與兩種 `accent_color`。
+
+【一般】既有 query 的 webhook URL 修正沒有回歸案例，採納的靜默失敗情境仍未被測試證明。依據：`worker/src/events-do.js::withComponents()` 已改用 `URL.searchParams.set()`，但 `worker/test/http.test.ts` 正常案例只使用不含 query 的 `HOOK`，且僅斷言字串包含 `with_components=true`；這無法防止日後退回字串相接而再次破壞既有 query。建議動作：新增原網址含 `?wait=true` 的整合案例，解析實際呼叫 URL 並同時斷言 `wait=true` 與 `with_components=true`。
+```
