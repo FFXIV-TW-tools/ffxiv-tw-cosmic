@@ -157,14 +157,15 @@ export function createEmergencyMap(root, data) {
     const groups = [selected];
     const kind = selected.split('-')[0];
 
-    // 通告文字已移除（見檔頭）。這裡改講**這一組怎麼認出來**——認的依據是任務板上的任務，
-    // 那是玩家看得到、而且不會有兩種解讀的東西。
+    // **不講資料怎麼來的**（Owner 2026-08-05：「不要顯示什麼插件從哪裡讀到的，就說是這張地圖」
+    // ——與 2026-08-02「不顯示回報來源」同一條）。對看的人來說要緊的是「是不是這一組」，
+    // 而不是這個結論怎麼得出來的。
     el.note.replaceChildren();
     const how = document.createElement('span');
     how.className = 'cos-map__ann';
     how.textContent = confirmedGroup === selected
-      ? '✓ 這次的事件就是這一組（插件從任務板讀到的）'
-      : `任務板出現「${GROUP_HINT[selected] ?? ''}」這類任務就是這一組`;
+      ? '✓ 這次的事件就是這一組'
+      : `這一組的任務：${GROUP_HINT[selected] ?? ''}`;
     if (confirmedGroup === selected) how.classList.add('cos-map__confirmed');
     el.note.append(how);
 
