@@ -116,12 +116,20 @@ test('warn 相位不要求 weatherId（預告時天氣還沒翻轉）', () => {
   assert.equal(L.validatePluginReport({ world: W, phase: 'start' }, NOW).reason, 'bad_weather');
 });
 
+/**
+ * Container payload 的文字區（Text Display）。訊息 2026-08-05 改成 Components V2 之後
+ * 已經沒有 `embeds[0].description`，標題與內文都在同一個 content 字串裡。
+ */
+const textOf = (p) => p.components[0].components[0].content;
+/** Container payload 的按鈕列。 */
+const buttonsOf = (p) => p.components[0].components[1].components;
+
 test('Discord：只收到預告時不編造倒數', () => {
-  const warn = L.discordPayload({ world: W, startAt: 0, endAt: NOW + 900, source: 'plugin' }, NOW);
-  const d = warn.embeds[0].description;
+  const warn = L.discordPayload({ id: 7, world: W, startAt: 0, endAt: NOW + 900, source: 'plugin' }, NOW);
+  const d = textOf(warn);
   assert.match(d, /再過幾分鐘/);
   assert.ok(!/\d+ 分鐘後開始/.test(d), '不得出現看起來精確的倒數');
-  assert.match(warn.embeds[0].title, /預告/);
+  assert.match(d, /預告/);
 });
 
 test('webhook 白名單擋掉近似域名與明文', () => {
@@ -244,12 +252,12 @@ test('冷卻只擋開新事件', () => {
 });
 
 test('Discord 訊息：講時間，不揭露來源', () => {
-  const base = { world: W, startAt: NOW + 300, endAt: NOW + 300 + L.EVENT_DURATION };
+  const base = { id: 12, world: W, startAt: NOW + 300, endAt: NOW + 300 + L.EVENT_DURATION };
   const manual = L.discordPayload({ ...base, source: 'manual' }, NOW);
-  assert.match(manual.embeds[0].description, /約 5 分鐘後開始/);
+  assert.match(textOf(manual), /約 5 分鐘後開始/);
 
   const started = L.discordPayload({ ...base, startAt: NOW, source: 'plugin' }, NOW);
-  assert.match(started.embeds[0].description, /已經開始/);
+  assert.match(textOf(started), /已經開始/);
 
   // Owner 2026-08-02：對外一律只講「回報」。兩種來源的訊息必須逐字相同，
   // 否則收訊息的人還是能從措辭反推來源。
@@ -330,4 +338,77 @@ test('任務板只有一般任務時不退件（緊急任務不涉及該職業�
     { world: W, weatherId: 194, phase: 'start', missionIds: [175, 519, 248, 523] }, NOW,
   );
   assert.deepEqual(mix.missionIds, [519, 523]);
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// 通知深連結（B-024）。形態＝Components V2 Container，實測樣本經 Owner 真機驗收。
+// ─────────────────────────────────────────────────────────────────────
+
+const EV = { id: 4321, world: W, startAt: 0, endAt: 0 };
+const started = (now) => ({ ...EV, startAt: now, endAt: now + L.EVENT_DURATION });
+
+test('深連結：三顆按鈕帶正確 id，且附議／否認不是同一條', () => {
+  const btns = buttonsOf(L.discordPayload(started(NOW), NOW));
+  assert.equal(btns.length, 3);
+  for (const b of btns) assert.ok(b.url.includes('ev=4321'), `按鈕漏帶事件 id：${b.url}`);
+  const [see, yes, no] = btns.map((b) => b.url);
+  // 三連結最容易犯且最無訊號的錯：複製貼上把 dispute 寫成 confirm ⇒ 兩顆看起來都正常，
+  // 按下去都變附議。
+  assert.notEqual(yes, no, '附議與否認的連結不得相同');
+  assert.match(yes, /vote=confirm/);
+  assert.match(no, /vote=dispute/);
+  assert.ok(!see.includes('vote='), '「看事件」不得帶投票意圖');
+});
+
+test('深連結：一律自訂網域，不得出現 pages.dev', () => {
+  const json = JSON.stringify(L.discordPayload(started(NOW), NOW))
+    + JSON.stringify(L.legacyEmbedPayload(started(NOW), NOW));
+  assert.ok(!json.includes('pages.dev'), '舊網址會被交接頁轉走，多繞一跳');
+  for (const u of buttonsOf(L.discordPayload(started(NOW), NOW)).map((b) => b.url)) {
+    assert.ok(u.startsWith('https://cosmic.xivtc.com/'), u);
+  }
+});
+
+test('深連結：Container 的三個硬條件（錯一條整則通知全滅，本地看不出來）', () => {
+  const p = L.discordPayload(started(NOW), NOW);
+  assert.equal(p.flags, 32768, 'IS_COMPONENTS_V2');
+  // 設了 flag 之後 embeds／content 一律 400——而 JSON 本身完全合法，只有 Discord 會拒
+  assert.ok(!('embeds' in p), 'V2 訊息不得有 embeds');
+  assert.ok(!('content' in p), 'V2 訊息不得有 content');
+  assert.equal(p.components[0].type, 17, 'Container');
+});
+
+test('深連結：按鈕形狀合規（帶 custom_id 就 400，且錯誤訊息不會指出原因）', () => {
+  for (const b of buttonsOf(L.discordPayload(started(NOW), NOW))) {
+    assert.equal(b.style, 5, 'link button');
+    assert.ok(b.url, '必須有 url');
+    // 2026-08-05 實測：style 4（紅色）配 url 回 400 {"components":["0"]}。
+    // 彩色 style 一律要 custom_id，而 custom_id 是互動元件、非 app webhook 禁送。
+    assert.ok(!('custom_id' in b), '非 app webhook 送不了互動元件');
+  }
+});
+
+test('深連結：預告與進行中的按鈕列逐顆相同（只有文案與色條不同）', () => {
+  // Owner 2026-08-05 修正原設計：預兆通告本身就是遊戲內看得到的東西，
+  // 所以「我也看到了」在預告階段有明確指涉。預告分支是另一段程式碼，
+  // 最可能的退化是「按鈕有了但 vote 參數漏帶」⇒ 逐顆比 url，不是只數數量。
+  const warn = L.discordPayload(EV, NOW);
+  const live = L.discordPayload(started(NOW), NOW);
+  assert.deepEqual(buttonsOf(warn), buttonsOf(live), '兩個分支的按鈕列必須逐顆相同');
+  assert.notEqual(
+    warn.components[0].accent_color, live.components[0].accent_color,
+    '色條仍要分得出預告與進行中',
+  );
+});
+
+test('深連結：退回版本與主版本的連結逐條相同', () => {
+  // legacyEmbedPayload 平常不執行（只有 Discord 拒收 V2 時才送），
+  // 壞了要等最需要它的那天才會發現 ⇒ 用測試釘住它不腐爛。
+  const live = L.discordPayload(started(NOW), NOW);
+  const legacy = L.legacyEmbedPayload(started(NOW), NOW);
+  assert.ok(!('components' in legacy), '退回版是純 embed');
+  assert.equal(legacy.embeds[0].url, buttonsOf(live)[0].url, '標題連結＝看事件');
+  for (const u of buttonsOf(live).map((b) => b.url)) {
+    assert.ok(legacy.embeds[0].description.includes(`(${u})`), `退回版漏了連結：${u}`);
+  }
 });

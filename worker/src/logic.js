@@ -399,38 +399,125 @@ export function inCooldown(lastAt, now) {
   return lastAt > 0 && now - lastAt < REPORT_COOLDOWN;
 }
 
+/** 站台自訂網域。**不用 `pages.dev`**：舊網址會被交接頁轉走，多繞一跳。 */
+const SITE_ORIGIN = 'https://cosmic.xivtc.com';
+
+/**
+ * 事件深連結。`vote` 給了就帶投票意圖——**收端不會自動送出**，只展開確認列
+ * （Discord 會為連結預抓、手機上按鈕很近，而否認達標是單向下架不回頭）。
+ *
+ * 參數只吃整數 id ⇒ 輸出長度有界、無使用者輸入拼接，
+ * 且 markdown 連結不會被字串裡的 `)` 提前關閉。
+ */
+export function eventUrl(id, vote) {
+  const q = vote ? `?ev=${id}&vote=${vote}` : `?ev=${id}`;
+  return `${SITE_ORIGIN}/${q}#emergency`;
+}
+
+/**
+ * 通知的三個入口。**預告與進行中共用同一組**（Owner 2026-08-05）：
+ * 預兆通告本身就是遊戲內看得到的東西，所以「我也看到了」在預告階段有明確指涉，
+ * 不是在投「我相信」。而預告是最早、最缺旁證的時間點，開放附議等於把驗證前移
+ * （`applyVote` 對同一個 event id 累加，warn→start 共用 id ⇒ 預告期的附議會沿用過去）。
+ *
+ * ⚠️ 一律 `style: 5` + `url`、**不得帶 `custom_id`**：彩色 style（1/3/4）必須有 custom_id，
+ * 而那是互動元件，non-application-owned webhook **禁送**（2026-08-05 實測回
+ * 400 `{"components":["0"]}`，錯誤訊息不會告訴你原因）。
+ * ⚠️ 按鈕右邊那個外連圖示 ⧉ 由客戶端固定渲染，**沒有任何欄位能關掉**（Button 物件全部欄位
+ * ＝type/id/style/label/emoji/custom_id/sku_id/url/disabled）。不要再找方法拿掉它。
+ */
+function actionRow(id) {
+  return {
+    type: 1,
+    components: [
+      // 「看事件」刻意不加 emoji——它與 ⧉ 語意重複，同一顆按鈕兩個跳轉符號是噪音
+      { type: 2, style: 5, label: '看事件', url: eventUrl(id) },
+      { type: 2, style: 5, label: '我也看到了', emoji: { name: '✅' }, url: eventUrl(id, 'confirm') },
+      { type: 2, style: 5, label: '查無此事', emoji: { name: '🚫' }, url: eventUrl(id, 'dispute') },
+    ],
+  };
+}
+
+/** 兩個分支的文案差異集中在這裡，讓 payload 組裝只剩形狀。 */
+function messageText(ev, now) {
+  // 只收到預告、還不知道何時開始（`startAt === 0`）——**不編造倒數**。
+  // 目前只有一個提前量樣本（5 分 40 秒），寫一個看起來精確的數字，
+  // 下一次不準的時候就沒有人會再相信這一頁。
+  if (!ev.startAt) {
+    return {
+      title: `⚡ ${ev.world}　緊急事件預告`,
+      body: '遊戲內已出現預兆通告，**再過幾分鐘就會開始**。',
+      note: '實際開始時會再通知一次',
+      color: 0xb58900,
+    };
+  }
+  const mins = Math.max(0, Math.round((ev.startAt - now) / 60));
+  const when = ev.startAt <= now ? '已經開始' : `約 ${mins} 分鐘後開始`;
+  return {
+    title: `⚡ ${ev.world}　緊急事件${ev.startAt <= now ? '進行中' : '預告'}`,
+    body: `**${when}**，持續約 20 分鐘。`,
+    note: '依回報顯示，實際以遊戲內為準',
+    color: 0x00b5d8,
+  };
+}
+
 /**
  * Discord 訊息內容。純字串組裝放這裡，DO 只負責送。
  *
  * ⚠️ **不揭露 `source`**（Owner 2026-08-02：「不要說明用插件偵測，就說通知回報即可」）。
  * `source` 仍然記在資料庫裡供管理端看 stats，但**任何使用者看得到的地方都只講「回報」**——
  * 對收通知的人來說，他要知道的是「哪一台、還有多久」，資料怎麼進來的與他無關。
+ *
+ * 形態＝**Components V2 Container**（`flags: 32768`）：色條包住整塊，按鈕在框**內**
+ * （Owner 2026-08-05 看過真機樣本後定案）。
+ * ⚠️ 設了這個 flag 就**不能再有 `embeds`／`content`**，一律 400。
+ * ⚠️ 送出時 URL **必須帶 `?with_components=true`**（`events-do.js _send`）——
+ * 不帶的話整組 components 被**靜默忽略**：訊息照樣 204，但按鈕全部消失、零錯誤訊號。
+ * ⚠️ Components V2 對 non-application-owned webhook **沒有官方明文保證**（我們是靠實測知道可行）。
+ * 退回路徑見 `legacyEmbedPayload()`。
  */
 export function discordPayload(ev, now) {
-  // 只收到預告、還不知道何時開始（`startAt === 0`）——**不編造倒數**。
-  // 目前只有一個提前量樣本（5 分 40 秒），寫一個看起來精確的數字，
-  // 下一次不準的時候就沒有人會再相信這一頁。
-  if (!ev.startAt) {
-    return {
-      username: 'FFXIV 宇宙探索',
-      embeds: [
-        {
-          title: `⚡ ${ev.world}　緊急事件預告`,
-          description: '遊戲內已出現預兆通告，**再過幾分鐘就會開始**。\n實際開始時會再通知一次。',
-          color: 0xb58900,
-        },
-      ],
-    };
-  }
-  const mins = Math.max(0, Math.round((ev.startAt - now) / 60));
-  const when = ev.startAt <= now ? '已經開始' : `約 ${mins} 分鐘後開始`;
+  const t = messageText(ev, now);
+  return {
+    username: 'FFXIV 宇宙探索',
+    flags: 32768,                          // IS_COMPONENTS_V2
+    components: [
+      {
+        type: 17,                          // Container
+        accent_color: t.color,             // 左側色條
+        components: [
+          { type: 10, content: `### [${t.title}](${eventUrl(ev.id)})\n${t.body}\n-# ${t.note}` },
+          actionRow(ev.id),
+        ],
+      },
+    ],
+  };
+}
+
+/**
+ * 退回用的純 embed 版本。**平常不會執行**——只有 Discord 拒收 Components V2（400）時才送。
+ *
+ * 為什麼需要它：V2 這條路沒有官方保證，哪天被收緊，fan-out 會連續 400 → 熔斷 →
+ * 使用者被告知「你的 webhook 已被暫停」，**而他的 webhook 根本沒壞**，症狀完全指向錯的方向。
+ * 有了它就變成**版面退化、通知不中斷**。
+ *
+ * ⚠️ 連結一律走 `eventUrl()`，不得在這裡另行拼字串——兩份 payload 的連結必須同源，
+ * 否則這個平常不執行的版本會悄悄指到錯的地方，而且要等到最需要它的那天才會發現。
+ */
+export function legacyEmbedPayload(ev, now) {
+  const t = messageText(ev, now);
   return {
     username: 'FFXIV 宇宙探索',
     embeds: [
       {
-        title: `⚡ ${ev.world}　緊急事件${ev.startAt <= now ? '進行中' : '預告'}`,
-        description: `**${when}**，持續約 20 分鐘。\n（依回報顯示，實際以遊戲內為準）`,
-        color: 0x00b5d8,
+        title: t.title,
+        url: eventUrl(ev.id),
+        description:
+          `${t.body}\n（${t.note}）\n\n`
+          + `[看事件](${eventUrl(ev.id)})　·　`
+          + `[✅ 我也看到了](${eventUrl(ev.id, 'confirm')})　·　`
+          + `[🚫 查無此事](${eventUrl(ev.id, 'dispute')})`,
+        color: t.color,
       },
     ],
   };
