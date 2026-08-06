@@ -9,7 +9,9 @@
  * 離線推不出來。頁面同時要讓「靈風」這個唯一有任務意義的天氣一眼可見。
  */
 
-import { WEATHER_PERIOD, clockText, dateText, eorzeaClock, formatDuration } from './eorzea-time.js';
+import {
+  WEATHER_PERIOD, clockText, localClockText, etClockText, dateText, eorzeaClock, formatDuration,
+} from './eorzea-time.js';
 
 /**
  * 天氣圖示＝**遊戲自己的圖**，由產生器從 client 解出放同源 `img/weather/<iconId>.png`
@@ -99,7 +101,6 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
 
   function renderNow(now) {
     const current = forecaster.weatherAt(now);
-    const et = eorzeaClock(now);
     const remain = WEATHER_PERIOD - (now % WEATHER_PERIOD);
     // 晴朗佔 70% 且沒有任何任務綁它 ⇒ 報「還有多久變天」是雜訊（多半只是變成另一段晴朗）。
     // 晴朗時改報「距離下一個特殊天氣」，那才是有意義的數字。
@@ -112,10 +113,11 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
      */
     const next = forecaster.weatherAt(now + remain);
     // 相對時間一律補上**現實時鐘**（Owner 2026-08-03：「不然要一直數」）——
-    // 「還剩 12 分」要心算才知道是幾點，「還剩 12 分（14:35）」不用。
+    // 「還剩 12 分」要心算才知道是幾點，「還剩 12 分（本地 14:35）」不用。
+    // ⚠️ 一律帶「本地」標記：隔壁那一格就是 ET，兩種時鐘格式一模一樣（2026-08-06）。
     // 註記改成節點陣列，才能把遊戲自己的天氣圖示放進「接著是」（原本是純文字塞不進圖）。
     const note = [
-      document.createTextNode(`還剩 ${formatDuration(remain)}（${clockText(now + remain)}）→ 接著是 `),
+      document.createTextNode(`還剩 ${formatDuration(remain)}（${localClockText(now + remain)}）→ 接著是 `),
       weatherIcon(next, 16),
       document.createTextNode(` ${next.name}`),
     ];
@@ -125,7 +127,11 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
     el.now.innerHTML = '';
     el.now.append(
       block('目前天氣', [weatherIcon(current, 28), document.createTextNode(` ${current.name}`)], note),
-      block('艾歐澤亞時間', `${String(et.hour).padStart(2, '0')}:${String(et.minute).padStart(2, '0')}`, '天氣全伺服器同步，不分伺服器'),
+      // 值帶 `ET` 前綴，與其餘三格的「本地 HH:MM」形成一眼可辨的對照——
+      // 這一格的 label 雖然寫著「艾歐澤亞時間」，但人是掃數字的，四個 `18:30` 並排時
+      // label 幫不上忙（Owner 2026-08-06）。註記講**尺度差**，那才是「差別」的本體：
+      // 1 ET 小時＝175 現實秒 ⇒ ET 跑得比現實快約 20.6 倍。
+      block('艾歐澤亞時間', etClockText(now), '遊戲內時間 · 1 小時＝現實 2 分 55 秒；全伺服器同步'),
       windyBlock(now),
       mechBlock(now),
     );
@@ -149,9 +155,12 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
     const d = block(
       '靈風視窗',
       // 同上：相對時間一律附現實時鐘（進行中報「到幾點結束」，還沒到報「幾點開始」）
+      // 「到 本地 18:30」讀起來會卡，所以進行中那句把標記放進去後改寫成「…結束」——
+      // 保留「這個時刻是結束不是開始」的語意，同時不犧牲標記（2026-08-06）。
       isNow
-        ? `還剩 ${formatDuration(WEATHER_PERIOD - (now % WEATHER_PERIOD))}（到 ${clockText(now + WEATHER_PERIOD - (now % WEATHER_PERIOD))}）`
-        : (next ? `${formatDuration(next.start - now)}後（${clockText(next.start)}）` : '—'),
+        ? clockSuffix(`還剩 ${formatDuration(WEATHER_PERIOD - (now % WEATHER_PERIOD))}`,
+          now + WEATHER_PERIOD - (now % WEATHER_PERIOD), ' 結束')
+        : (next ? clockSuffix(`${formatDuration(next.start - now)}後`, next.start) : '—'),
       `${count} 個天氣限定臨時任務的必要條件（佔 ${windy.rate}% 時段）`,
     );
     d.classList.add('codex-tint-panel', 'codex-tint-panel--highlight', 'codex-tint-panel--bar');
@@ -166,9 +175,22 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
     const next = nextMechAt(now);
     return block(
       '機甲行動',
-      `${formatDuration(next - now)}後（${clockText(next)}）`,
-      '每小時 :16 / :36 / :56（現實時間）',
+      clockSuffix(`${formatDuration(next - now)}後`, next),
+      '每小時 :16 / :36 / :56（本地時間，不是 ET）',
     );
+  }
+
+  /**
+   * 「倒數 ＋（本地 HH:MM）」的值。**時鐘降一級字**（`codex-small`）——
+   * 加上「本地」標記之後整串在 4 欄版面會折行（2026-08-06 實測），而且折行不是唯一的理由：
+   * 這一格的焦點是倒數，時鐘是拿來對錶的輔助，本來就不該跟倒數同一個字級。
+   * 依設計系統「utility 只裁字級」，顏色／字重仍繼承 `.codex-h2`（accent）。
+   */
+  function clockSuffix(mainText, unixSeconds, tail = '') {
+    const small = document.createElement('span');
+    small.className = 'codex-small';
+    small.textContent = `（${localClockText(unixSeconds)}${tail}）`;
+    return [document.createTextNode(mainText), small];
   }
 
   function block(label, value, note) {
@@ -200,7 +222,7 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
     return [
       weatherIcon(upcoming.weather, 16),
       document.createTextNode(
-        ` ${upcoming.weather.name} ${formatDuration(upcoming.start - now)}後（${clockText(upcoming.start)}）`,
+        ` ${upcoming.weather.name} ${formatDuration(upcoming.start - now)}後（${localClockText(upcoming.start)}）`,
       ),
     ];
   }
@@ -258,6 +280,9 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
       const countdown = td(isNow ? '進行中' : formatDuration(slot.start - now), 'codex-table__num');
       tr.append(
         td(dateCell, 'cos-col-date'),
+        // 這兩欄用**裸值**（`clockText` 而非 `localClockText`）——欄位標題已經寫著
+        // 「本地時間」與「ET」，格內再標一次會把 5 欄擠爆。這是允許裸值的唯一情形，
+        // 判準寫在 `eorzea-time.js` 的 `clockText` 註解，由 clock-labelling 測試守門。
         td(clockText(slot.start), 'codex-table__num'),
         td(`${String(et.hour).padStart(2, '0')}:00`, 'codex-table__num'),
         weatherCell(slot.weather),

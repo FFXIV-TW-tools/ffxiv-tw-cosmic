@@ -9,7 +9,7 @@
  * 而閒置時猛打 API 會把免費額度燒在沒有資訊增益的地方（輪詢節奏見下方常數）。
  */
 
-import { formatDuration, clockText } from './eorzea-time.js';
+import { formatDuration, localClockText } from './eorzea-time.js';
 import { emergencyApi } from './emergency-api.js';
 
 /**
@@ -529,11 +529,11 @@ export function createEmergencyView(root, { worlds, prefetch = null, onState, on
   function renderStatus() {
     if (offline) {
       el.status.textContent = fetchedAt
-        ? `⚠️ 連不上通報伺服器，畫面停在 ${clockText(fetchedAt)} 的資料。`
+        ? `⚠️ 連不上通報伺服器，畫面停在 ${localClockText(fetchedAt)} 的資料。`
         : '⚠️ 連不上通報伺服器 — 本站其他分頁不受影響。';
       return;
     }
-    el.status.textContent = fetchedAt ? `更新於 ${clockText(fetchedAt)}` : '載入中…';
+    el.status.textContent = fetchedAt ? `更新於 ${localClockText(fetchedAt)}` : '載入中…';
   }
 
   /**
@@ -550,7 +550,7 @@ export function createEmergencyView(root, { worlds, prefetch = null, onState, on
     span.className = 'codex-small cos-em__last';
     const t = state?.lastEnded?.[world];
     // 沒有紀錄就留空——寫「無紀錄」會讓人以為那台從沒出過事件，但真相是本站 8/2 才開始收
-    span.textContent = t ? `上次 ${clockText(t)} 結束 · ${formatDuration(now - t)}前` : '';
+    span.textContent = t ? `上次 ${localClockText(t)} 結束 · ${formatDuration(now - t)}前` : '';
     return span;
   }
 
@@ -647,13 +647,13 @@ function weatherLabel(ev) {
       when.textContent = '即將開始';
       const note = document.createElement('span');
       note.className = 'codex-small cos-em__none';
-      note.textContent = `（${clockText(ev.warnedAt || now)} 出現預兆通告）`;
+      note.textContent = `（${localClockText(ev.warnedAt || now)} 出現預兆通告）`;
       when.append(note);
     } else {
       // 相對時間一律附現實時鐘（Owner 2026-08-03）：要不要現在動身是看幾點，不是看還剩幾分
       when.textContent = ev.startAt > now
-        ? `${formatDuration(ev.startAt - now)}後開始（${clockText(ev.startAt)}）`
-        : `進行中 · 剩 ${formatDuration(ev.endAt - now)}（到 ${clockText(ev.endAt)}）`;
+        ? `${formatDuration(ev.startAt - now)}後開始（${localClockText(ev.startAt)}）`
+        : `進行中 · 剩 ${formatDuration(ev.endAt - now)}（${localClockText(ev.endAt)} 結束）`;
     }
     li.append(when);
 

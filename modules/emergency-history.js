@@ -113,6 +113,7 @@ export function createEmergencyHistory(root, { worlds }) {
       const t = r.startAt || r.warnedAt;
       const cells = [
         dateText(t),
+        // 裸值：表頭那欄已標「本地時間」，10% 寬的欄位塞不下「本地 11:06」（見 eorzea-time.js 判準）
         clockText(t),
         r.world,
         // 距上次（同一台）。**跨伺服器不算**——七台各自獨立發事件，混在一起算出來的

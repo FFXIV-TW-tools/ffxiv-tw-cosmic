@@ -92,10 +92,34 @@ export function formatDuration(seconds) {
   return `${s} 秒`;
 }
 
-/** 本地時間 HH:MM。 */
+/**
+ * 本地時間 HH:MM，**裸值不帶標記**。
+ *
+ * ⚠️ **散文裡不要直接用這支**，用下面的 `localClockText()`。這一頁同時存在兩種時鐘
+ * ——現實時鐘與艾歐澤亞時鐘（ET）——而且**格式一模一樣**（`18:30`／`15:42`），
+ * 頁首四格更是把兩者並排。裸值等於要使用者自己猜是哪一種（Owner 2026-08-06 指出）。
+ *
+ * 允許用裸值的**唯一情形**：欄位標題已經標明是哪種時鐘（天氣預報表的「本地時間」／「ET」兩欄）。
+ * 這條判準由 `tests/clock-labelling.test.mjs` 機械守門——散文裡漏標的症狀是「畫面完全正常、
+ * 只是有人看錯時間跑去等」，沒有任何錯誤訊號。
+ */
 export function clockText(unixSeconds) {
   const d = new Date(unixSeconds * 1000);
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+/** 現實時鐘的標記字。ET 那一側的對應標記是 `ET`（見 forecast-view 四格）。 */
+export const LOCAL_TAG = '本地';
+
+/** 散文用的本地時間：`本地 18:30`。與 ET 並排時一眼分得出是哪一種時鐘。 */
+export function localClockText(unixSeconds) {
+  return `${LOCAL_TAG} ${clockText(unixSeconds)}`;
+}
+
+/** 散文用的 ET：`ET 15:42`。跟 `localClockText()` 是同一組對照，兩邊要一起改。 */
+export function etClockText(unixSeconds) {
+  const et = eorzeaClock(unixSeconds);
+  return `ET ${String(et.hour).padStart(2, '0')}:${String(et.minute).padStart(2, '0')}`;
 }
 
 /** 本地日期 MM/DD（跨日時給時間軸標記用）。 */

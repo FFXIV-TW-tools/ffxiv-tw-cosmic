@@ -25,7 +25,7 @@
  * 唯一算不出來的是**前置任務有沒有完成**，所以有前置的會標出來而不是假裝它一定在。
  */
 
-import { clockText, formatDuration } from './eorzea-time.js';
+import { localClockText, formatDuration } from './eorzea-time.js';
 import { jobIcon } from './job-icon.js';
 
 /** 條件欄＝遊戲的子分類名 ＋ **實際的值**。只寫子分類名還是得點進去才知道幾點，
@@ -408,10 +408,11 @@ export function createNowPanel(root, { windows, missions, conditions, jobs, fore
     }
     const nextBatch = withEta.filter((x) => x.start === soonest).map((x) => x.m);
     fill(nextList, nextBatch, '接下來 4 天內沒有會開啟的臨時任務');
-    // 倒數後面補現實時間：「4 分 52 秒後」還要自己心算，「（12:47）」才是能直接對錶的
+    // 倒數後面補現實時間：「4 分 52 秒後」還要自己心算，「（本地 12:47）」才是能直接對錶的。
+    // 「本地」標記不可省：條件欄裡的「ET 14:00–16:00」就在同一張表上（2026-08-06）。
     nextHead.textContent = soonest === null
       ? '接下來沒有'
-      : `下一批 — ${formatDuration(soonest - now)}後（${clockText(soonest)}）`;
+      : `下一批 — ${formatDuration(soonest - now)}後（${localClockText(soonest)}）`;
   }
 
   /**
