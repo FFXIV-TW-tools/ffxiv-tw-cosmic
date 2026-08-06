@@ -45,6 +45,25 @@ function itemIcon(it) {
   return img;
 }
 
+/**
+ * 數量。**沒有數量時印「×?」而不是省略、更不是補 ×1**。
+ *
+ * 40 筆任務（24 個緊急＋16 個雙職業）的需求物是由**配方產出**反推的（`viaRecipe`），
+ * 而數量只存在於 `WKSMissionToDo`、配方那邊沒有任何數量欄；已知數量分布是 ×1…×48，
+ * 沒有常數可套。省略會被讀成「一個」，補 ×1 更是直接給錯的備料量——兩種錯法都不會有訊號。
+ */
+function qtyMark(it) {
+  const span = document.createElement('span');
+  if (it.qty > 0) {
+    span.textContent = ` ×${it.qty}`;
+    return span;
+  }
+  span.className = 'cos-itemqty--unknown';
+  span.textContent = ' ×?';
+  span.title = '數量未知：這筆的需求物是從配方的產出反推的，而台服 client 的配方資料沒有數量欄。以遊戲內顯示為準。';
+  return span;
+}
+
 export function requiredItems(mission) {
   const frag = document.createDocumentFragment();
   if (!mission.items?.length) {
@@ -59,7 +78,8 @@ export function requiredItems(mission) {
     box.className = craftable ? 'cos-craftlink' : 'cos-itemline';
     const ico = itemIcon(it);
     if (ico) box.append(ico);
-    box.append(document.createTextNode(`${it.name} ×${it.qty}`));
+    box.append(document.createTextNode(it.name));
+    box.append(qtyMark(it));
     if (craftable) {
       box.href = crafterUrl(it.itemId);
       box.target = TARGET;

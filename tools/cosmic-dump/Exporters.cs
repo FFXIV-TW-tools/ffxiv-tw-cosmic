@@ -85,6 +85,7 @@ internal sealed class Exporters(GameData gd, JsonObject meta,
         var itemSheet = Sheet("Item");
         var weatherSheet = Sheet("Weather");
         var recipeSheet = Sheet("WKSMissionRecipe");
+        var craftSheet = Sheet("Recipe");
         var markerSheet = Sheet("WKSMissionMapMarker");
 
         var o = Wrap("544 筆渴望灣任務。conditions 為額外開放條件；type=unknown 者語意未定，刻意不猜。");
@@ -142,7 +143,8 @@ internal sealed class Exporters(GameData gd, JsonObject meta,
                  * 但實測顯示它與「任務會不會出現」仍高度相關，語意未知 ⇒ 只輸出、不判定。
                  */
                 ["c14"] = (int)TcCosmicSheets.SlotUnknown(row),
-                ["items"] = RequiredItems(todoSheet, itemInfoSheet, itemSheet, unit.MissionToDo),
+                ["items"] = RequiredItems(todoSheet, itemInfoSheet, itemSheet,
+                    recipeSheet, craftSheet, unit.MissionToDo, unit.MissionRecipe),
                 // 任務地點（世界座標 X/Z ＋ 半徑）。**不是顯示用的裝飾**——ICE 就是拿它當
                 // 採集路線的查詢 key（`TcMissionToDo.MapMarker` 的反解依據：108 筆採集任務
                 // 全部命中、產生的相異座標數恰好等於路線檔數）。沒有 marker 的任務輸出 null，
@@ -273,11 +275,58 @@ internal sealed class Exporters(GameData gd, JsonObject meta,
         return new JsonObject { ["x"] = mk.X, ["y"] = mk.Y, ["r"] = mk.Radius };
     }
 
+    /// <summary>
+    /// 任務要交的東西。**主線走 <c>WKSMissionToDo</c>**；那裡沒填時（40 筆，含 24 個緊急任務、
+    /// 16 個雙職業任務）改由**配方的產出**補上（<c>Recipe.c4</c>，反解依據見
+    /// <see cref="TcCosmicSheets.RecipeResultItemId"/>）。
+    ///
+    /// <para>為什麼可以這樣補：360 個「兩者都有」的任務裡，需求物 <b>360/360</b> 都落在該任務
+    /// 配方的產出集合裡（零例外）；而這 40 筆**每一筆都剛好只有一個配方** ⇒ 沒有「要交哪一個」
+    /// 的歧義。這不是推測，是對得起帳的關係。</para>
+    ///
+    /// <para>⚠️ <b>補出來的一律不填 <c>qty</c>、並標 <c>viaRecipe</c></b>：數量只存在於 ToDo，
+    /// 配方那邊沒有任何數量欄，而已知數量分布是 ×1…×48 沒有常數可套（鐵則 §2）。
+    /// 消費端必須據此顯示「數量未知」而不是預設 ×1——那正是這批 sheet 最典型的錯法。</para>
+    /// </summary>
     private JsonArray RequiredItems(ExcelSheet<RawRow> todoSheet, ExcelSheet<RawRow> itemInfoSheet,
-                                           ExcelSheet<RawRow> itemSheet, uint todoId)
+                                           ExcelSheet<RawRow> itemSheet, ExcelSheet<RawRow> recipeSheet,
+                                           ExcelSheet<RawRow> craftSheet, uint todoId, uint missionRecipeId)
     {
         var arr = new JsonArray();
-        if (todoId == 0 || !todoSheet.TryGetRow(todoId, out var todoRow)) return arr;
+        if (todoId != 0 && todoSheet.TryGetRow(todoId, out var todoRow))
+            FromToDo(arr, todoRow, itemInfoSheet, itemSheet);
+        if (arr.Count == 0)
+            FromRecipe(arr, recipeSheet, craftSheet, itemSheet, missionRecipeId);
+        return arr;
+    }
+
+    /// <summary>由配方產出補需求物。**只在 ToDo 完全沒給時才走**，且不填數量。</summary>
+    private void FromRecipe(JsonArray arr, ExcelSheet<RawRow> recipeSheet, ExcelSheet<RawRow> craftSheet,
+                            ExcelSheet<RawRow> itemSheet, uint missionRecipeId)
+    {
+        if (missionRecipeId == 0 || !recipeSheet.TryGetRow(missionRecipeId, out var mrow)) return;
+        for (var i = 0; i < 5; i++)
+        {
+            var rid = mrow.ReadUInt32Column(i);
+            if (rid == 0 || !craftSheet.TryGetRow(rid, out var rrow)) continue;
+            var itemId = TcCosmicSheets.RecipeResultItemId(rrow);
+            if (itemId == 0) continue;
+            var nm = itemSheet.TryGetRow(itemId, out var it) ? TcCosmicSheets.ItemName(it) : "";
+            if (nm.Length == 0) continue;
+            // qty 刻意缺席（不是 0、也不是 1）——消費端看得出「這欄沒有值」
+            var o = new JsonObject { ["itemId"] = (int)itemId, ["name"] = nm, ["viaRecipe"] = true };
+            if (itemIcons.TryGetValue(itemId, out var iconId))
+            {
+                o["icon"] = (int)iconId;
+                UsedItemIcons.Add(iconId);
+            }
+            arr.Add(o);
+        }
+    }
+
+    private void FromToDo(JsonArray arr, RawRow todoRow, ExcelSheet<RawRow> itemInfoSheet,
+                          ExcelSheet<RawRow> itemSheet)
+    {
         var todo = new TcMissionToDo(todoRow);
         for (var i = 0; i < 3; i++)
         {
@@ -297,7 +346,6 @@ internal sealed class Exporters(GameData gd, JsonObject meta,
             }
             arr.Add(o);
         }
-        return arr;
     }
 
     private static JsonObject Reward(ExcelSheet<RawRow> rewardSheet, uint missionId)

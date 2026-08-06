@@ -84,13 +84,25 @@ const withRecipes = m.missions.filter((x) => x.recipes.length > 0);
 check(withRecipes.length === 400, `有配方的任務 = ${withRecipes.length}，應為 400（8 製作職 × 50）`);
 check(withRecipes.every((x) => x.jobs.some((j) => m.jobs[j]?.role === 'crafter')),
   '有配方的任務落在非製作職上（配方欄接錯 WKSMissionRecipe？）');
-// ⚠ 已知缺口（非本輪造成）：117 個任務抓不到需求物，其中 40 個有配方、含全部 16 個雙職業任務。
-// `WKSMissionUnit` 有多個 ToDo 槽（上游 BestCraft 的 entity 是 ToDo0/1/2），本站只讀了 col[11] 一個。
-// 數字寫死＝**追蹤而非默許**：修好會讓這條紅、逼人回來把數字改小；變多同樣紅。
+// ⚠ 已知缺口：77 個任務抓不到需求物。數字寫死＝**追蹤而非默許**：修好會讓這條紅、逼人把數字改小；變多同樣紅。
+//
+// 2026-08-06 從 117 降到 77：40 筆（24 個緊急任務＋16 個雙職業任務）的 ToDo 沒填需求物，
+// 改由**配方產出**補上。可以這樣補的依據＝360 個「兩者都有」的任務裡需求物 360/360 都落在
+// 該任務配方的產出集合內（零例外），而這 40 筆每筆只有一個配方 ⇒ 無歧義。
+// ⚠ 舊註解說「WKSMissionUnit 有多個 ToDo 槽、本站只讀 col[11]」——**那個假設是錯的**：
+// 逐欄檢定過，除 col[11] 外唯一像 ToDo FK 的是 col[12]（恰好 33 筆＝全部緊急任務、值＝col[11]+1），
+// 而那些列同樣沒有需求物。剩下的 77 筆是真的沒有要交的東西（討伐／偵察類）。
 const noItems = m.missions.filter((x) => x.items.length === 0);
-check(noItems.length === 117, `抓不到需求物的任務 = ${noItems.length}，應為 117（已知 ToDo 槽缺口）`);
-check(withRecipes.filter((x) => x.items.length === 0).length === 40,
-  '有配方卻沒有需求物的任務數變動（已知 40，見 ToDo 槽缺口）');
+check(noItems.length === 77, `抓不到需求物的任務 = ${noItems.length}，應為 77`);
+check(withRecipes.filter((x) => x.items.length === 0).length === 0,
+  '有配方卻沒有需求物的任務又出現了（配方 fallback 失效？）');
+// 由配方推來的需求物**一律不得帶數量**——數量只存在於 ToDo，配方那邊沒有任何數量欄。
+// 塞一個 ×1 進去不會有任何錯誤訊號，但會讓人備錯料（鐵則 §2）。
+const viaRecipe = m.missions.flatMap((x) => x.items).filter((it) => it.viaRecipe);
+check(viaRecipe.length === 40, `由配方補的需求物 = ${viaRecipe.length}，應為 40`);
+check(viaRecipe.every((it) => it.qty === undefined), '由配方補的需求物帶了數量（數量在 client 裡不存在，不得冒充）');
+check(m.missions.flatMap((x) => x.items).filter((it) => !it.viaRecipe).every((it) => it.qty > 0),
+  'ToDo 來的需求物缺數量（欄位對照崩了？）');
 check(m.missions.every((x) => x.recipes.every((r) => r > 0)), '配方陣列含 0（空槽應在產生端剔除）');
 // 舊版把三段品質門檻塞在 _unverified.evalThresholds，且用任務 id 去查 WKSMissionToDoEvalutionRefin
 // ——那是錯的 join（真鍵是 Recipe.CollectableMetadata）。門檻已移到 crafter 側，這裡守著別回來。

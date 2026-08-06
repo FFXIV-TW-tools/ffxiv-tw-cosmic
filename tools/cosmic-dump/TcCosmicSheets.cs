@@ -74,6 +74,23 @@ internal static class TcCosmicSheets
     /// <summary><c>WKSItemInfo</c> c0＝<c>Item</c> row id（ICE 已驗：103→月水盾草、366→月面隕石、372→月鉻鐵礦）。</summary>
     public static uint ItemInfoItemId(RawRow info) => info.ReadUInt32Column(0);
 
+    /// <summary>
+    /// <c>Recipe</c> c4＝該配方的**產出物品** <c>Item</c> row id。
+    ///
+    /// <para><b>反解依據（2026-08-06）</b>：任務用到的 520 個配方，c4 取出來 <b>520/520</b>
+    /// 都是名稱非空的合法 Item；同表其他候選欄不是全零（c2/c5/c7）就是明顯不對
+    /// （c1 全是 Gil、c3 只有 280/520 有名且出現「過期牛皮牧羊腰帶（漆黑）」這種不相干的東西）。</para>
+    ///
+    /// <para><b>決定性檢定</b>：拿 360 個「ToDo 有需求物、且有配方」的任務當對照組，
+    /// 需求物 <b>360/360</b> 都落在該任務配方的 c4 產出集合裡（零例外）。所以
+    /// 「任務要交的東西＝配方的產出」不是推測，是對得起帳的關係。</para>
+    ///
+    /// ⚠️ <b>數量不在配方裡</b>：<c>WKSMissionRecipe</c> 只有 c0–c2 三個配方槽（c3/c4 恆零），
+    /// 沒有任何數量欄；而已知需求數量的分布是 ×1/×2/×3/×5…×48，沒有常數可套。
+    /// 故由配方推出來的需求物<b>一律不填數量</b>（鐵則 §2：未定性欄位標明，不拿合理值冒充）。
+    /// </summary>
+    public static uint RecipeResultItemId(RawRow recipe) => recipe.ReadUInt32Column(4);
+
     /*
      * 三段品質門檻**刻意不在這裡產**（2026-08-01 移除 EvalThresholds）。
      *

@@ -464,6 +464,11 @@ body {
 /* 顏色走 accent（本站與全生態一律 cyan），不自造色。虛線底線而非實線：一欄可能有好幾個，
    實線會讓表格看起來像連結牆。 */
 .cos-craftlink { color: var(--accent); text-decoration: underline dotted; text-underline-offset: 2px; }
+
+/* 數量未知的「×?」——**要看得出是刻意的**，不能長得像壞掉的數字。用警示色而非灰：
+   灰＝「可有可無的補充」，但這裡是「我們不知道，你得自己看遊戲」，那是要讀懂的資訊
+   （設計系統 muted 準則：需要讀懂才能操作的文字不降 muted）。 */
+.cos-itemqty--unknown { color: var(--color-warn, #e8a45a); cursor: help; }
 .cos-craftlink:hover, .cos-craftlink:focus-visible { text-decoration-style: solid; }
 /* 「可以點過去」要看得出來，不能只靠 hover 才發現 ⇒ 給一個常駐的動作記號 */
 .cos-craftlink__go {
