@@ -116,15 +116,19 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
     // 「還剩 12 分」要心算才知道是幾點，「還剩 12 分（本地 14:35）」不用。
     // ⚠️ 一律帶「本地」標記：隔壁那一格就是 ET，兩種時鐘格式一模一樣（2026-08-06）。
     // 註記改成節點陣列，才能把遊戲自己的天氣圖示放進「接著是」（原本是純文字塞不進圖）。
+    //
+    // ⚠️ **每個語意段各自 nowrap**（2026-08-06）：這句是四格裡唯一會折到 3 行的，
+    // 放任它折會切在詞中間——Owner 截圖上是「…接著是 🌤 晴」／「朗 · 月塵…」。
+    // 綁成三段之後，斷點只可能落在「→」與「·」這兩個分隔符上，那正是語意的接縫。
     const note = [
-      document.createTextNode(`還剩 ${formatDuration(remain)}（${localClockText(now + remain)}）→ 接著是 `),
-      weatherIcon(next, 16),
-      document.createTextNode(` ${next.name}`),
+      nowrap(document.createTextNode(`還剩 ${formatDuration(remain)}（${localClockText(now + remain)}）`)),
+      document.createTextNode(' → '),
+      nowrap(document.createTextNode('接著是 '), weatherIcon(next, 16), document.createTextNode(` ${next.name}`)),
     ];
     if (current.name === PLAIN_WEATHER && next.name === PLAIN_WEATHER) {
       // 用「·」接，**不要再包一層括號**：裡面那句自己就帶了「（本地 11:53）」，
       // 包起來會變成巢狀括號「…（月塵 26 分後（本地 11:53））」，折行時還會在行首留一個孤立的「（」。
-      note.push(document.createTextNode(' · '), ...nextSpecialNote(now));
+      note.push(document.createTextNode(' · '), nowrap(...nextSpecialNote(now)));
     }
     el.now.innerHTML = '';
     el.now.append(
@@ -188,9 +192,18 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
    * 這一格的焦點是倒數，時鐘是拿來對錶的輔助，本來就不該跟倒數同一個字級。
    * 依設計系統「utility 只裁字級」，顏色／字重仍繼承 `.codex-h2`（accent）。
    */
+  /** 把幾個節點綁成「不可在中間斷行」的一段。斷點只留在段與段之間的分隔符上。 */
+  function nowrap(...nodes) {
+    const span = document.createElement('span');
+    span.className = 'cos-stat__clock';
+    span.append(...nodes.filter(Boolean));
+    return span;
+  }
+
   function clockSuffix(mainText, unixSeconds, tail = '') {
     const small = document.createElement('span');
-    small.className = 'codex-small';
+    // `cos-stat__clock` ＝ nowrap，整個括號是一個單位（見 style.css 該條註解）
+    small.className = 'codex-small cos-stat__clock';
     small.textContent = `（${localClockText(unixSeconds)}${tail}）`;
     return [document.createTextNode(mainText), small];
   }

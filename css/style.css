@@ -49,7 +49,12 @@ body {
 /* BETA 告示。視覺＝共用 `.codex-tint-panel--warn --bar`（2026-08-06 收斂）——
    本檔原本有三份逐字相同的「警示色左邊條」自刻（betanote／np__caveat／caveat），
    而設計系統早有這個元件（B-017 Track B 就是為了收編這一派）。這裡只留間距。 */
-.cos-betanote { margin: var(--space-4, 16px) 0 0; }
+.cos-betanote {
+  margin: var(--space-4, 16px) 0 0;
+  /* 共用元件的 padding 是給列／小方塊用的（8/12px），這是一條橫跨整頁的散文告示 ⇒ 補足內距。
+     元件本身明文允許消費端覆寫 padding。 */
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+}
 
 .cos-header-tools {
   display: flex;
@@ -101,10 +106,15 @@ body {
 .cos-panel p:last-child { margin-bottom: 0; }
 
 /* ── 天氣現況三格 ─────────────────────────────────────────── */
+/* ⚠️ 上下的 margin 不是裝飾：沒有它時 BETA 告示、四格、分頁列三者**間距literally 是 0**
+   （2026-08-06 實測 betaBottom === statsTop === 169），三塊黏成一片＝Owner 說的「擁擠」。
+   min-width 從 200 提到 240：太窄時「6 小時 12 分後（本地 18:30）」會擠成兩行，
+   寧可讓四欄在中等寬度下折成兩排，也不要每一格自己內部亂折。 */
 .cos-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: var(--space-3, 12px);
+  margin: var(--space-4, 16px) 0 var(--space-5, 24px);
   /* JS 填入前先撐住高度，避免空→滿把下方金色高亮往下推（CLS 鐵則） */
   min-height: 104px;
 }
@@ -121,7 +131,17 @@ body {
 }
 
 .cos-stat__value { margin: 0; }
-.cos-stat__note { color: var(--color-text-muted, #c0c9da); }
+
+/* 「（本地 18:30）」是**一個不可分割的單位**——不加這行，窄一點的版面會在括號中間斷行，
+   變成「6 小時 12 分後（本地」／「18:30）」（Owner 2026-08-06 截圖）。
+   斷在「後」與「（」之間是乾淨的，斷在括號裡不是。 */
+.cos-stat__clock { white-space: nowrap; }
+
+.cos-stat__note {
+  color: var(--color-text-muted, #c0c9da);
+  /* 讓瀏覽器避免最後一行只剩一兩個字的孤字（不支援的瀏覽器就是原樣，零風險） */
+  text-wrap: pretty;
+}
 
 /* ── 靈風視窗高亮（全頁唯一金色，見設計系統用量上限）──────── */
 
