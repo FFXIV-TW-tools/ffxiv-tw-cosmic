@@ -561,8 +561,10 @@ export function createEmergencyView(root, { worlds, prefetch = null, onState, on
  * 才指得出地點，而「不知道」與「知道是磁暴但不知道 A／B」對它是不同的輸入。
  */
 function weatherLabel(ev) {
-  // **只寫天氣，不寫 A／B**：地圖上沒有 A／B（通告↔任務分組的對應還沒有證據，B-023），
-  // 這裡寫了「磁暴 B」，人到地圖上會找不到叫 B 的那一組。變體仍然存在後端，只是還不能用來指路。
+  // **只寫天氣，不寫 A／B**：`a`／`b` 是**通告文字**的編號，地圖上的組叫 α／β，兩套名字不同；
+  // 這裡寫「磁暴 B」，人到地圖上會找不到叫 B 的那一組。對應本身已於 2026-08-06 全數定案
+  // （B-023，後端 `variantMap`），所以要顯示的話該顯示的是 `ev.group`（`storm-α`）而不是變體，
+  // 而那要先決定 α／β 對使用者叫什麼名字 —— 未做，見 BACKLOG B-026。
   const kind = ev.weather ?? (ev.variant ? ev.variant.split('-')[0] : null);
   return WEATHERS.find((x) => x.kind === kind)?.name ?? null;
 }

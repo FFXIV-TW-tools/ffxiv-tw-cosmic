@@ -581,8 +581,10 @@ export class CosmicEventsDO extends DurableObject {
       events: byWorld,
       disputeThreshold: L.DISPUTE_THRESHOLD,
       lastEnded: this._lastEnded(now),
-      // 已定案的「通告↔任務組」。**沒定案的變體不會出現在這裡**——前端據此決定
-      // 要不要顯示「※ 待實測確認」。回一個空物件與回一個猜的值，差別就是使用者知不知道。
+      // 已定案的「通告↔任務組」。**沒定案的變體不會出現在這裡**——回一個空物件與回一個猜的值，
+      // 差別就是使用者知不知道。2026-08-06 起六個變體全部定案，因此這一欄目前恆滿。
+      // ⚠️ 前端目前**不消費這一欄**（事件的組別走 `events[].group`，後端已填好）。
+      // 保留它是給管理端與除錯用；要在畫面上標「※ 待實測確認」的話才會用到。
       variantMap: this._variantMap(),
     };
   }
