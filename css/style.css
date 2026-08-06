@@ -46,14 +46,10 @@ body {
   vertical-align: middle;
 }
 
-/* BETA 告示：警示色左邊條，與一般段落區隔，但不搶內容的視覺權重 */
-.cos-betanote {
-  margin: var(--space-4, 16px) 0 0;
-  padding: var(--space-3, 12px);
-  border-left: 3px solid var(--color-warn, #e8a45a);
-  border-radius: var(--radius-sm, 6px);
-  background: var(--color-surface, #101824);
-}
+/* BETA 告示。視覺＝共用 `.codex-tint-panel--warn --bar`（2026-08-06 收斂）——
+   本檔原本有三份逐字相同的「警示色左邊條」自刻（betanote／np__caveat／caveat），
+   而設計系統早有這個元件（B-017 Track B 就是為了收編這一派）。這裡只留間距。 */
+.cos-betanote { margin: var(--space-4, 16px) 0 0; }
 
 .cos-header-tools {
   display: flex;
@@ -113,31 +109,21 @@ body {
   min-height: 104px;
 }
 
+/* 四格的框與底色來自共用 `.codex-tint-panel`（forecast-view 的 block() 掛上去）。
+   本地只留版型與內距——原本這裡自刻 border/background/radius，與靈風那格疊上去的
+   `--bar`（它會 `border: 0`）互相打架：同為單一 class，靠檔案載入順序決定勝負，
+   結果是金色那格同時有全框和左邊條（2026-08-06 收斂）。 */
 .cos-stat {
   display: flex;
   flex-direction: column;
   gap: var(--space-1, 4px);
   padding: var(--space-3, 12px) var(--space-4, 16px);
-  border: 1px solid var(--color-border, #2b3f56);
-  border-radius: var(--radius-md, 8px);
-  background: var(--color-surface, #101824);
 }
 
 .cos-stat__value { margin: 0; }
 .cos-stat__note { color: var(--color-text-muted, #c0c9da); }
 
 /* ── 靈風視窗高亮（全頁唯一金色，見設計系統用量上限）──────── */
-.cos-highlight {
-  margin-top: var(--space-3, 12px);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1, 4px);
-  /* 兩種狀態（進行中／倒數）文案長度不同，預留高度免得每 23 分跳一次版 */
-  min-height: 72px;
-  justify-content: center;
-}
-
-.cos-highlight__title { margin: 0; }
 
 /* ── 時間軸表 ─────────────────────────────────────────────── */
 #fc-timeline .is-current {
@@ -315,11 +301,6 @@ body {
   margin: var(--space-4, 16px) 0 var(--space-2, 8px);
 }
 
-/* 階級門說明：它是自動套用的過濾，必須看得見 —— 隱形過濾比不過濾更糟 */
-.cos-np__progress {
-  margin: var(--space-2, 8px) 0 0;
-  color: var(--color-text-muted, #c0c9da);
-}
 
 /* 範圍說明跟在標題後面，權重要低於標題本身 */
 .cos-np__scope {
@@ -344,15 +325,10 @@ body {
   color: var(--color-text-muted, #c0c9da);
 }
 
-/* 面板底部的告誡：講「上面那些什麼時候會不準」，與資料列分開一段 */
-.cos-np__caveat {
-  margin: var(--space-3, 12px) 0 0;
-  padding: var(--space-3, 12px);
-  border-left: 3px solid var(--color-warn, #e8a45a);
-  border-radius: var(--radius-sm, 6px);
-  background: var(--color-surface, #101824);
-  color: var(--color-text-muted, #c0c9da);
-}
+/* 面板底部的告誡：講「上面那些什麼時候會不準」，與資料列分開一段。
+   視覺同 .cos-betanote ＝共用 tint-panel（見該處註解）。
+   ⚠️ 不再降 muted：它是「使用者需要讀懂才能操作」的說明文字（設計系統 muted 準則）。 */
+.cos-np__caveat { margin: var(--space-3, 12px) 0 0; }
 
 /* 欄位標題：與資料列共用同一組 grid 欄寬，否則標題會對不準（Owner 2026-07-31：「很不直觀」）。
    純視覺輔助 ⇒ aria-hidden，不讓讀螢幕器把它當成一列資料。 */
@@ -491,14 +467,8 @@ body {
 
 .cos-serverdiff li { margin-bottom: var(--space-1, 4px); }
 
-/* 未確認事項：與已證實的敘述視覺分離，不讓人當成結論 */
-.cos-caveat {
-  margin-top: var(--space-3, 12px);
-  padding: var(--space-3, 12px);
-  border-left: 3px solid var(--color-warn, #e8a45a);
-  border-radius: var(--radius-sm, 6px);
-  background: var(--color-surface, #101824);
-}
+/* 未確認事項：與已證實的敘述視覺分離，不讓人當成結論。視覺同上，共用元件。 */
+.cos-caveat { margin-top: var(--space-3, 12px); }
 
 /* ── 基地進度 ─────────────────────────────────────────────── */
 .cos-ds-lead {

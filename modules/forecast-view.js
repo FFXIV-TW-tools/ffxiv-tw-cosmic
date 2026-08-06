@@ -43,7 +43,7 @@ const SCAN_PERIODS = 200;
 /**
  * 機甲行動的班表：**現實時間**每小時的 :16 / :36 / :56，20 分鐘一班（Owner 2026-08-01）。
  *
- * 跟這頁其他東西**不同源**：天氣與 ET 都是 unix 時間的函數、走艾歐澤亞刻度；
+ * 跟這頁其他東西**不同源**：天氣與 ET 都是 unix 時間的函數、走艾奧傑亞刻度；
  * 這個直接按現實時鐘的分鐘走 ⇒ 用 `Date` 取**本地**分秒，不要自己拿 unix 秒取模。
  * 台灣是整點時區，取模剛好也會對；但只要有人在半小時時區（印度／尼泊爾）開這頁就整整差半小時，
  * 而那種錯沒有任何訊號——畫面照樣在倒數，只是倒到錯的時間。
@@ -122,16 +122,18 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
       document.createTextNode(` ${next.name}`),
     ];
     if (current.name === PLAIN_WEATHER && next.name === PLAIN_WEATHER) {
-      note.push(document.createTextNode('（'), ...nextSpecialNote(now), document.createTextNode('）'));
+      // 用「·」接，**不要再包一層括號**：裡面那句自己就帶了「（本地 11:53）」，
+      // 包起來會變成巢狀括號「…（月塵 26 分後（本地 11:53））」，折行時還會在行首留一個孤立的「（」。
+      note.push(document.createTextNode(' · '), ...nextSpecialNote(now));
     }
     el.now.innerHTML = '';
     el.now.append(
       block('目前天氣', [weatherIcon(current, 28), document.createTextNode(` ${current.name}`)], note),
       // 值帶 `ET` 前綴，與其餘三格的「本地 HH:MM」形成一眼可辨的對照——
-      // 這一格的 label 雖然寫著「艾歐澤亞時間」，但人是掃數字的，四個 `18:30` 並排時
+      // 這一格的 label 雖然寫著「艾奧傑亞時間」，但人是掃數字的，四個 `18:30` 並排時
       // label 幫不上忙（Owner 2026-08-06）。註記講**尺度差**，那才是「差別」的本體：
       // 1 ET 小時＝175 現實秒 ⇒ ET 跑得比現實快約 20.6 倍。
-      block('艾歐澤亞時間', etClockText(now), '遊戲內時間 · 1 小時＝現實 2 分 55 秒；全伺服器同步'),
+      block('艾奧傑亞時間', etClockText(now), '1 小時＝現實 2 分 55 秒 · 全伺服器同步'),
       windyBlock(now),
       mechBlock(now),
     );
@@ -161,7 +163,7 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
         ? clockSuffix(`還剩 ${formatDuration(WEATHER_PERIOD - (now % WEATHER_PERIOD))}`,
           now + WEATHER_PERIOD - (now % WEATHER_PERIOD), ' 結束')
         : (next ? clockSuffix(`${formatDuration(next.start - now)}後`, next.start) : '—'),
-      `${count} 個天氣限定臨時任務的必要條件（佔 ${windy.rate}% 時段）`,
+      `${count} 個天氣限定任務的必要條件 · 佔 ${windy.rate}% 時段`,
     );
     d.classList.add('codex-tint-panel', 'codex-tint-panel--highlight', 'codex-tint-panel--bar');
     return d;
@@ -176,7 +178,7 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
     return block(
       '機甲行動',
       clockSuffix(`${formatDuration(next - now)}後`, next),
-      '每小時 :16 / :36 / :56（本地時間，不是 ET）',
+      '每小時 :16 / :36 / :56 · 本地時間不是 ET',
     );
   }
 
@@ -195,7 +197,9 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
 
   function block(label, value, note) {
     const d = document.createElement('div');
-    d.className = 'cos-stat';
+    // 框與底色走共用 `.codex-tint-panel`（預設 cyan，與全站 accent 一致）；
+    // 本地 `.cos-stat` 只負責版型。靈風那格另外疊 `--highlight --bar` 換成金色左邊條。
+    d.className = 'cos-stat codex-tint-panel';
     const l = document.createElement('span');
     l.className = 'codex-label';
     l.textContent = label;

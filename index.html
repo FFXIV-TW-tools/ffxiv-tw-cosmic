@@ -142,7 +142,7 @@
   <main class="codex-container cos-main">
     <!-- BETA 告示。刻意不寫資料來源（Owner 2026-08-01）——使用者要知道的是
          「哪些可以信、哪些還不能」，來源與他無關。 -->
-    <p class="codex-body cos-betanote">
+    <p class="codex-body codex-tint-panel codex-tint-panel--warn codex-tint-panel--bar cos-betanote">
       <strong>⚠️ BETA</strong> — 天氣、ET 時段、任務分類與獎勵已對照遊戲確認；
       「條件成立後任務會不會真的出現」還有規則未釐清（階級門、前置鏈）。看到不符請回報。
     </p>
@@ -159,7 +159,7 @@
     <div class="cos-stats" id="fc-now"></div>
 
     <!-- 這句講的就是「上面那個天氣可能被緊急事件蓋掉」，必須緊貼四格，不能留在原分頁 -->
-    <p class="codex-small cos-np__caveat cos-hideable" id="np-caveat" hidden></p>
+    <p class="codex-small codex-tint-panel codex-tint-panel--warn codex-tint-panel--bar cos-np__caveat cos-hideable" id="np-caveat" hidden></p>
 
     <div class="codex-tabs" id="cos-tabs" role="tablist" aria-label="宇宙探索分頁">
       <button class="codex-tab" role="tab" data-tab="emergency" id="tab-emergency"
@@ -230,7 +230,7 @@
         <span class="codex-hud" aria-hidden="true"></span>
         <h2 class="codex-h2 cos-panel__title">
           特殊天氣預報
-          <span class="codex-help-trigger" data-help="只列月塵與靈風。晴朗佔 70%、而且沒有任何任務綁它，整片列出來只會稀釋重點。｜這裡是純天氣預報，任務在「臨時任務」分頁。｜天氣＝unix 時間的純函數，全繁中服 7 個伺服器同一秒看到的天氣完全相同，可推算到任意未來。｜每段固定 23 分 20 秒（＝8 艾歐澤亞小時）。｜這一欄是**必然**的：時間到了天氣就是那樣。任務會不會出現是另一回事。">
+          <span class="codex-help-trigger" data-help="只列月塵與靈風。晴朗佔 70%、而且沒有任何任務綁它，整片列出來只會稀釋重點。｜這裡是純天氣預報，任務在「臨時任務」分頁。｜天氣＝unix 時間的純函數，全繁中服 7 個伺服器同一秒看到的天氣完全相同，可推算到任意未來。｜每段固定 23 分 20 秒（＝8 艾奧傑亞小時）。｜這一欄是**必然**的：時間到了天氣就是那樣。任務會不會出現是另一回事。">
             怎麼算的 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
           </span>
         </h2>
@@ -288,7 +288,7 @@
         <p class="codex-body">
           緊急事件的三種天氣不在機率表裡，演算法永遠擲不到 —— 所以本站只做算得準的部分。
         </p>
-        <p class="codex-body cos-caveat">
+        <p class="codex-body codex-tint-panel codex-tint-panel--warn codex-tint-panel--bar cos-caveat">
           ⚠️ <strong>尚未確認</strong>：開發階段會不會影響哪些任務出得來。遊戲內有這道門，規則未解出，本站不計算。
         </p>
       </section>
