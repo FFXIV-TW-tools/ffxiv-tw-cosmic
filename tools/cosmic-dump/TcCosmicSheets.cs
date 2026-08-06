@@ -16,7 +16,7 @@ internal static class TcCosmicSheets
     /// <summary>渴望灣（Sinus Ardorum）的 TerritoryType row id。ICE 亦硬編此值。</summary>
     public const uint SinusArdorumTerritory = 1237;
 
-    /// <summary>天氣週期長度（秒）＝8 艾歐澤亞小時＝23 分 20 秒。</summary>
+    /// <summary>天氣週期長度（秒）＝8 艾奧傑亞小時＝23 分 20 秒。</summary>
     public const int WeatherPeriodSeconds = 1400;
 
     /// <summary><c>TerritoryType</c> c12＝<c>WeatherRate</c> row id。

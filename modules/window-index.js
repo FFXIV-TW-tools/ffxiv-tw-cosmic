@@ -48,7 +48,7 @@ export function buildWindows(conditions, missions, forecaster) {
        *    跟「ET 小時」相容也跟任何 2 級距的東西相容，唯一依據是上游的欄位命名。
        *    現已由 Owner 遊戲內核對：#445「採集精密空氣淨化裝置所需的材料」(園藝師/A) 本站解出
        *    ET 10:00–12:00，遊戲顯示 10:00~11:59，逐位吻合；同名的採掘師版 (#400) 是 02:00–04:00，
-       *    兩者不同 ⇒ 不是碰巧對上任意 2 小時級距。單位確認為**艾歐澤亞小時**。
+       *    兩者不同 ⇒ 不是碰巧對上任意 2 小時級距。單位確認為**艾奧傑亞小時**。
        */
       verified: cond.type === 'weather' || cond.type === 'time',
 
@@ -69,7 +69,7 @@ export function buildWindows(conditions, missions, forecaster) {
         return null;
       },
 
-      /** 平均多久輪一次（秒）——ET 時段每艾歐澤亞日一次；天候依機率期望值。 */
+      /** 平均多久輪一次（秒）——ET 時段每艾奧傑亞日一次；天候依機率期望值。 */
       cadence() {
         if (cond.type === 'time') return EORZEA_DAY;
         if (cond.type === 'weather') {

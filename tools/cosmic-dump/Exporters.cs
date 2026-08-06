@@ -228,7 +228,7 @@ internal sealed class Exporters(GameData gd, JsonObject meta,
                     ["type"] = "time",
                     ["start"] = start,
                     ["end"] = end,
-                    ["label"] = $"艾歐澤亞時間 {start:00}:00–{end:00}:00",
+                    ["label"] = $"艾奧傑亞時間 {start:00}:00–{end:00}:00",
                 };
             }
             else

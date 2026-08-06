@@ -24,7 +24,7 @@ import { createEmergencyHistory } from './emergency-history.js';
 
 const TICK_MS = 1000;
 
-// 「現在可接」只在條件邊界變動，而兩種條件的邊界都落在 350 秒（＝2 艾歐澤亞小時）的格線上
+// 「現在可接」只在條件邊界變動，而兩種條件的邊界都落在 350 秒（＝2 艾奧傑亞小時）的格線上
 // ——天氣時段 1400 秒正好是它的 4 倍 ⇒ 用它當節流 key 同時涵蓋兩者，不會漏掉 ET 時段換檔。
 const CONDITION_TICK = 350;
 

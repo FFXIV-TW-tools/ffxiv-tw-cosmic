@@ -1,5 +1,5 @@
 /**
- * 艾歐澤亞時間與天氣週期的純計算層——**沒有 DOM、沒有資料表**，只有時間數學。
+ * 艾奧傑亞時間與天氣週期的純計算層——**沒有 DOM、沒有資料表**，只有時間數學。
  *
  * 天氣是 unix 時間的純函數（SE 官方演算法），與伺服器、DC、實例都無關：
  * 全繁中服 7 個伺服器在同一秒看到的天氣完全相同，因此本站不需要「選伺服器」。
@@ -10,17 +10,17 @@
  * 收斂到 portal 共用層需要動共用 API（Owner Gate1），故此處先各自實作、以 BACKLOG 追蹤。
  */
 
-/** 天氣時段長度（秒）＝8 艾歐澤亞小時＝23 分 20 秒。 */
+/** 天氣時段長度（秒）＝8 艾奧傑亞小時＝23 分 20 秒。 */
 export const WEATHER_PERIOD = 1400;
 
-/** 艾歐澤亞 1 小時 = 175 現實秒。 */
+/** 艾奧傑亞 1 小時 = 175 現實秒。 */
 const ET_HOUR = 175;
 
-/** 艾歐澤亞 1 天 = 24 ET 小時 = 4200 現實秒。 */
+/** 艾奧傑亞 1 天 = 24 ET 小時 = 4200 現實秒。 */
 const ET_DAY = ET_HOUR * 24;
 
 /**
- * 天氣種子（0–99）。SE 官方演算法：把「艾歐澤亞日數 × 100 ＋ 時段起點」丟進一個
+ * 天氣種子（0–99）。SE 官方演算法：把「艾奧傑亞日數 × 100 ＋ 時段起點」丟進一個
  * 位移互斥或雜湊。落在哪個天氣由各區的機率表累加決定。
  *
  * 實作細節：JS 的位元運算是 32 位元有號數，`<<`／`^` 之後必須 `>>> 0` 轉回無號，
@@ -44,7 +44,7 @@ export function periodStart(unixSeconds) {
   return Math.floor(unixSeconds / WEATHER_PERIOD) * WEATHER_PERIOD;
 }
 
-/** 該 unix 秒對應的艾歐澤亞時間（時、分）。 */
+/** 該 unix 秒對應的艾奧傑亞時間（時、分）。 */
 export function eorzeaClock(unixSeconds) {
   const etSeconds = Math.floor(unixSeconds / ET_HOUR * 3600);
   return {
@@ -53,7 +53,7 @@ export function eorzeaClock(unixSeconds) {
   };
 }
 
-/** 艾歐澤亞小時（含小數）——用來判斷是否落在某個 ET 時段條件內。 */
+/** 艾奧傑亞小時（含小數）——用來判斷是否落在某個 ET 時段條件內。 */
 export function eorzeaHour(unixSeconds) {
   return (unixSeconds % ET_DAY) / ET_HOUR;
 }
@@ -68,7 +68,7 @@ export function inEorzeaWindow(unixSeconds, start, end) {
 }
 
 /**
- * 下一次（含當前）「艾歐澤亞 ET 時段條件成立」的區間。
+ * 下一次（含當前）「艾奧傑亞 ET 時段條件成立」的區間。
  * 正在窗內時回傳當前窗（呼叫端要的是「現在能不能做」，不是「下一輪」）。
  */
 export function nextEorzeaWindow(unixSeconds, start, end) {
@@ -79,7 +79,7 @@ export function nextEorzeaWindow(unixSeconds, start, end) {
   return { start: from, end: from + span };
 }
 
-/** 艾歐澤亞一天的現實秒數——供呼叫端換算「多久輪一次」。 */
+/** 艾奧傑亞一天的現實秒數——供呼叫端換算「多久輪一次」。 */
 export const EORZEA_DAY = ET_DAY;
 
 /** 把秒數格式化成「1 小時 23 分」／「45 秒」這種倒數文字。 */
@@ -96,7 +96,7 @@ export function formatDuration(seconds) {
  * 本地時間 HH:MM，**裸值不帶標記**。
  *
  * ⚠️ **散文裡不要直接用這支**，用下面的 `localClockText()`。這一頁同時存在兩種時鐘
- * ——現實時鐘與艾歐澤亞時鐘（ET）——而且**格式一模一樣**（`18:30`／`15:42`），
+ * ——現實時鐘與艾奧傑亞時鐘（ET）——而且**格式一模一樣**（`18:30`／`15:42`），
  * 頁首四格更是把兩者並排。裸值等於要使用者自己猜是哪一種（Owner 2026-08-06 指出）。
  *
  * 允許用裸值的**唯一情形**：欄位標題已經標明是哪種時鐘（天氣預報表的「本地時間」／「ET」兩欄）。
