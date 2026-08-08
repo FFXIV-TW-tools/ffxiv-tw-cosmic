@@ -90,6 +90,12 @@ export function createAlarm(root, { windows, jobs, getJobFilter }) {
     el.status.textContent = `開啟中 · 提前 ${state.leadMinutes} 分鐘 · ${channel} · 分頁需保持開啟`;
   }
 
+  /**
+   * 「開啟當下」這一檔容許的回溯窗（秒）。tick 是每秒一次，但分頁被節流／電腦睡醒時
+   * 會跳過好幾秒 ⇒ 給一分鐘的餘裕，否則剛好跳過那一秒就整個漏掉。
+   */
+  const OPEN_GRACE_SECONDS = 60;
+
   /** 每次 tick 檢查一輪。@param {number} now unix 秒 */
   function check(now) {
     if (!state.enabled) return;
@@ -98,11 +104,28 @@ export function createAlarm(root, { windows, jobs, getJobFilter }) {
     const filter = wanted.length ? new Set(wanted) : null;
 
     for (const w of windows) {
-      if (w.isOpen(now) !== false) continue;        // 已開或條件未定：不是「即將開啟」
+      /*
+       * ⚠️ **提前量選「開啟當下」（0 分）時不能跳過已開的視窗**（2026-08-08 健檢）。
+       *
+       * 原本這裡一律 `isOpen(now) !== false continue`，於是只剩「還沒開」的視窗，
+       * 而那些的 `eta` 必然 > 0 ⇒ 對 `leadSeconds === 0` 而言 `eta > leadSeconds` 恆真、
+       * **一律 continue**。選項就掛在畫面上（index.html 的 `<option value="0">開啟當下`），
+       * 卻是靜默失效的：沒有錯誤、狀態列照樣寫「開啟中 · 提前 0 分鐘」。
+       *
+       * `next()` 的契約是「下一次**含當前**」⇒ 視窗開著時回的是當前視窗（start 在過去），
+       * 所以 eta ≤ 0 自然通過下面的閘，`fired` 鍵含 start 又保證同一個視窗只響一次。
+       *
+       * **但只收「剛開的」**（OPEN_GRACE 內）：不設下界的話，使用者按下開關的當下會被
+       * 所有「已經開了半小時」的視窗一次炸滿——那是雜訊不是提醒。
+       */
+      const open = w.isOpen(now);
+      if (open === null) continue;                  // 條件語意未定：不猜（鐵則 §2）
+      if (leadSeconds > 0 ? open !== false : open !== true) continue;
       const at = w.next(now);
       if (!at) continue;
       const eta = at.start - now;
       if (eta > leadSeconds) continue;
+      if (leadSeconds === 0 && eta < -OPEN_GRACE_SECONDS) continue;   // 早就開著的不補響
 
       const targets = filter ? w.jobs.filter((j) => filter.has(j)) : w.jobs;
       if (targets.length === 0) continue;

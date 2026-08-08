@@ -163,9 +163,13 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
       // 同上：相對時間一律附現實時鐘（進行中報「到幾點結束」，還沒到報「幾點開始」）
       // 「到 本地 18:30」讀起來會卡，所以進行中那句把標記放進去後改寫成「…結束」——
       // 保留「這個時刻是結束不是開始」的語意，同時不犧牲標記（2026-08-06）。
+      // ⚠️ 結束時刻用 `currentRunEnd` 而不是「目前時段還剩多久」（2026-08-08 健檢）：
+      // 天氣每段獨立擲，實測 12.8% 的靈風後面緊接著又是靈風，用時段邊界會提早 23 分 20 秒收掉。
       isNow
-        ? clockSuffix(`還剩 ${formatDuration(WEATHER_PERIOD - (now % WEATHER_PERIOD))}`,
-          now + WEATHER_PERIOD - (now % WEATHER_PERIOD), ' 結束')
+        ? (() => {
+          const end = forecaster.currentRunEnd(now, windy.id);
+          return clockSuffix(`還剩 ${formatDuration(end - now)}`, end, ' 結束');
+        })()
         : (next ? clockSuffix(`${formatDuration(next.start - now)}後`, next.start) : '—'),
       `${count} 個天氣限定任務的必要條件 · 佔 ${windy.rate}% 時段`,
     );

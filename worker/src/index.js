@@ -23,8 +23,13 @@ L.setWorlds(devStages.worlds);
 // ⚠️ 新網域用精確 host、不用 `([a-z-]+\.)?xivtc\.com` 萬用比對 —— 那會放行任何現在或
 //    未來的子網域，是不必要的邊界擴張（同 portal worker 的決定）。
 // 只列 cosmic 自己：實測本 worker 唯一呼叫端是 `modules/emergency-api.js`，無跨工具呼叫。
+// ⚠️ **pages.dev 也要精確到專案名**（2026-08-08 健檢收窄，原本是 `ffxiv-[a-z-]+`）：
+//    `*.pages.dev` 是全 CF 共用的命名空間，任何帳號都能開一個 `ffxiv-whatever` 專案並
+//    因此取得合法 Origin ——那等於把本 worker 唯一的跨站寫入防線對外開放。
+//    同一段註解上面才說「新網域刻意不用萬用比對」，下面卻對 pages.dev 用了，自相矛盾。
+//    `([a-f0-9]+\.)?` 前綴保留：那是 CF preview 部署的 hash，拿掉會讓預覽版驗不了。
 const ORIGIN_PATTERNS = [
-  /^https:\/\/([a-f0-9]+\.)?ffxiv-[a-z-]+\.pages\.dev$/,
+  /^https:\/\/([a-f0-9]+\.)?ffxiv-tw-cosmic\.pages\.dev$/,
   /^https:\/\/cosmic\.xivtc\.com$/,
   /^http:\/\/(localhost|127\.0\.0\.1)(:[0-9]+)?$/,
 ];
@@ -144,6 +149,12 @@ export default {
           {
             source: 'plugin', world: v.world, startAt: v.startAt, phase: v.phase,
             variant: v.variant, weather: v.weather, missionIds: v.missionIds,
+            // ⚠️ **這兩欄不能漏**（2026-08-08 健檢抓到）：這裡是逐欄列舉，漏掉不會有任何錯誤——
+            // `weatherObserved` 沒傳下去的話，`events-do.js` 那句
+            // `if (input.weatherObserved && input.weather)` 恆假，鐵則 §5.5「觀測 > 推導」
+            // 在「事件已經開始」那條路徑上**完全沒有執行**，錯的天氣會永久留住。
+            // 當初的測試走 warn→start 升級分支（那條有自己的 UPDATE）所以恆綠，抓不到。
+            weatherObserved: v.weatherObserved, variantConflicts: v.variantConflicts,
           },
           now,
         );

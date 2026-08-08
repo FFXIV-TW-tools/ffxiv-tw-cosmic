@@ -58,7 +58,27 @@ export function createForecaster(weatherData) {
     return null;
   }
 
-  return { table, periodSeconds: WEATHER_PERIOD, weatherAt, forecast, nextWeather };
+  /**
+   * 目前這一「段」同種天氣的結束時刻——**連著好幾個時段都是同一種天氣時要一路算到底**。
+   *
+   * ⚠️ 由來（2026-08-08 健檢）：靈風視窗原本用 `WEATHER_PERIOD - (now % WEATHER_PERIOD)`
+   * 算結束，那是「**目前這個時段**還剩多久」，不是「這段靈風還剩多久」。天氣是每段獨立
+   * 擲出來的，實測 **12.8%** 的靈風時段後面緊接著又是靈風 ⇒ 那些場合站上會提早整整
+   * 23 分 20 秒說它結束了，而使用者其實還有一整段可以做任務。
+   *
+   * 掃不到邊界（超過上限）就退回單段的結束時刻，**不回 null**——呼叫端拿 null 只會
+   * 退化成更糟的顯示，而「至少這一段是對的」永遠成立。
+   */
+  function currentRunEnd(from, weatherId, maxPeriods = 400) {
+    const start = periodStart(from);
+    for (let i = 1; i <= maxPeriods; i++) {
+      const at = start + i * WEATHER_PERIOD;
+      if (weatherAt(at).id !== weatherId) return at;
+    }
+    return start + WEATHER_PERIOD;
+  }
+
+  return { table, periodSeconds: WEATHER_PERIOD, weatherAt, forecast, nextWeather, currentRunEnd };
 }
 
 /**

@@ -1135,3 +1135,44 @@ describe('殘留變體（2026-08-08 ICE log 實證）', () => {
     expect(st.events[world].variant).toBe('storm-b');
   });
 });
+
+describe('觀測 > 推導的實際到達性（2026-08-08 健檢）', () => {
+  // 這條守的是**路由層有沒有把信任等級傳下去**。原本 index.js 逐欄列舉時漏了
+  // `weatherObserved`，於是 events-do 那句 `if (input.weatherObserved && ...)` 恆假，
+  // 鐵則 §5.5 在正式環境從未生效——而既有測試走 warn→start 升級分支（另一句 UPDATE）故恆綠。
+  it('事件已存在時，插件觀測到的天氣要蓋掉先前手動報的', async () => {
+    stubDiscord();
+    const world = devStages.worlds[6];
+    await clearWorld(world);
+    // ① 有人手動報成孢子霧（推導級：使用者自己選的）
+    const first = await (await post('/report',
+      { uuid: uuid(), world, startsInMinutes: 0, variant: 'spore-b' })).json() as any;
+    let st = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    expect(st.events[world].weather).toBe('spore');
+
+    // ② 插件送 weatherId=196（磁暴）——直接讀 ActiveWeather，觀測級 ⇒ 必須覆寫
+    await post('/report', { world, weatherId: 196, phase: 'start', missionIds: [] }, PLUG);
+    st = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    expect(st.events[world].weather).toBe('storm');
+    // 先前那個與觀測天氣不同種的變體必須被清掉，否則地圖會指向另外半張圖
+    expect(st.events[world].variant).toBeNull();
+    await revoke(first.eventId);
+  });
+});
+
+describe('Origin 白名單精確度（2026-08-08 健檢 sec-backend/A4）', () => {
+  // `*.pages.dev` 是全 CF 共用命名空間：任何帳號都能開 `ffxiv-whatever` 專案。
+  // 白名單原本寫 `ffxiv-[a-z-]+`，等於把唯一的跨站寫入防線對所有人開放。
+  it('別的 ffxiv-* Pages 專案不得通過，自己與 preview hash 要通過', async () => {
+    const probe = (origin: string) => SELF.fetch('https://x/state', { headers: { Origin: origin } });
+    const acao = async (o: string) => (await probe(o)).headers.get('Access-Control-Allow-Origin');
+
+    expect(await acao('https://ffxiv-tw-cosmic.pages.dev')).toBe('https://ffxiv-tw-cosmic.pages.dev');
+    expect(await acao('https://deadbeef.ffxiv-tw-cosmic.pages.dev')).toBe('https://deadbeef.ffxiv-tw-cosmic.pages.dev');
+    expect(await acao('https://cosmic.xivtc.com')).toBe('https://cosmic.xivtc.com');
+    // 負向控制：這三個以前會被放行
+    expect(await acao('https://ffxiv-evil.pages.dev')).toBeNull();
+    expect(await acao('https://ffxiv-tw-cosmic-evil.pages.dev')).toBeNull();
+    expect(await acao('https://evil.example.com')).toBeNull();
+  });
+});

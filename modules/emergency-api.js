@@ -26,7 +26,7 @@ const MESSAGES = {
   rate_limited: '太頻繁了，請等一分鐘再試。',
   cooldown: '你剛才才通報過這台伺服器，請等這次事件結束。',
   bad_world: '伺服器不在繁中服 7 台之內。',
-  bad_lead: '開始時間超出可通報範圍（0–15 分鐘）。',
+  bad_lead: '開始時間超出可通報範圍（往後最多 5 分鐘、往前最多 19 分鐘）。',
   bad_uuid: '識別碼異常 — 到工具箱設定重新產生一次即可。',
   bad_weather_kind: '天氣選項不正確，請重新選一次。',
   bad_variant: '天氣選項不正確，請重新選一次。',
@@ -38,6 +38,11 @@ const MESSAGES = {
   no_active_event: '這台伺服器目前沒有進行中的事件。',
   already_sent: '通知已經送出去了，不用再按一次。',
   not_configured: '後端尚未完成設定，請稍後再試。',
+  revoked: '這筆通報已被管理者撤銷。',
+  // 訂閱設定與投票這兩條路使用者按得到，錯誤碼要有話可說（2026-08-08 健檢：原本這三個沒訊息）
+  bad_worlds: '伺服器選擇不正確，請重新勾選一次。',
+  bad_mention: '提及對象設定不正確 — 到工具箱設定檢查一次 Discord 使用者／身分組 ID。',
+  bad_kind: '投票類型不正確，請重新整理頁面再試。',
 };
 
 export function messageFor(code) {
@@ -86,7 +91,12 @@ async function call(path, { method = 'GET', body } = {}) {
   if (res.ok) return { ok: true, data };
   // 409 不是失敗：代表這台伺服器已經有進行中的事件，本筆自動轉成附議
   if (res.status === 409) return { ok: true, data, duplicate: true };
-  const code = data?.error ?? 'unknown';
+  // ⚠️ **兩個欄位都要讀**（2026-08-08 健檢抓到）：HTTP 層的驗證失敗回 `{error}`，
+  // 但 Durable Object 自己的判斷（cooldown／not_reporter／has_confirms…）回的是 `{reason}`，
+  // 而 index.js 是把 DO 的回傳原封不動往外送。只讀 `error` 的話，上面那張訊息表裡
+  // 有一半的條目**永遠不會被用到**，全部退化成「後端暫時無法處理，請稍後再試」——
+  // 而那幾種情境重試永遠不會成功，等於把可行動的訊息換成會誤導的建議。
+  const code = data?.error ?? data?.reason ?? 'unknown';
   return { ok: false, code, message: messageFor(code), status: res.status };
 }
 
