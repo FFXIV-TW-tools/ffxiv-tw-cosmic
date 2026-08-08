@@ -19,7 +19,10 @@
 
 - **單一 DO 實例**（`idFromName('v1')`）裝全部 7 台伺服器。不分片：量體是「每台每小時最多幾筆」，
   而 fan-out 必須跨伺服器讀訂閱表。
-- **不排 alarm**：事件過期用 lazy 判定（`now >= endAt`），沒有任何事需要在結束那一刻發生。
+- **過期用 lazy 判定**（`now >= endAt`）：沒有任何事需要在結束那一刻發生。
+- **但有 alarm**：手動通報的 30 秒靜置期靠 DO alarm 實作（`_scheduleNotify` / `alarm()`），
+  **不得改成在 `waitUntil` 裡睡**——DO 會被回收，通知會靜默消失且無任何訊號（AGENTS 鐵則 §4）。
+  ⚠️ 本行原本寫「不排 alarm」，那是 2026-08-03 加靜置期之前的敘述，改完沒回頭更新（2026-08-08 健檢）。
 - **三個相位**：`warn`（遊戲內出現預兆通告，此時**還不知道何時開始** ⇒ `startAt=0`）→
   `start`（天氣真的翻轉，**就地把同一筆升級**、不開新事件，否則提前量就算不出來）→
   `end`（天氣轉回去，收 `endAt`）。`warn` 不要求 `weatherId`——那一刻天氣還沒變。
@@ -39,8 +42,8 @@
 
 ```bash
 pnpm install
-pnpm test              # 38 個整合測試（vitest-pool-workers）
-pnpm test:logic        # 20 個純函式測試（node --test）
+pnpm test              # 66 個整合測試（vitest-pool-workers）
+pnpm test:logic        # 41 個純函式測試（node --test）
 pnpm cf:deploy:dry     # 0 error 才往下
 # STOP（對外發佈，由 shawn 執行）：
 pnpm cf:deploy
@@ -67,7 +70,7 @@ npx wrangler secret put PLUGIN_TOKEN    # ICE 插件回報用的共享密鑰
 | `GET` | `/health` | 健康檢查（回伺服器數量，順便驗資料有載進來） |
 | `GET` | `/state` | 全 7 台現況。每台只回最新的一個 active 事件 |
 | `GET` | `/history?world=&limit=` | 歷史紀錄：已結束／已撤銷的事件（新→舊）。**只回計數不回 UUID**；撤銷的也列出來並標明 |
-| `POST` | `/report` | 通報。**manual**：`{uuid, world, startsInMinutes}`（0–15，需白名單 Origin）。**plugin**：header `X-Plugin-Token` ＋ `{world, weatherId, missionIds[], phase:'warn'\|'start'\|'end'}` |
+| `POST` | `/report` | 通報。**manual**：`{uuid, world, startsInMinutes}`（**−19–5**，需白名單 Origin；上限 5 是因為遊戲的預兆通告只提前約 5 分鐘，負值＝發現得晚、事件已經開始）。**plugin**：header `X-Plugin-Token` ＋ `{world, weatherId, missionIds[], phase:'warn'\|'start'\|'end'}` |
 | `POST` | `/vote` | `{uuid, eventId, kind:'confirm'\|'dispute'}` |
 | `POST` | `/withdraw` | `{uuid, eventId}` — **通報者撤回自己那一筆**（誤按用）。三個條件缺一不可：是本人、還在進行中、**還沒有人附議**。已送出的通知收不回來 |
 | `PUT` | `/sub` | `{uuid, worlds[], webhookUrl?}`；`worlds: []` ＝退訂並**實體刪列** |
@@ -75,6 +78,7 @@ npx wrangler secret put PLUGIN_TOKEN    # ICE 插件回報用的共享密鑰
 | `POST` | `/admin/revoke` | `{eventId}` — 撤銷。⚠ 已推播的 Discord 訊息收不回來 |
 | `POST` | `/admin/block` | `{uuid, note}` — 封鎖並刪除其訂閱 |
 | `POST` | `/admin/adjust` | `{eventId, startAt}` — 校正開始時間（`endAt` 依 20 分鐘常數重算、`startExact` 轉 false）。通報時間只可能是「送出的那一刻」，發現得晚就整段偏，這是唯一的修正手段 |
+| `POST` | `/admin/variant-map` | `{variant, group}` — 人工定案「開始通告 ↔ 任務組」。Owner 在遊戲裡看到就能直接寫，不必等插件剛好覆蓋到那一台 |
 | `POST` | `/admin/purge` | 刪掉**已撤銷／已撤回**的事件。判準用狀態不用時間：真實事件跑完後狀態仍是 `active`（過期是 lazy 判定），所以只會刪到被人明確撤掉的那些（測試資料、誤按） |
 | `GET` | `/admin/stats` | 分桶計數（plugin／manual 通報量、附議率、否認率、fan-out 失敗、熔斷數） |
 

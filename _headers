@@ -1,5 +1,5 @@
 # Cloudflare Pages headers — 安全強化 + cache 控制（新工具 starter 範本）
-# 複製到新 repo 根目錄。把 換成本工具自己的 worker（沒有後端就刪掉該段）。
+# 複製到新 repo 根目錄。把 connect-src 裡的 `ffxiv-tw-cosmic-api` 換成本工具自己的 worker（沒有後端就刪掉該段）。
 # CSP 已放行 portal CDN 全 src（fat-cat / header / settings 等資產）+ CF Web Analytics。
 # connect-src 必須含 discord.com / discordapp.com：portal 設定 modal 的「🧪 測試發送」
 # 是從**本頁**直接 POST 到 Discord webhook（不經任何後端）。少了它，按鈕會回
