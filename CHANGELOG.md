@@ -2,6 +2,40 @@
 
 > 日期段落制（cycle 收官為段）；條目含人話「為什麼」，不從 git log 自動生成。格式見 DEVLOOP §4.3。
 
+## 2026-08-08 — 全專案健檢：修掉五類「功能靜默失效」
+
+**為什麼**：Owner 要求完整健檢並把不需拍板的項目直接做完。14 維度 fan-out（37 agents、85 findings、70 confirmed／15 partial／**0 refuted**）＋主迴圈加倍抽驗。報告與計畫在 `docs/health-reviews/`。
+
+**雙視角總評：專案體質 6.9 / 使用者友善 6.4**。0 critical、2 high，其餘集中在同一個形狀——**功能在畫面上、實際不會動，而且沒有任何訊號**。
+
+### Fixed
+
+- **路由層丟掉 `weatherObserved`** ⇒ 兩天前才立的鐵則 §5.5「觀測 > 推導」**在正式環境從未生效**。`index.js` 逐欄列舉傳給 DO 的物件時漏了它，於是 `if (input.weatherObserved && ...)` 恆假。當初的測試走 warn→start 升級分支（那條有自己的 UPDATE）所以恆綠——**測試綠而功能死**。已補傳並加「事件已 active 時插件觀測到別種天氣」的測試，反向對照確認移除修正後恰一條轉紅。
+- **鬧鐘「開啟當下」（0 分）永遠不會響**。迴圈先跳過所有已開視窗，剩下的 `eta` 必然 > 0，而閘是 `eta > leadSeconds` ⇒ lead=0 一律 continue。選項就掛在畫面上、狀態列還寫著「開啟中 · 提前 0 分鐘」。修法收「剛開的」視窗（60 秒回溯窗——不設下界的話，按下開關的當下會被所有已開視窗一次炸滿）。
+- **靈風視窗在連續兩段靈風時提早 23 分 20 秒收掉**。原本用「**目前這個時段**還剩多久」當結束時刻，但天氣是每段獨立擲的——實測 **12.8%** 的靈風後面緊接著又是靈風。新增 `forecaster.currentRunEnd()` 一路掃到邊界。
+- **八個錯誤訊息全部退化成「請稍後再試」**。HTTP 層失敗回 `{error}`、Durable Object 的判斷回 `{reason}`，而前端只讀 `error` ⇒ `cooldown`／`not_reporter`／`has_confirms` 這些**早就寫好的訊息從來沒被用過**，全部換成一句「重試看看」——而那些情境重試永遠不會成功。順帶修掉 `bad_lead` 文案的 drift（寫 0–15，實際 −19–5）。
+- **CORS 白名單放行任何 `ffxiv-*.pages.dev`**。`*.pages.dev` 是全 CF 共用命名空間，任何人都能開一個 `ffxiv-evil` 取得合法 Origin。同一段註解上面才說「新網域刻意不用萬用比對」，下面卻對 pages.dev 用了。已收窄到專案名（preview hash 前綴保留）。
+
+### Added
+
+- `tests/time-weather.test.mjs`（8 條）——**整站最核心的天氣／ET 純函式在此之前一條數值斷言都沒有**，而「時間資訊要對」正是這個站的核心承諾。釘週期常數、ET 尺度、種子值域、長期分布 vs client 機率表、連續同天氣段邊界。
+- `tests/error-messages.test.mjs`——後端錯誤碼 ↔ 中文訊息的涵蓋率哨兵。加上去當場又抓出 9 個沒訊息的碼，其中 3 個（`bad_worlds`／`bad_mention`／`bad_kind`）使用者按得到，已補。
+- `tests/alarm-lead.test.mjs`（4 條）——喂假 window 與假 Notification 逐秒跑過開啟時刻，含反向對照。
+- **`AGENTS.md` 補 `TEST-BASELINE` 標記**：本 repo 原本沒有 ⇒ monorepo 的 pre-commit gate 6 與跨 repo 稽核**整個跳過本站**，VERIFY 段宣告的測試數從來沒有任何東西在驗。
+
+### Docs
+
+- **README 複述本專案自己已證偽的結論**：「標出緊急任務的必要條件視窗（靈風時段）」——該說法 2026-08-02 就證偽並從站上移除，README 沒跟著改；而且整個緊急事件功能（預設分頁）在 README 裡完全不存在。
+- `worker/README` 三處：「不排 alarm」（實際有，靜置期就靠它）、`startsInMinutes` 0–15（實際 −19–5）、缺 `/admin/variant-map`、測試數 38/20（實際 66/41）。
+- B-017 關閉——它是 open 條目卻指向**已證偽的修法**（「補齊多個 ToDo 槽」），數字也停在 117。
+
+### Notes
+
+- 測試檔 4 → **7**、worker 整合 64 → **66**、純函式 41。
+- ⚠️ **worker 已改但尚未部署**：Worker 與 Pages 部署完全脫鉤，只 push 的話 `weatherObserved` 與 CORS 收窄**線上不會生效**，而且測試全綠、畫面全正常。部署屬對外行為，留給 Owner。
+- 未執行的 10 項已開成 B-030～B-039，其中 2 個 high（DO 零索引、每秒重建 DOM）各自需要先寫 spec；B-034 需要**先進遊戲核對**才能動（鐵則 §2）。
+- **0 refuted 觸發 skill 的橡皮圖章警語** ⇒ 主迴圈親自複驗 5 條（全部屬實，含自行掃 20000 段實算連續靈風比例）＋5 項 recall 反查。其中 ICE log 對帳抓到 **2 項 agent 找不到的**（它們沒有 log）：事件結束時間偏晚 81–137 秒、`startExact` 送出卻從未被消費 → B-038。
+
 ## 2026-08-08 — 緊急事件的天氣會被殘留的變體寫錯
 
 **為什麼**：Owner 問「最近的 log 有沒有助於分析網頁正確性」，比對 ICE 執行 log 時抓到一筆**站上是錯的**紀錄。
