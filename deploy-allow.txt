@@ -3,6 +3,7 @@ _routes.json
 css
 data
 favicon-192.png
+favicon.ico
 functions
 img
 index.html
