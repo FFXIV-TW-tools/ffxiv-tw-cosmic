@@ -144,6 +144,28 @@ export class CosmicEventsDO extends DurableObject {
   }
 
   /**
+   * 天氣與變體不同種 ⇒ **把變體與已定的組別一起清掉**。
+   *
+   * 這兩欄的可信度不對等：`weather` 來自遊戲的 ActiveWeather（直接觀測），
+   * `variant` 來自畫面通告文字比對（會殘留上一場的值）。不同種時只有一個可能對，
+   * 而留著錯的變體代價最大——它會經由 `variant_map` 讓地圖指向**另外半張圖**。
+   *
+   * **清空而不是改成推導值**：我們知道「這個變體是錯的」，不知道「正確的是哪一個」。
+   * 留白＝「還不知道是哪一組」，那是本站處理得了的狀態（鐵則 §2）。
+   * 之後任何一筆帶對變體的回報會把它補回來。
+   */
+  _dropConflictingVariant(eventId) {
+    const rows = this.sql
+      .exec('SELECT variant, weather, groupKey FROM events WHERE id = ?', eventId).toArray();
+    if (!rows.length) return;
+    const { variant, weather } = rows[0];
+    if (!variant || !weather) return;
+    if (L.weatherKindOf(variant) === weather) return;
+    this.sql.exec('UPDATE events SET variant = NULL, groupKey = NULL WHERE id = ?', eventId);
+    this._bump('variant_weather_conflict');
+  }
+
+  /**
    * 拿「通告變體 ＋ 任務板上的任務 id」定案一次對應。
    *
    * **只在兩者都有、而且判得出組時才寫**（`resolveGroup` 判不出來會回 null，不回「比較像」的）；
@@ -318,7 +340,12 @@ export class CosmicEventsDO extends DurableObject {
         `INSERT INTO events (world, source, startAt, endAt, startExact, createdAt, reporter, warnedAt, variant, weather)
          VALUES (?, ?, 0, ?, 0, ?, '', ?, ?, ?)`,
         world, source, now + L.WARN_TTL, now, now, input.variant ?? null,
-        input.weather ?? L.weatherKindOf(input.variant) ?? null,
+        // ⚠️ **預告階段不由 variant 推天氣**（2026-08-08）。`validatePluginReport` 刻意把
+        // warn 的 weather 設成 null，理由是那一刻 `weatherId` 還是上一場的殘留值——
+        // 但 `variant` 是**同一個殘留問題**（來自畫面通告比對），從它推導等於把剛擋掉的
+        // 錯值從後門放進來。實證：2026-08-06 15:09 的預告帶著上一場的 `spore-`，
+        // 20 分鐘後那場其實是磁暴，而站上 id=94 就這樣被記成孢子霧。
+        input.weather ?? null,
       );
       const wid = this.sql.exec('SELECT last_insert_rowid() AS id').toArray()[0].id;
       this._bump('warn_ok');
@@ -352,11 +379,19 @@ export class CosmicEventsDO extends DurableObject {
       this.sql.exec(
         // 變體只有**開始通告**帶得出來（預告階段兩個變體共用同一句），所以是在升級這一刻
         // 才寫得進去。`COALESCE` ＝插件沒偵測到就保持原值，不要用 null 蓋掉已知的。
-        `UPDATE events SET startAt = ?, endAt = ?, startExact = 1,
+        //
+        // ⚠️ **`weather` 一定要在這裡寫**（2026-08-08 補）。這一段原本完全沒碰它，於是
+        // 預告那一刻寫進去的天氣（那時只可能是推導或殘留的）**永遠沒有被改正的機會**——
+        // 天氣真的翻轉、插件讀到了 ActiveWeather，卻沒有任何一條路把它寫回去。
+        // 這正是 id=94 被記成孢子霧的原因：20 分鐘內三筆回報都帶著正確的 196（磁暴），
+        // 一次都沒寫進去。這一筆是插件的 start ⇒ 天氣是觀測值，直接覆寫。
+        `UPDATE events SET startAt = ?, endAt = ?, startExact = 1, weather = COALESCE(?, weather),
            variant = COALESCE(?, variant), missionIds = COALESCE(?, missionIds) WHERE id = ?`,
-        now, now + L.EVENT_DURATION, input.variant ?? null,
+        now, now + L.EVENT_DURATION, input.weather ?? null, input.variant ?? null,
         input.missionIds?.length ? JSON.stringify(input.missionIds) : null, existing.id,
       );
+      // 升級後才判衝突：這時 weather 是觀測值、variant 可能還是預告階段殘留的那個
+      this._dropConflictingVariant(existing.id);
       this._bump('warn_to_start');
       this.ctx.waitUntil(this._fanout(this._activeEvent(world, now), now));
       return { ok: true, eventId: existing.id, duplicate: false };
@@ -374,13 +409,29 @@ export class CosmicEventsDO extends DurableObject {
       }
       // 附議者可能比第一個人知道得多：只看到預告的人選不出 α／β，事件開始後才進來的人選得出。
       // **只補空欄**（`COALESCE(舊, 新)` — 舊值非空就贏），後到的人不能改寫已經定下來的變體。
+      //
+      // ⚠️ **天氣是例外：直接觀測到的值會覆寫**（2026-08-08）。COALESCE 的語意是「先到的贏」，
+      // 而事件的第一筆常常是預告——那時天氣還沒翻轉、值是推導或殘留的。等真正的 `start`
+      // 帶著讀自 ActiveWeather 的天氣進來時，先到的錯值反而把它擋掉了。
+      // 實證＝id=94：預告記成孢子霧，20 分鐘裡三筆 start/end 都送 `weatherId=196`（磁暴），
+      // 一次都沒有機會改正。**觀測 > 推導**，不管誰先到。
       if (input.variant || input.weather) {
         this.sql.exec(
-          'UPDATE events SET variant = COALESCE(variant, ?), weather = COALESCE(weather, ?) WHERE id = ?',
-          input.variant ?? null,
-          input.weather ?? L.weatherKindOf(input.variant) ?? null,
-          existing.id,
+          'UPDATE events SET variant = COALESCE(variant, ?) WHERE id = ?',
+          input.variant ?? null, existing.id,
         );
+        // ⚠️ **覆寫權只給「觀測到的」天氣**（插件 start/end 讀 ActiveWeather）。
+        // 手動通報的天氣是使用者自己選的，跟先到的值同一個等級 ⇒ 照舊 COALESCE，
+        // 否則「第三個人選錯」會蓋掉前面兩個人的正確值（既有測試正是守這件事）。
+        if (input.weatherObserved && input.weather) {
+          this.sql.exec('UPDATE events SET weather = ? WHERE id = ?', input.weather, existing.id);
+          this._dropConflictingVariant(existing.id);
+        } else {
+          this.sql.exec(
+            'UPDATE events SET weather = COALESCE(weather, ?) WHERE id = ?',
+            input.weather ?? L.weatherKindOf(input.variant) ?? null, existing.id,
+          );
+        }
       }
       // **補送路徑**：事件開始那一秒任務板多半沒開，插件讀不到 `missionIds`。
       // 玩家之後打開任務板時插件會再送一次，這裡把當時空著的欄位補起來

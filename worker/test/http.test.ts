@@ -480,10 +480,14 @@ describe('事件變體（α／β）', () => {
     const mid = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
     expect(mid.events[w].variant).toBeNull();
 
+    // ⚠️ 變體必須與 weatherId 同種（196＝磁暴 ⇒ storm-*）。原本這裡寫 `spore-b`，
+    // 那是**內部矛盾的 fixture**——本案要驗的是「COALESCE 不會用 null 蓋掉」，
+    // 不是「衝突的變體要留著」。2026-08-08 起衝突的變體會被丟掉（見「殘留變體」那組），
+    // 所以這裡改成自洽的一對；斷言的意圖不變。
     await post('/report',
-      { world: w, weatherId: 196, missionIds: [518], phase: 'start', variant: 'spore-b' }, PLUG);
+      { world: w, weatherId: 196, missionIds: [518], phase: 'start', variant: 'storm-b' }, PLUG);
     const after = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
-    expect(after.events[w].variant).toBe('spore-b');
+    expect(after.events[w].variant).toBe('storm-b');
     expect(after.events[w].id).toBe(mid.events[w].id);   // 同一筆，不是新開的
     await revoke(after.events[w].id);
   });
@@ -1098,5 +1102,36 @@ describe('管理', () => {
     const s = await res.json() as any;
     expect(s.report_ok_manual).toBeGreaterThan(0);
     expect(s.report_ok_plugin).toBeGreaterThan(0);
+  });
+});
+
+describe('殘留變體（2026-08-08 ICE log 實證）', () => {
+  // 真實序列（伊弗利特 2026-08-06）：
+  //   15:09 warn   variant=spore-b（同日 11:07 那場孢子霧殘留）
+  //   15:14 start  weatherId=196（磁暴）＋ 同一個殘留 variant
+  //   15:34 end    weatherId=196 ＋ 正確的 storm-b
+  // 修正前的結果＝站上 id=94 被記成孢子霧，地圖會指向孢子霧那半張圖。
+  it('預告的殘留變體不得決定天氣，之後觀測到的天氣要蓋掉它', async () => {
+    stubDiscord();
+    const world = W2;
+    // ① 預告：那一刻天氣還沒翻轉，weatherId 不可信 ⇒ 天氣必須留白
+    await post('/report', { world, weatherId: 0, variant: 'spore-b', phase: 'warn' }, PLUG);
+    let st = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    expect(st.events[world]).toBeTruthy();
+    expect(st.events[world].weather).toBeNull();
+
+    // ② 開始：weatherId 是直接讀遊戲的 ActiveWeather ⇒ 一定要蓋過先到的空值／推導值
+    await post('/report', { world, weatherId: 196, variant: 'spore-b', phase: 'start', missionIds: [] }, PLUG);
+    st = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    expect(st.events[world].weather).toBe('storm');
+    // 殘留的變體與觀測到的天氣不同種 ⇒ 必須被丟掉（留著會讓地圖指錯半張圖）
+    expect(st.events[world].variant).toBeNull();
+    expect(st.events[world].group).toBeNull();
+
+    // ③ 之後帶對變體的回報要能把它補回來
+    await post('/report', { world, weatherId: 196, variant: 'storm-b', phase: 'start', missionIds: [] }, PLUG);
+    st = await (await SELF.fetch(`https://x/state?bust=${++seq}`)).json() as any;
+    expect(st.events[world].weather).toBe('storm');
+    expect(st.events[world].variant).toBe('storm-b');
   });
 });

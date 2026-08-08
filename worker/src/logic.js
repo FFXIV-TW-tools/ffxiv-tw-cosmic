@@ -269,6 +269,22 @@ export function validatePluginReport(body, now) {
   if (body.variant !== undefined && !VARIANTS.includes(body.variant)) {
     return { ok: false, reason: 'bad_variant' };
   }
+  /*
+   * ⚠️ **變體與觀測到的天氣不同種 ⇒ 丟掉變體**（2026-08-08，ICE log 實證）。
+   *
+   * 插件的 `variant` 來自「畫面通告文字比對」，**上一場事件的值會殘留**；`weatherId` 則是
+   * 直接讀遊戲的 ActiveWeather。兩者衝突時只有一個可能對，而直接觀測那個明顯更可信。
+   *
+   * 實證：2026-08-06 15:14 伊弗利特送出 `weatherId=196`（磁暴）配 `variant=spore-b`
+   * ——那是同日 11:07 那場孢子霧留下來的。28 秒後插件自己比對到正確的 `storm-b`。
+   * 沒有這道閘的話，那筆事件會被存成孢子霧、地圖指向孢子霧那半張圖（實際站上 id=94 就是這樣）。
+   *
+   * **丟掉而不是退件**：事件本身是真的（天氣確實翻轉了），退件會連事件都消失——
+   * 那比標錯變體更糟。變體留白只是「還不知道是哪一組」，那是本站處理得了的狀態。
+   */
+  const observedKind = phase === 'warn' ? null : kindOfWeatherId(body.weatherId);
+  const variantConflicts = body.variant !== undefined && observedKind !== null
+    && weatherKindOf(body.variant) !== observedKind;
   // 任務板上的 id **只取緊急任務區間**，其餘忽略。
   //
   // ⚠️ **不因為「沒有 critical」而退件**（2026-08-04 修）。原本的檢查是
@@ -284,7 +300,10 @@ export function validatePluginReport(body, now) {
     world: body.world,
     phase,
     startAt: now,
-    variant: body.variant ?? null,
+    variant: variantConflicts ? null : (body.variant ?? null),
+    // 給呼叫端記一筆 metric 用——這件事只會在插件那頭的殘留 bug 還在時發生，
+    // 沒有計數的話它會安靜地一直發生（畫面上只是「那場事件沒有 α／β」）。
+    variantConflicts,
     // 天氣種類由 `weatherId` 查表得出（見 WEATHER_ID_KIND）——插件送的是 id，
     // 而 `variant` 常常是 null（沒抓到開始通告），只靠 variant 推導會讓天氣欄空著。
     //
@@ -292,6 +311,10 @@ export function validatePluginReport(body, now) {
     // **上一次事件的殘留**（初始值還是 196＝磁暴）。2026-08-03 實測踩到：利維坦的預告
     // 因此被標成「磁暴」，而那個值沒有任何觀測支撐——鐵則 §2 說的「看起來合理但沒有訊號」。
     weather: phase === 'warn' ? null : kindOfWeatherId(body.weatherId),
+    // **這一筆的天氣是「觀測」還是「推導」**——只有插件的 start/end 是直接讀遊戲的
+    // ActiveWeather，那種才有資格覆寫先前的值。手動通報的天氣是使用者自己選的（推導級），
+    // 覆寫權給它會讓「第三個人選錯」蓋掉前面兩個人的正確值。
+    weatherObserved: phase !== 'warn',
     // **存下來**（原本只驗不存）：`variant` 是通告文字解出來的、`missionIds` 是任務板看到的，
     // 兩者**同時**出現的那一筆就是「哪則通告對應哪一組任務」的唯一證據（B-023）。
     // 每次丟掉它，就等於每次事件都把那個答案扔了。已在上面濾成只剩緊急任務區間。

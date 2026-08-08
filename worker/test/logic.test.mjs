@@ -509,3 +509,25 @@ test('@ 對象：validateSub 跨欄位驗證（寫入邊界一律拒絕，不降
     assert.equal(L.validateSub({ ...base, ...bad }).reason, 'bad_mention', `應拒：${JSON.stringify(bad)}`);
   }
 });
+
+test('插件通報：變體與觀測到的天氣不同種 ⇒ 丟掉變體，但事件照收', () => {
+  // 2026-08-06 15:14 伊弗利特的真實 payload：weatherId 196＝磁暴，
+  // variant 卻是同日 11:07 那場孢子霧殘留下來的 spore-b。
+  const stale = { world: W, weatherId: 196, variant: 'spore-b', phase: 'start', missionIds: [] };
+  const r = L.validatePluginReport(stale, NOW);
+  assert.equal(r.ok, true, '事件本身是真的（天氣確實翻轉了）⇒ 不得退件');
+  assert.equal(r.weather, 'storm', '天氣以直接觀測的 weatherId 為準');
+  assert.equal(r.variant, null, '衝突的變體必須丟掉，不能留著讓地圖指錯半張圖');
+  assert.equal(r.variantConflicts, true);
+
+  // 對照組：同種就照收
+  const ok = L.validatePluginReport({ ...stale, variant: 'storm-b' }, NOW);
+  assert.equal(ok.variant, 'storm-b');
+  assert.equal(ok.variantConflicts, false);
+
+  // warn 沒有觀測天氣（那一刻還沒翻轉）⇒ 無從判斷衝突，變體照留
+  const warn = L.validatePluginReport({ world: W, weatherId: 0, variant: 'spore-b', phase: 'warn' }, NOW);
+  assert.equal(warn.ok, true);
+  assert.equal(warn.weather, null);
+  assert.equal(warn.variant, 'spore-b');
+});
