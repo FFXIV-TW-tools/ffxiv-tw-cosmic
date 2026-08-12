@@ -143,6 +143,12 @@ const WEATHER_CHOICES = [
  */
 const EVENT_MINUTES = 20;
 
+/**
+ * 預兆通告 → 事件開始的**密集區間**（秒）。實測 18 筆中 17 筆落在這裡，另 1 筆 543 秒。
+ * 只拿它算顯示用的區間，**不拿來排程、不拿來預測下一次事件**（鐵則 §4）。
+ */
+const LEAD_CLUSTER = [278, 281];
+
 const LEAD_GROUPS = [
   ['還沒開始', [5, 3, 1].map((m) => [m, `再 ${m} 分鐘開始`])],
   // 已經開始的一律講**剩餘時間**，不講「已經過了多久」——玩家看得到的是倒數，
@@ -151,6 +157,32 @@ const LEAD_GROUPS = [
     m, m === 0 ? '剛剛開始' : `剩餘時間 ${EVENT_MINUTES + m} 分鐘`,
   ])],
 ];
+
+/**
+ * 預告階段的「還要多久開始」——**給區間，不給精確倒數**（B-027，Owner 2026-08-11 拍板方案 A）。
+ *
+ * 依據：插件量的 `warnedAt → startAt` 共 18 筆，其中 **17 筆落在 278–281 秒**（全距只有 3 秒），
+ * 另 1 筆 543 秒。密集到這個程度，本來足以做精確倒數——**但那 1 筆離群值正好證明提前量
+ * 不是常數**，而倒數歸零卻沒開始，在這一頁會被讀成「網站說錯了」而失去整頁的信任
+ * （這一頁的資訊主張本來就比其他頁弱，禁不起這種損失）。
+ *
+ * 所以：拿密集區間 [278, 281] 當基準，**往外取整到分鐘**再顯示。
+ * 剛出現預告時自然得到「約 4–5 分鐘後開始」，之後隨時間收斂成「約 1–2 分鐘後」。
+ *
+ * **走過區間就退回「即將開始」**，不改口說「應該已經開始了」——那是我們不知道的事
+ * （那 1/18 的場合就是還沒開始），寧可少講也不要講一件沒有依據的。
+ *
+ * @param {number} warnedAt 預兆通告出現的 unix 秒
+ * @param {number} now      現在的 unix 秒
+ * @returns {string}
+ */
+export function warnEtaText(warnedAt, now) {
+  if (!warnedAt) return '即將開始';
+  const lo = Math.floor((warnedAt + LEAD_CLUSTER[0] - now) / 60);
+  const hi = Math.ceil((warnedAt + LEAD_CLUSTER[1] - now) / 60);
+  if (lo <= 0) return '即將開始';
+  return lo === hi ? `約 ${lo} 分鐘後開始` : `約 ${lo}–${hi} 分鐘後開始`;
+}
 
 /**
  * @param {HTMLElement} root #panel-emergency
@@ -650,7 +682,7 @@ function weatherLabel(ev) {
       // 落在 278–281 秒、全距 3 秒），但**還有一筆 543 秒**——那個離群值正好證明提前量
       // 不是常數。倒數歸零而事件沒開始，在這一頁會被讀成「網站說錯了」而失去整頁的信任。
       // 要做的話給區間（「約 4–5 分鐘後」）不給精確值，見 docs/BACKLOG.md B-027。
-      when.textContent = '即將開始';
+      when.textContent = warnEtaText(ev.warnedAt, now);
       const note = document.createElement('span');
       note.className = 'codex-small cos-em__none';
       note.textContent = `（${localClockText(ev.warnedAt || now)} 出現預兆通告）`;
