@@ -75,38 +75,12 @@ ICE 插件偵測到 `ActiveWeather ∈ 194–197` 自動回報，加上玩家手
 **15/15 都是晴朗**；同一份記錄的非緊急 171 筆演算法與實測 171/171 吻合 ⇒ 不是演算法或記錄的問題。
 加回去只會把真實通報靜默退掉。
 
-**2026-08-06 升級為統計結論、2026-08-11 擴充到 n=173**（`/history` 的 `status=active` 通報；
-天氣是時間的純函數 ⇒ 每筆的底層演算法天氣都能離線回推）：
+統計上也站得住：**n=173，χ²=3.35（df=2，臨界 5.99）⇒ 與隨機取樣無異**（2026-08-11）。
+推導、兩次方法修正史（基準必須用該期間**實際**天氣分布、不是機率表 70/15/15）、per-server 計時器
+形狀與 `/history` 100 筆全域上限的取數陷阱 → **`docs/emergency-weather-analysis.md`**（動這條前先讀那份）。
 
-| | 晴朗 | 月塵 | 靈風 |
-|---|---|---|---|
-| 事件開始時的演算法天氣（n=173）| 102（59.0%）| 35（20.2%）| 36（20.8%）|
-| **同一段期間實際的天氣時段分布**（n=550）| 358（65.1%）| 102（18.5%）| 90（16.4%）|
-
-χ²=**3.35**（df=2，臨界 5.99）⇒ **與隨機取樣無異**。**多數是從晴朗直接轉過去的**，
-不存在「先靈風／月塵再轉」這條路。
-
-⚠️ **基準要用「該期間實際的天氣分布」，不是機率表的 70/15/15**（2026-08-11 更正）。
-天氣是每段獨立擲的，9 天只有 550 段，本身就會偏離長期機率——這段期間實際是 65/18.5/16.4。
-拿理論值當基準會把「這陣子天氣本來就偏多靈風」算到事件頭上：同一份 n=173 用理論值算出
-χ²=10.06（看起來顯著），用實際分布算是 3.35（不顯著）。
-**2026-08-06 那次寫的 χ²=1.48 也是用理論值算的**——那次結論沒錯是因為樣本小、剛好沒跨過臨界值，
-但方法是錯的，重算會得到不同答案而讓人以為結論翻案。
-
-另兩條佐證：
-
-- **與天氣時鐘不對齊**：事件開始距所屬天氣時段起點均勻散布（min 17／中位 720／max 1395 秒，
-  週期 1400）⇒ 緊急天氣不是「取代某個天氣時段」，它跑在另一條時間軸上。
-  回推 lag −1400 ~ +1400 秒全掃過，靈風佔比在 14–31% 間隨機擺動、無尖峰 ⇒ 不是通報延遲造成的。
-- **真正的形狀是 per-server 計時器**：同伺服器相鄰事件間隔 166 筆中，**124 筆落在 161–326 分**
-  （中位 **261 分 ≈ 4 小時 21 分**），其餘 42 筆全是該值的近整數倍（密集在 1.7–2.3／2.7–3.1／3.8–4.3
-  ＝2×／3×／4×）＝那幾輪沒人通報。**回推那些漏掉的時刻，天氣分布與觀測到的一致**
-  （62.9/20.0/17.1 vs 59.0/20.2/20.8）⇒ 也不存在「特殊天氣比較容易被通報」的偵測偏差。
-- ⚠️ **取資料時 `/history` 的 100 筆上限是全域的**，事件累積到約 19 筆／日之後全域查詢只涵蓋 5 天。
-  要拿完整序列得**逐伺服器查**（`?world=<名>&limit=100`），七台合併才是全量。
-
-⚠️ 這條**不是**「已解出緊急事件的觸發規則」。已排除的只有天氣；per-server 週期是**觀察到的形狀**，
-沒有 client 欄位佐證 ⇒ **仍然不預測、不排程、不猜下一次**（本鐵則第一段照舊）。
+⚠️ 已排除的**只有天氣**，不是「解出了觸發規則」；per-server 週期是**觀察到的形狀**、無 client 欄位佐證
+⇒ **仍然不預測、不排程、不猜下一次**（本鐵則第一段照舊）。
 
 ### 5. 輪詢是最後手段，且一律綁前景（2026-08-04，額度事故後訂）
 
@@ -246,6 +220,7 @@ ET 用 `etClockText()`（輸出「ET 15:42」）。裸值 `clockText()` **只准
 | `modules/emergency-*.js` | `node tests/run-all.mjs`（**8 個測試檔**，含 `emergency-view.test.mjs`＝4 條時序斷言）＋本機 `wrangler dev` ＋瀏覽器走一次通報→附議→訂閱 | 測試全綠；console 零 error；後端關掉時該分頁降級為唯讀、其他分頁不受影響。⚠️ **前景輪詢時序量不到**——自動化開的分頁本身就 `document.hidden`（見鐵則 §5 末），要驗間隔得用真人分頁 |
 | 任何 CSS／HTML | `node C:/FFXIVProject/tools/check-design-drift.js --files <改動檔> --strict` | exit 0 |
 | 任何前端改動 | 瀏覽器開 `http://127.0.0.1:8774/ffxiv-tw-cosmic/`（`svc start portal`） | console 零 error；四個分頁都出得來；`documentElement.scrollWidth - clientWidth === 0` |
+| 動 `deploy-*` 三件組／**新增任何頂層項** | `sh deploy-prepare.sh` | 印出「✓ 部署輸出就緒」（未分類的頂層項會讓它 exit 1——那是設計，去 `deploy-allow.txt`／`deploy-deny.txt` 歸類，見下方「🔒 部署面鐵則」） |
 | commit 前 | monorepo 共用 pre-commit（已掛 `core.hooksPath`） | secret／檔案大小／design-lint／DEVLOOP 工件 全過 |
 
 <!-- TEST-BASELINE cmd="node tests/run-all.mjs" match="(\d+)/\d+ 測試檔通過" expect="8" label="前端 run-all" -->
@@ -265,3 +240,16 @@ ET 用 `etClockText()`（輸出「ET 15:42」）。裸值 `clockText()` **只准
 
 正典 `~/.claude/process/DEVLOOP.md`。本 repo 工件：`docs/BACKLOG.md`（`B-NNN`）／
 `docs/specs/<cycle>-design.md`／`docs/plans/<cycle>-plan.md`／`CHANGELOG.md`。
+
+### 🔒 部署面鐵則（2026-08-01，勿回退）
+
+本 repo 的 CF Pages 部署**不是「發佈 repo 根目錄」**，而是由 `deploy-prepare.sh` 依 `deploy-allow.txt` 產出 `_site/`。CF dashboard 必須設 Build command = `sh deploy-prepare.sh`、Build output directory = `_site`。
+
+> 本段為 12 個 external repo 的**共用權威版本**（2026-08-15 統一）：三條原本只寫在單一 repo 的教訓（cache-bust 假紅燈／分類閘的靜默放行／產物路徑並行安全）已回填到所有副本。改本段請同步全部副本，不要只改一份。
+
+- **為什麼**：CF Pages 無 build 步驟時把 repo 根整棵目錄當靜態資產上傳 → `AGENTS.md`／`docs/`／`tools/`／`tests/`／`worker/` 後端源碼全部變成該網域下可直接 GET 的公開檔（2026-08-01 實測 12/13 站中招）。**private repo 只保護「誰能 clone」，不保護「已部署的檔案誰能下載」**；`.gitignore`（檔是 tracked）／`_headers`（只加標頭）／`robots.txt`（只擋收錄不擋直取）都擋不到。
+- **允許清單而非排除清單**：頂層出現任何未列入 `deploy-allow.txt`／`deploy-deny.txt` 的項目 → **build 直接失敗**。新增內部資產的預設值是「不發佈」，不靠任何人記得。排除清單做不到（實測當天漏了 `worker/` 106 支 .ts 與 `_tools/`／`_cache/` 141 檔）。注意（健檢 R3 D6）：分類閘另有兩條靜默放行（CF 容器 npm 產物固定 skip 清單、`git check-ignore`）——它是「逼人歸類」的提醒層；**真正的部署邊界是第 2 段複製迴圈的 allow-list 比對**，改腳本時該比對不可動、skip 清單只放建置環境產物不得用來繞分類。
+- **新增站台資產**（新頁面／新資料夾）→ 加進 `deploy-allow.txt`；**新增內部資產** → 加進 `deploy-deny.txt`。改完跑一次 `sh deploy-prepare.sh` 確認印出「✓ 部署輸出就緒」。
+- **腳本改動禁忌**：① 只能用 POSIX 語法（CF 容器的 `sh` 是 dash，`read -r -d ''` 之類 bashism 會靜默失敗、輸出 0 檔而 build 仍「成功」⇒ **整站 404**，2026-08-01 實際發生）② 根層檔名不可無條件 `mkdir "$OUT/${f%/*}"`（會建出「叫 index.html 的目錄」⇒ `/` 404）③ 不得移除出貨前驗收閘（輸出 <3 檔／缺 index.html／內部檔混入 → 非零 exit，CF 保留前一版）④ **產物路徑不得假設獨佔**：只要主工作樹可能被並行 session 或 cron 同時使用，固定的 `_site` 一定互踩。ranking B-117（2026-08-15）實證：只做「逐次專屬」而不加鎖**仍然兩份都 exit 1**（撞在 `rm -rf _site`），現行解＝建到 `_site.tmp.$$`、清單走 `mktemp`（repo 外）、換名段用 `mkdir "$_site.lock"` 序列化，哨兵＝`test_deploy_prepare_is_concurrency_safe`。兩次實際故障的訊息（「頂層出現未分類項目」「輸出缺 index.html」）**都指向錯的方向**，看起來像漏加允許清單 —— 本 repo 日後若接排程／並行寫入者，照 ranking 的做法改，別重新 debug 一次。
+- **部署後驗**（**務必帶 cache-bust**）：`curl -sI "https://<repo>.pages.dev/AGENTS.md?cb=$(date +%s)"` → 回 `text/html` 正常（檔案不存在、走 SPA fallback）；回 `text/markdown` = 紅燈。
+  - ⚠️ **不帶 cache-bust 會得到假紅燈**：舊部署（發佈 repo 根的那版）留在 CF 邊緣的物件帶 `s-maxage=604800`，命中時回 `text/markdown` 但 header 有 `CF-Cache-Status: HIT` ＋ 大 `Age`。**那是快取殘留不是外洩**，最長 7 天自癒（pages.dev 非自有 zone，dashboard 沒有 Purge Everything，收斂路徑就是等 TTL）。2026-08-01 R3 健檢實測：帶 cache-bust 的 `/AGENTS.md`、`/worker/src/index.js`、`/deploy-allow.txt` 全回 SPA fallback＝現行部署乾淨。
