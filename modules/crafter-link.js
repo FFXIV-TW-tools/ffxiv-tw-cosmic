@@ -60,7 +60,7 @@ function qtyMark(it) {
   }
   span.className = 'cos-itemqty--unknown';
   span.textContent = ' ×?';
-  span.title = '數量未知：這筆的需求物是從配方的產出反推的，而台服 client 的配方資料沒有數量欄。以遊戲內顯示為準。';
+  span.title = '數量未知：這筆的需求物是從配方的產出反推的，而台服客戶端的配方資料沒有數量欄。以遊戲內顯示為準。';
   return span;
 }
 

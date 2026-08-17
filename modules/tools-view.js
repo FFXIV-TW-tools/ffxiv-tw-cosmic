@@ -9,7 +9,7 @@ export function createToolsView(root, { chains }) {
 
   const totalUnreleased = chains.reduce((n, c) => n + c.unreleasedStages, 0);
   summary.textContent = totalUnreleased > 0
-    ? `${chains.length} 職各 ${chains[0].stages.length} 階。每職另有 ${chains[0].unreleasedStages} 階在台服尚未實裝（client 內名稱為空）。`
+    ? `${chains.length} 職各 ${chains[0].stages.length} 階。每職另有 ${chains[0].unreleasedStages} 階在台服尚未實裝（客戶端內名稱為空）。`
     : `${chains.length} 職各 ${chains[0].stages.length} 階。`;
 
   for (const chain of chains) {
