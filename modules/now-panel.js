@@ -368,19 +368,30 @@ export function createNowPanel(root, { windows, missions, conditions, jobs, fore
    *   事件開始時刻距天氣時段起點也均勻散布（17–1395 秒／週期 1400），跟天氣時鐘完全不對齊。
    * · **偵測得到**：2026-08-02 起有「緊急事件」分頁（插件偵測＋玩家通報），只是覆蓋率＝回報者人數。
    */
+  // ⚠️ **這一格永遠有內容，不再 hidden**（2026-08-23，CLS）：原本只在非晴朗時才顯示，
+  // 而天氣要等 `data/weather.json` 抓回來才算得出來 ⇒ 它在 ~525ms 才長出 50px，把分頁列與
+  // 整個面板往下推（實測那一筆 layout shift 就是 0.17，佔本頁載入期 CLS 0.18 的絕大部分）。
+  // 純預留高度不行：`special` 只在非晴朗成立，實測天氣分布晴朗 358／月塵 102／靈風 90
+  // ⇒ 約六成五的時間會留下一條空白帶。改成兩種文案都有，槽位恆定、位移歸零，
+  // 而且「現在沒有這個風險」本來就是使用者想知道的事（原本是靠「沒有那句話」去推論）。
   function renderCaveat(now) {
     const w = forecaster.weatherAt(now);
     const special = w.name !== '晴朗';
-    caveat.hidden = !special;
-    if (!special) return;
+    caveat.hidden = false;
+    caveat.classList.toggle('codex-tint-panel--warn', special);
     caveat.textContent = '';
     const lead = document.createElement('strong');
-    lead.textContent = `⚠️ 緊急事件一發生就會覆蓋現在的${w.name}。`;
+    lead.textContent = special
+      ? `⚠️ 緊急事件一發生就會覆蓋現在的${w.name}。`
+      : '☀️ 現在是晴朗，沒有天氣限定任務會被覆蓋。';
     caveat.append(
       lead,
-      document.createTextNode('被覆蓋後上面的天氣限定任務會跟著失效。緊急事件由伺服器推播、'
-        + '與現在是什麼天氣無關（實測多數發生在晴朗），本站算不出何時發生 —— '
-        + '有沒有正在發生請看「緊急事件」分頁。'),
+      document.createTextNode(special
+        ? '被覆蓋後上面的天氣限定任務會跟著失效。緊急事件由伺服器推播、'
+          + '與現在是什麼天氣無關（實測多數發生在晴朗），本站算不出何時發生 —— '
+          + '有沒有正在發生請看「緊急事件」分頁。'
+        : '緊急事件仍可能發生（由伺服器推播、與現在是什麼天氣無關，實測多數就發生在晴朗），'
+          + '本站算不出何時發生 —— 有沒有正在發生請看「緊急事件」分頁。'),
     );
   }
 

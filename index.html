@@ -159,7 +159,11 @@
     <div class="cos-stats" id="fc-now"></div>
 
     <!-- 這句講的就是「上面那個天氣可能被緊急事件蓋掉」，必須緊貼四格，不能留在原分頁 -->
-    <p class="codex-small codex-tint-panel codex-tint-panel--warn codex-tint-panel--bar cos-np__caveat cos-hideable" id="np-caveat" hidden></p>
+    <!-- 開場就佔位、不用 hidden（CLS，見 modules/now-panel.js renderCaveat 的由來註解）：
+         天氣要等 weather.json 抓回來才算得出來，晚 ~500ms 才長出 50px 會把整個分頁區往下推。
+         這裡放中性的等待文案，算完再換成兩種正式文案之一——不放正式文案是因為
+         「晴朗」與「非晴朗」猜錯會先顯示錯的判斷再改口。 -->
+    <p class="codex-small codex-tint-panel codex-tint-panel--bar cos-np__caveat cos-hideable" id="np-caveat">目前天氣查詢中…</p>
 
     <div class="codex-tabs" id="cos-tabs" role="tablist" aria-label="宇宙探索分頁">
       <button class="codex-tab" role="tab" data-tab="emergency" id="tab-emergency"

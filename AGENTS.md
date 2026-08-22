@@ -198,6 +198,9 @@ ET 用 `etClockText()`（輸出「ET 15:42」）。裸值 `clockText()` **只准
 
 ---
 
+- **CLS：`.cos-stats` 那條 `min-height:104px` 只對「一排」是對的**（2026-08-23）。四格是 `auto-fit minmax(240px,1fr)`，欄數隨寬度變、列數跟著變 ⇒ 實測最終高度 116（4 欄）／221（3 或 2 欄）／407（1 欄），單一 104px 在窄一點的視窗完全不夠。**600px 是全站最差的一個點：CLS 0.527**，而桌機看只有 0.175 —— 只量一個寬度會漏掉最嚴重的情況。同時 `#job-picker` 由 JS 填，讓 `.cos-header-tools` 45×16 進場、432×38 收場，390px 下它會在 ~500ms 換行、把 `#ftw-main` 整塊下推 46px。修法＝逐斷點釘實測高度＋`.cos-header-tools` 釘 `min-height/min-width`（讓「換不換行」在首次繪製定案）。修後 1366/1000/900/600/390＝0.009/0.009/0.016/0.012/0.0002。
+- **條件式警語不要用「不顯示」表達「沒問題」**（同上）：`#np-caveat` 原本只在非晴朗時 `hidden=false`，而天氣要等 `weather.json` 回來才算得出來 ⇒ 晚 500ms 長出 50px 推走整個分頁區。純預留高度不行——實測天氣分布晴朗 358／月塵 102／靈風 90，約**六成五**的時間會留一條空白帶。改成兩種文案都有（晴朗時講「沒有天氣限定任務會被覆蓋」），槽位恆定、位移歸零，而且「現在沒有這個風險」本來就是使用者想知道的事（原本要靠「沒有那句話」去反推）。HTML 端放中性等待文案，不放正式文案——猜錯會先顯示錯的判斷再改口。
+
 ## VERIFY（改動後必跑）
 - **canonicalTest（safe-push 實跑的那一條；`process/fleet.json` 逐字對照本行）**：`node tools/validate.mjs && node tests/run-all.mjs && cd worker && pnpm test`
   > 2026-08-04 併入 `tests/run-all.mjs`：`tests/` 底下的測試檔先前沒有任何自動入口會跑到（跨 repo 稽核＝claude-skills `process/tools/check-orphan-tests.mjs`）。run-all 自動掃描`tests/*.test.{js,mjs}`，新增測試檔不必再記得掛進來。

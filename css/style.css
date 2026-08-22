@@ -349,6 +349,24 @@ body {
    視覺同 .cos-betanote ＝共用 tint-panel（見該處註解）。
    ⚠️ 不再降 muted：它是「使用者需要讀懂才能操作」的說明文字（設計系統 muted 準則）。 */
 .cos-np__caveat { margin: var(--space-3, 12px) 0 0; }
+/* ── 開場就固定高度（2026-08-23，CLS）──────────────────────────────────
+   這一格的內容要等 weather.json 回來才決定（見 modules/now-panel.js renderCaveat），
+   等待文案只有一行、正式文案兩行 ⇒ 不釘高度就會在 ~500ms 長高 25px，
+   連同 #fc-now 的 +12px 把分頁列與整個面板往下推 62px（實測那一筆 CLS 0.17）。
+   數值＝各斷點實測的最終高度（正式文案的行數）。 */
+#np-caveat { min-height: 50px; }
+@media (max-width: 700px) { #np-caveat { min-height: 78px; } }
+/* 四格是 auto-fit minmax(240px,1fr)：欄數隨寬度變，列數跟著變 ⇒ 上面 .cos-stats 的
+   min-height:104px 只對「一排」是對的。實測最終高度 116（4 欄）／221（3 或 2 欄＝兩排）／
+   407（1 欄＝四排）；斷點取「幾欄放得下」算出來的臨界，不是隨手挑的數字。 */
+#fc-now { min-height: 116px; }
+@media (max-width: 1100px) { #fc-now { min-height: 221px; } }
+@media (max-width: 520px)  { #fc-now { min-height: 407px; } }
+/* 職業選擇器（#job-picker）由 JS 填 ⇒ 這條工具列 45x16 進場、432x38 收場。
+   min-height 擋住標題列長高；min-width 讓「要不要換到第二列」在首次繪製就定案
+   ——沒有它，390px 下工具列會在 ~500ms 換行，把 #ftw-main 整塊下推 46px（實測 0.4369）。
+   342 ＝ 390px 下的實測最終寬，寬螢幕仍不換行故不受影響。 */
+.cos-header-tools { min-height: 38px; min-width: 342px; }
 
 /* 欄位標題：與資料列共用同一組 grid 欄寬，否則標題會對不準（Owner 2026-07-31：「很不直觀」）。
    純視覺輔助 ⇒ aria-hidden，不讓讀螢幕器把它當成一列資料。 */
