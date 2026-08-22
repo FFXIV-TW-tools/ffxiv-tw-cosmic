@@ -1,0 +1,10 @@
+onlyBuiltDependencies:
+  - esbuild
+  - workerd
+# 修 Dependabot：強制 transitive 升到修復版（vitest/wrangler 工具鏈的 dev-only 依賴）
+# 由來 2026-08-22（portal B-064）：這批 advisory 全是 `wrangler > miniflare > undici` 這一條路徑，
+# 屬 devDependency ⇒ 不會進到部署的 Worker（線上跑 CF 自己的 runtime）。修法照抄 marketboard。
+# ⚠️ 只加 overrides 不夠：`^7.28.0` 被鎖住的 7.28.0 滿足，pnpm 不會自己重解 —— 加完要跑一次
+#    `pnpm update undici` 才會落到 7.29.0（實測，portal B-064 當輪踩到）。
+overrides:
+  undici: ^7.28.0   # GHSA 修復版（保 v7 線、不跳 v8 major）
