@@ -359,9 +359,12 @@ body {
 /* 四格是 auto-fit minmax(240px,1fr)：欄數隨寬度變，列數跟著變 ⇒ 上面 .cos-stats 的
    min-height:104px 只對「一排」是對的。實測最終高度 116（4 欄）／221（3 或 2 欄＝兩排）／
    407（1 欄＝四排）；斷點取「幾欄放得下」算出來的臨界，不是隨手挑的數字。 */
-#fc-now { min-height: 116px; }
-@media (max-width: 1100px) { #fc-now { min-height: 221px; } }
-@media (max-width: 520px)  { #fc-now { min-height: 407px; } }
+/* ⚠️ 數值要量到**真正收斂**才算（2026-08-23 當天第二次修）：第一版用 116/221/407，
+   那是資料剛填完當下的高度——之後還會再長 18px（倒數字串從「—」變成實際秒數會換行）。
+   結果 1280px 仍有 0.190、900px 0.234。取樣點若停在「看起來填好了」，就會少那最後一跳。 */
+#fc-now { min-height: 134px; }
+@media (max-width: 1100px) { #fc-now { min-height: 239px; } }
+@media (max-width: 520px)  { #fc-now { min-height: 424px; } }
 /* 職業選擇器（#job-picker）由 JS 填 ⇒ 這條工具列 45x16 進場、432x38 收場。
    min-height 擋住標題列長高；min-width 讓「要不要換到第二列」在首次繪製就定案
    ——沒有它，390px 下工具列會在 ~500ms 換行，把 #ftw-main 整塊下推 46px（實測 0.4369）。
