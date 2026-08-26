@@ -271,6 +271,45 @@ body {
   body { padding-top: 64px; }   /* 重置也要補回，否則被 fixed navbar 蓋住 */
   .cos-filters { grid-template-columns: 1fr; }
   .cos-filterfoot .cos-count { margin-left: 0; }
+
+  /* ── 任務清單：10 欄表 → 逐任務卡（2026-08-26，行動適配預設化政策）──
+     破口＝393px 實測 `#mv-table` 的 wrap scrollWidth 410 / clientWidth 361，而 10 欄按
+     百分比分下去每欄只剩 19–74px ⇒ 「緊急任務」「月藍尾鯰」這種詞被擠成**一字一行的直排**，
+     最後兩欄還被切掉（截圖實證）。這不是「窄了一點」，是讀不了。
+     欄名由 `data-label` 提供（`modules/mission-view.js` 逐格寫入；桌面用不到它）。
+     ⚠️ 選擇器一律帶組合子（`#mv-table td`），不碰 `.codex-table` 根 selector（design-lint R5）。 */
+  #mv-table, #mv-table tbody, #mv-table tr, #mv-table td { display: block; }
+  #mv-table thead { display: none; }
+  #mv-table tr {
+    padding: var(--space-2, 8px) var(--space-1, 4px);
+    border-bottom: 1px solid var(--color-border, #2b3f56);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: var(--space-3, 12px);
+    row-gap: 2px;
+  }
+  #mv-table td { padding: 0; border: 0; width: auto !important; white-space: normal; }
+  /* 任務名＝卡片標題（整寬）；需求物與開放條件字多，也各自整寬 */
+  #mv-table td[data-label="任務"] { flex: 1 1 100%; font-weight: var(--fw-semibold, 600); }
+  #mv-table td[data-label="需求物"],
+  #mv-table td[data-label="開放條件"] { flex: 1 1 100%; }
+  /* 其餘欄縮成一行小字，各自帶回欄名（職業／類型／現在是圖示或 badge，不需要文字欄名） */
+  #mv-table td[data-label="難度"]::before,
+  #mv-table td[data-label="時限"]::before,
+  #mv-table td[data-label="開放條件"]::before,
+  #mv-table td[data-label="需求物"]::before,
+  #mv-table td[data-label="宇宙"]::before,
+  #mv-table td[data-label="月球"]::before { content: attr(data-label) " "; opacity: 0.7; }
+  #mv-table td[data-label="難度"],
+  #mv-table td[data-label="時限"],
+  #mv-table td[data-label="宇宙"],
+  #mv-table td[data-label="月球"],
+  #mv-table td[data-label="開放條件"] {
+    font-size: var(--fs-small, 12px);
+    color: var(--color-text-muted, #c0c9da);
+    text-align: left;
+  }
 }
 
 /* ── 職業偏好選擇器（page-header 內）───────────────────────── */

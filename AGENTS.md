@@ -226,7 +226,7 @@ ET 用 `etClockText()`（輸出「ET 15:42」）。裸值 `clockText()` **只准
 | 動 `deploy-*` 三件組／**新增任何頂層項** | `sh deploy-prepare.sh` | 印出「✓ 部署輸出就緒」（未分類的頂層項會讓它 exit 1——那是設計，去 `deploy-allow.txt`／`deploy-deny.txt` 歸類，見下方「🔒 部署面鐵則」） |
 | commit 前 | monorepo 共用 pre-commit（已掛 `core.hooksPath`） | secret／檔案大小／design-lint／DEVLOOP 工件 全過 |
 
-<!-- TEST-BASELINE cmd="node tests/run-all.mjs" match="(\d+)/\d+ 測試檔通過" expect="8" label="前端 run-all" -->
+<!-- TEST-BASELINE cmd="node tests/run-all.mjs" match="(\d+)/\d+ 測試檔通過" expect="9" label="前端 run-all" -->
 <!-- TEST-BASELINE cmd="npx vitest run" cwd="worker" match="Tests\s+(\d+) passed" expect="66" label="worker 整合" -->
 <!-- TEST-BASELINE cmd="node --test test/logic.test.mjs" cwd="worker" match="pass (\d+)" expect="41" label="worker 純函式" -->
 

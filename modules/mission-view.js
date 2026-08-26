@@ -259,6 +259,9 @@ export function createMissionView(root, { missions, conditions, jobs, forecaster
     }
   }
 
+  /** 表頭欄名（順序＝下方 `cells` 的順序）；手機堆疊版靠 `data-label` 顯示欄名。 */
+  const MV_COL_LABELS = ['職業', '類型', '難度', '任務', '開放條件', '現在', '時限', '需求物', '宇宙', '月球'];
+
   function row(m) {
     const tr = document.createElement('tr');
     const avail = availability(m);
@@ -298,7 +301,7 @@ export function createMissionView(root, { missions, conditions, jobs, forecaster
 
     // 欄序＝誰 → 是什麼 → 何時 → 代價 → 報酬（與主面板同一套邏輯）。
     // 獎勵拆成宇宙／月球兩欄，也跟面板一致——擠在一格沒辦法上下比大小。
-    tr.append(
+    const cells = [
       jobCell,
       classCell,
       td(RANK_LABEL[m.rank] ?? String(m.rank), 'codex-table__num'),
@@ -309,7 +312,11 @@ export function createMissionView(root, { missions, conditions, jobs, forecaster
       itemCell,
       td(String(m.reward.cosmo), 'codex-table__num'),
       td(String(m.reward.lunar), 'codex-table__num'),
-    );
+    ];
+    // 手機把這張表拆成逐任務卡片（見 css/style.css §手機），那時候沒有 thead ⇒ 欄名只能由
+    // `data-label` 提供。桌面完全用不到它，所以拿掉不會有任何人發現——哨兵見 tests/。
+    cells.forEach((c, i) => { c.dataset.label = MV_COL_LABELS[i]; });
+    tr.append(...cells);
     return tr;
   }
 

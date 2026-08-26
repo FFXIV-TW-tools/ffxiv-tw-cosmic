@@ -2,6 +2,29 @@
 
 > 日期段落制（cycle 收官為段）；條目含人話「為什麼」，不從 git log 自動生成。格式見 DEVLOOP §4.3。
 
+## 2026-08-26 — 行動適配：任務清單 10 欄表改逐任務卡
+
+portal 側行動適配改成預設要做（`_DESIGN-SYSTEM.md` §📱 行動適配是預設，不是選配）。
+
+**破口**（393px 實測）：`#mv-table` 的 wrap scrollWidth **410** / clientWidth 361，而 10 欄
+按百分比分下去每欄只剩 **19–74px** ⇒「緊急任務」「月藍尾鯰」被擠成**一字一行的直排**，
+最後兩欄（宇宙／月球點數）還被切掉。這不是「窄了一點」，是讀不了——截圖實證。
+
+**修法**（≤700px）：表格 block 化、thead 隱藏、每筆任務變一張卡：任務名整寬當標題，
+職業圖示／類型 badge／難度一行，開放條件與需求物各自整寬，時限與宇宙／月球點數帶欄名。
+- **DOM 只加不減**：`modules/mission-view.js` 逐格寫 `data-label`（新常數 `MV_COL_LABELS`），
+  桌面用不到——桌面有 thead。
+- 選擇器一律帶組合子（`#mv-table td`），不碰 `.codex-table` 根 selector（design-lint R5）。
+
+**新哨兵** `tests/mission-view-mobile-labels.test.mjs`（基線 8→9）：三條互鎖——
+① `MV_COL_LABELS` 長度 == thead 欄數 ② `row()` 真的逐格寫進 `dataset.label`
+③ CSS 真的有 `attr(data-label)` 消費端。**拿掉 `data-label` 桌面完全看不出來**，
+只有手機會退化成一串無名數字，正是本 repo 家族反覆踩的零回饋訊號形狀。
+
+驗證：393px wrap scrollWidth == clientWidth（361，橫捲消失）、每張卡 143px；
+桌面 1366 `tr`/`td`/`thead` 的 display 與 wrap scrollWidth(1288) 全維持原值；
+`tools/validate.mjs` 資料不變量全過、`tests/run-all` 9/9。
+
 ## 2026-08-12 — 預告改顯示區間；天氣統計擴充到 n=173（並更正卡方基準）
 
 **為什麼**：Owner 問「天氣的 log 應該很齊全了吧」。是——`/history` 累積到 **173 筆**（8/6 那次是 71），涵蓋 9 天、7 台伺服器。資料變硬讓兩件事得以定案，也讓我抓到自己的一個方法錯誤。
