@@ -13,7 +13,7 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { computeGraph, renderBlock, currentHtmlBlock, ENTRY } from '../tools/gen-modulepreload.mjs';
+import { computeGraph, renderBlock, currentHtmlBlock, toHref, ENTRY } from '../tools/gen-modulepreload.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
@@ -25,8 +25,8 @@ const inHtml = [...block.matchAll(/rel="modulepreload"\s+href="([^"]+)"/g)].map(
 const graph = computeGraph();
 
 // ① 雙向相等
-const missing = graph.filter((f) => !inHtml.includes(f));
-const extra = inHtml.filter((f) => !graph.includes(f));
+const missing = graph.map(toHref).filter((f) => !inHtml.includes(f));
+const extra = inHtml.filter((f) => !graph.map(toHref).includes(f));
 assert.deepStrictEqual(
   { missing, extra },
   { missing: [], extra: [] },
@@ -34,11 +34,20 @@ assert.deepStrictEqual(
 );
 
 // ② 入口不得自我預載（入口名從生成器取，逐站複製時只有生成器那一行要改）
-assert.ok(!inHtml.includes(ENTRY), `${ENTRY} 已由 <script type="module"> 載入，不該再預載`);
+assert.ok(!inHtml.includes(toHref(ENTRY)), `${ENTRY} 已由 <script type="module"> 載入，不該再預載`);
 
 // ③ 路徑必須真的存在
 for (const f of inHtml) {
-  assert.ok(fs.existsSync(path.join(ROOT, f)), `modulepreload 指向不存在的檔案：${f}`);
+  assert.ok(fs.existsSync(path.join(ROOT, f.slice(1))), `modulepreload 指向不存在的檔案：${f}`);
+}
+
+
+// ⑤ 一律根絕對路徑（2026-08-28）。相對 specifier 會被 CF Pages 的 Early Hints 搬進**每一個**回應的
+//    `Link:` 標頭（含 `/settings-api/*`），瀏覽器便以那個 URL 為基準解析 ⇒ 打出一批不存在的路徑，
+//    而 CF Pages 對未知路徑回 200 + index.html ⇒ 畫面正常、無錯誤、build 全綠。實測 ranking
+//    一次開頁多打 22 次（各自 Pages Function + service binding 兩次計費），是帳號撞每日上限的主因。
+for (const f of inHtml) {
+  assert.ok(f.startsWith('/'), `modulepreload href 必須是根絕對路徑，實得：${f}`);
 }
 
 // ④ 生成器輸出必須與 HTML 現況逐字節相同（擋「手改了區塊但格式對不上生成器」）

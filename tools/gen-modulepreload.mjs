@@ -60,8 +60,17 @@ export function computeGraph(entry = ENTRY) {
   return [...seen].sort();
 }
 
+// href 一律寫**根絕對路徑**。相對 specifier 會被 CF Pages 的 Early Hints 原樣搬進該站**每一個**
+// 回應的 `Link:` 標頭（包含 `/settings-api/*`），瀏覽器於是以那個 URL 為基準解析 ⇒ 打出
+// `/settings-api/settings/<模組名>` 這種不存在的路徑；而 CF Pages 對未知路徑回 200 + index.html，
+// 所以無錯誤、無警告、畫面正常。2026-08-28 實測 ranking 一次開頁因此多打 22 次請求，
+// 每次還是 Pages Function + service binding 各一 ⇒ 44 次計費。解析後的 URL 與相對寫法相同，preload 照樣命中。
+export function toHref(file) {
+  return '/' + file;
+}
+
 export function renderBlock(files) {
-  return [BEGIN, ...files.map((f) => `  <link rel="modulepreload" href="${f}">`), END].join('\n');
+  return [BEGIN, ...files.map((f) => `  <link rel="modulepreload" href="${toHref(f)}">`), END].join('\n');
 }
 
 function splice(html, block) {
