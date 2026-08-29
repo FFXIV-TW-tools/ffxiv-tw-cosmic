@@ -2,6 +2,16 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
+  <!-- [CLS] 首屏 body 盒子（inline，必須是樣式的第一筆）- 2026-08-28，由真實使用者的 LayoutShift 反推。
+       診斷探針實測到的形狀：`body (8,21,...) -> (0,0,...)`，那個 x=8 是瀏覽器 **UA 預設的
+       `body{margin:8px}`** => 首屏是用 UA 樣式畫出來的，同源 CSS 與跨網域 header.css 都還沒生效，
+       樣式一到整頁重排。實測案例：macro-builder CLS **1.356**、marketboard **0.368**。
+       注意 1：本機重現不出來（所有 link 都在 head、render-blocking，延遲 CDN 只會讓瀏覽器多等），
+               **但修法不依賴知道確切機制** - inline 樣式在 parse 當下就生效，UA 預設沒有窗口能畫出來。
+       注意 2：值一律照**該站穩定期的 computed style 實測**抄，不套通用範本 -
+               macro-builder 第一版寫成 padding:0，而該站 body 有 12px 水平 padding，
+               等於自己製造一個 12px 水平位移。改完必須比對 computed style 前後一致。 -->
+  <style>html{scrollbar-gutter:stable;color-scheme:dark}html,body{margin:0}body{box-sizing:border-box;min-height:100vh;padding:64px 0 0}</style>
   <!-- ═══ 舊網址交接（B-061）—— 必須是 <head> 裡第一支腳本，位置就是規格 ═══
        【做什麼】帶著舊 `*.pages.dev` 書籤進來的人，連同他的跨工具身份一起送到 xivtc.com。
        【為什麼從 Pages Function 搬到這裡】原本這段跑在 functions/_middleware.js，代價是
