@@ -5,6 +5,7 @@ css
 data
 favicon-192.png
 favicon.ico
+favicon.svg
 functions
 img
 index.html
