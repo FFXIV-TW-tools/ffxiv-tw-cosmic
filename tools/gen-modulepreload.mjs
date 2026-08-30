@@ -80,11 +80,19 @@ function splice(html, block) {
   return html.slice(0, i) + block + html.slice(j + END.length);
 }
 
+// ⚠️ **回傳前正規化行尾**（2026-08-30）：`renderBlock()` 以 `'\n'` join，而本函式切的是磁碟上的
+//    原文 —— 工作樹是 CRLF 時逐位元組比對**恆不相等** ⇒ `--check` 與 `tests/modulepreload-drift`
+//    在 Windows checkout 上永遠紅、在 LF checkout 上永遠綠。實測同一天同一份內容：
+//    cosmic（CRLF）紅、marketboard／sightseeing（LF）綠 —— **測試的顏色由誰最後碰過這個檔決定，
+//    不由內容決定**，而它紅著也沒人處理（safe-push 被擋才發現）。
+//    判準必須綁在**內容**上；同樣的教訓本 repo 家族已記過兩次（`gen-seo.mjs` 的 --check、
+//    portal `tests/agents-line-budget.test.mjs` 的全檔計量）。
+//    ⚠️ 只正規化「比對用」的回傳值：`splice()` 寫檔走的是另一條路，不受影響。
 export function currentHtmlBlock(html = fs.readFileSync(HTML, 'utf8')) {
   const i = html.indexOf(BEGIN);
   const j = html.indexOf(END);
   if (i === -1 || j === -1) return null;
-  return html.slice(i, j + END.length);
+  return html.slice(i, j + END.length).split('\r\n').join('\n');
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
