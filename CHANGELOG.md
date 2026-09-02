@@ -16,6 +16,7 @@ Owner 搜尋「ff14 成績單」看到的仍是 `pages.dev`、站名顯示「Clo
 - 已知代價：還沒來過新站的舊書籤使用者不再自動帶雲端 UUID（到設定面板貼上即可）；inline 交接腳本保留為退路。
 - `tests/handoff.test.mjs` ③–⑤ 改斷言 301／Location／no body／CRLF。13 站同步；跨 repo 一致性哨兵全綠。
 - 上線後：GSC 對舊 host property 跑「網址變更」，讓 Google 整批搬訊號。
+- 續：GSC「網址變更」驗證器抓首頁**不帶 `Accept: text/html`**，回報「找不到重新導向」⇒ 拿掉 Accept 條件、HEAD 也攔。資產早被 `_routes.json` 只列 HTML 路徑擋在 Function 外，該條件已無作用。
 
 ## 2026-08-26 — 行動適配：任務清單 10 欄表改逐任務卡
 

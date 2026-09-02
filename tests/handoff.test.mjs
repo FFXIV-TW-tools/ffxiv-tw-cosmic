@@ -34,10 +34,10 @@ ok(hit() === true, '四條件齊全 → 攔截');
 
 // ── ② 逐一破壞單一條件，都必須放行 ──
 ok(hit({ method: 'POST' }) === false, '① 非 GET → 放行（POST）');
-ok(hit({ method: 'HEAD' }) === false, '① HEAD → 放行（前閘 R1 C4：用 -sI 驗會驗到這條）');
-ok(hit({ accept: '*/*' }) === false, '② Accept: */* → 放行（前閘 R2-12：curl 預設就是這個）');
-ok(hit({ accept: 'text/css' }) === false, '② 資產請求 → 放行');
-ok(hit({ accept: null }) === false, '② 無 Accept header → 放行');
+ok(hit({ method: 'HEAD' }) === true, '① HEAD → 攔截（GSC 網址變更驗證器可能用 HEAD 探首頁）');
+ok(hit({ accept: '*/*' }) === true, '② Accept: */* → 攔截（GSC 驗證器不帶 text/html；資產由 _routes.json 擋在 Function 外）');
+ok(hit({ accept: 'text/css' }) === true, '② 任何 Accept 都攔（路徑閘在 _routes.json，不在這裡）');
+ok(hit({ accept: null }) === true, '② 無 Accept header → 攔截');
 ok(hit({ url: `https://abc123.${OLD_HOST}/` }) === false,
   '③④ CF preview 子網域 → 放行（攔了會讓預覽部署無法驗證）');
 ok(hit({ url: `${NEW_ORIGIN}/` }) === false,

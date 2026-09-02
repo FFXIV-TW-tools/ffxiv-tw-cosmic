@@ -41,16 +41,15 @@ const NEW_ORIGIN = 'https://cosmic.xivtc.com';
 const STAY_PARAM = 'stay';
 
 // 攔截條件——**四個同時成立才攔**，任何一個不成立就 next()：
-//   ① GET（POST／HEAD 等一律放行）
-//   ② Accept 含 text/html（只攔「人在導覽」與爬蟲抓頁；資產與 fetch 一律放行——
-//      舊 host 上被瀏覽器快取的舊 HTML 仍可能請求同源資產，301 到跨 origin 會被自己的 CSP 擋掉）
+//   ① GET 或 HEAD（POST 等一律放行）
+//   ② 不看 Accept（2026-09-02 GSC「網址變更」驗證實測：它抓首頁不帶 text/html，原 Accept 條件讓它
+//      回報「找不到重新導向」。資產已由 _routes.json 只列 HTML 路徑擋在 Function 外，這條件不再需要）
 //   ③④ host 精確等於 production 舊 host
 //       ⚠️ 用**字串全等**而非 endsWith('.pages.dev')：全等同時滿足 ③ 與 ④——
 //          `<hash>.<OLD_HOST>`（CF preview 部署）天然不匹配而被放行。
 //          攔了 preview 會讓預覽部署無法驗證；用 endsWith 還會在新網域哪天共用同一份程式碼時自我攔截成迴圈。
 function shouldHandoff(request, url) {
-  if (request.method !== 'GET') return false;
-  if (!(request.headers.get('accept') || '').includes('text/html')) return false;
+  if (request.method !== 'GET' && request.method !== 'HEAD') return false;
   if (url.searchParams.has(STAY_PARAM)) return false;   // 救援門，見上
   return url.hostname === OLD_HOST;
 }
