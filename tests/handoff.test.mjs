@@ -14,7 +14,7 @@ import { pathToFileURL } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const { __test } = await import(pathToFileURL(join(ROOT, 'functions', '_middleware.js')).href);
-const { shouldHandoff, escAttr, handoffPage, OLD_HOST, NEW_ORIGIN } = __test;
+const { shouldHandoff, handoffRedirect, OLD_HOST, NEW_ORIGIN } = __test;
 
 let fail = 0;
 const ok = (c, m) => { console.log((c ? '✓ ' : '✗ ') + m); if (!c) fail++; };
@@ -53,45 +53,27 @@ ok(hit({ url: `https://${OLD_HOST}/some/page?a=1&stay` }) === false, '②b 救�
 ok(hit({ url: `https://${OLD_HOST}/?stay=whatever` }) === false, '②b 只看參數在不在、不看值（救援指引才寫得短）');
 ok(hit({ url: `https://${OLD_HOST}/?stayx=1` }) === true, '②b 參數名須全等，前綴相符不算');
 
-// ── ③ 回應標頭與內容 ──
-const res = handoffPage(new URL(`https://${OLD_HOST}/?a=1`));
+// ── ③ 回應＝HTTP 301（2026-09-02 由 200 交接頁改回）──
+// 【為什麼要斷言狀態碼而不是「有沒有 Location」】GSC 實查：舊 host 回 200 ＋ 內容一個月，
+// Google 否決 canonical、把 pages.dev 選成標準網址。搜尋引擎只認 HTTP 層 ⇒ 301 是規格本身。
+const res = handoffRedirect(new URL(`https://${OLD_HOST}/?a=1`));
 const h = res.headers;
-ok(h.get('cache-control') === 'no-store', 'no-store（改壞了要能立刻回滾，不留快取殘留）');
-ok(h.get('referrer-policy') === 'no-referrer', 'no-referrer（UUID 會進 URL）');
-const csp = h.get('content-security-policy') || '';
-ok(/script-src 'nonce-[A-Za-z0-9]{8,}'/.test(csp), 'CSP 用 nonce 而非 unsafe-inline');
-ok(!csp.includes('connect-src'), '無 connect-src —— 交接頁不發任何網路請求（搬運已於範圍收斂時移除）');
+ok(res.status === 301, '狀態碼必須是 301（永久搬遷；302 不會讓 Google 搬索引與權重）');
+// ⚠️ 由 NEW_ORIGIN 推導，不得寫死主機名 —— 本檔是 13 站逐站複製的樣板（每站只換兩個常數）。
+ok(h.get('location') === `${NEW_ORIGIN}/?a=1`, 'Location 逐路徑指向新網址（pathname＋search，不是只導首頁）');
+ok(h.get('cache-control') === 'no-store', 'no-store（瀏覽器對 301 預設永久快取；改壞了要能立刻回滾）');
+ok(h.get('referrer-policy') === 'no-referrer', 'no-referrer（舊書籤 query 可能帶 ftw_*）');
+ok(res.body === null, '301 不帶 body（Google 只看 Location；有內容反而給它東西可索引）');
 
-const body = await res.text();
-// ⚠️ 由 NEW_ORIGIN 推導，不得寫死主機名 —— 本檔是 13 站逐站複製的樣板（plan Task 4 Step 1：
-//    「每站只換兩個常數」），寫死的話每站都要記得改測試，而那正是漏抄的來源。
-ok(body.includes(`<link rel="canonical" href="${NEW_ORIGIN}/?a=1">`),
-  'canonical 逐路徑指向新網址（本 Function 一上線，靜態 canonical 就不再出現 ⇒ SEO 收斂靠這條）');
-ok(!body.includes('ftw_uuid=') , 'canonical 與 noscript 連結不含 ftw_*（身份不進 SEO 訊號）');
-ok(body.includes('<noscript>') && body.includes(`href="${NEW_ORIGIN}/?a=1"`),
-  'noscript 連結由 server 組出 pathname+search（不是只連首頁）');
+// ── ④ 惡意 query／path 不得進 Location 原樣 ──
+const evil = handoffRedirect(new URL(`https://${OLD_HOST}/?q=%22%3E%3Cscript%3E`)).headers.get('location');
+ok(!evil.includes('<') && !evil.includes('"'), 'query 保持百分比編碼，不解碼後放進 header（前閘 R2-18）');
+const crlf = handoffRedirect(new URL(`https://${OLD_HOST}/x%0d%0aSet-Cookie:a=b`)).headers.get('location');
+ok(!/[\r\n]/.test(crlf), 'pathname 不含 CRLF（header 注入）');
 
-// nonce 每次不同
-const n1 = (handoffPage(new URL(`https://${OLD_HOST}/`)).headers.get('content-security-policy') || '').match(/nonce-([A-Za-z0-9]+)/)[1];
-const n2 = (handoffPage(new URL(`https://${OLD_HOST}/`)).headers.get('content-security-policy') || '').match(/nonce-([A-Za-z0-9]+)/)[1];
-ok(n1 !== n2, 'nonce 每個 response 重新產生（固定 nonce 等同 unsafe-inline）');
-
-// ── ④ 惡意 query／path 的跳脫 ──
-ok(escAttr('"><script>alert(1)</script>') === '&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;',
-  'escAttr: 引號與角括號都跳脫');
-const evil = await handoffPage(new URL(`https://${OLD_HOST}/?q=%22%3E%3Cscript%3E`)).text();
-ok(!evil.includes('"><script>'), '惡意 query 不會原樣進 href（前閘 R2-18）');
-
-// ── ⑤ inline script 的關鍵不變量（source ratchet）──
-ok(body.includes("p.set('ftw_uuid_t'"),
-  '必帶 ftw_uuid_t —— 省略會讓帶入身份在 decideAdopt 裡變成最弱檔（前閘 R2-13）');
-ok(!body.includes('ftw_link'.concat("',")) && !/p\.set\('ftw_link'/.test(body),
-  '不得附加 ftw_link=1（那是 QR/邀請語意＝凌駕資料保護，交接不是那個語意）');
-ok(/forEach\(function\(k\)\{p\.delete\(k\);\}\)/.test(body),
-  '先 delete 再 set —— 直接 append 的話 URLSearchParams.get() 只取第一個值，舊參數會勝出（前閘 R1 C12）');
-ok(body.includes('location.replace('), '用 replace 不用 assign（避免返回鍵陷阱）');
-ok(!/setTimeout|await |\.then\(/.test(body.split('<noscript>')[0]),
-  '零延遲：跳轉路徑上不得有 setTimeout／await（Owner：要讓使用者感受不到）');
+// ── ⑤ 深鏈與 hash ──
+ok(handoffRedirect(new URL(`https://${OLD_HOST}/x?r=1#p2`)).headers.get('location') === `${NEW_ORIGIN}/x?r=1`,
+  'hash 不在 Location（瀏覽器會自行把 #fragment 帶過 301）');
 
 // ── ⑥ _routes.json ≡ route manifest ──
 const routes = JSON.parse(readFileSync(join(ROOT, '_routes.json'), 'utf8'));

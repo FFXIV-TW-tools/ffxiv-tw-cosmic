@@ -207,6 +207,8 @@ ET 用 `etClockText()`（輸出「ET 15:42」）。裸值 `clockText()` **只准
 
 
 <!-- B-048-HANDOFF -->
+> 2026-09-02 起 `_middleware.js` 對舊 host 回 **HTTP 301**（GSC 實查：Google 否決 canonical、把 pages.dev 選成標準網址；inline JS 跳轉對爬蟲無效）；可導覽路徑列回 `_routes.json`。
+>
 > **交接頁契約（B-048 Task 4）**——改 `functions/_middleware.js`／`_routes.json`／`tests/route-manifest.json` 後必跑：
 >
 > ```bash
