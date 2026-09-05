@@ -1,9 +1,7 @@
 {
   "version": 1,
-  "description": "Pages Functions 攔：可導覽 HTML 路徑（舊 host 回 301 → xivtc.com，新網域 next() 放行）＋ extraRoutes。2026-09-02 把 HTML 路徑列回來：B-061 改成 inline JS 跳轉後，Google 對舊 host 拿到 200＋內容、否決 canonical，pages.dev 被選成標準網址；只有 HTTP 301 收斂得了。代價＝新網域這些路徑每次開頁一次 Functions 呼叫。include 唯一事實源＝tests/route-manifest.json（include ≡ paths ＋ extraRoutes，tests/handoff.test.mjs 守全等）。刻意不用 /* —— 那會讓每個資產請求都變成一次 Functions invocation。",
+  "description": "Pages Functions 只攔 API 代理路徑。舊 `*.pages.dev` host 的 301 自 2026-09-05 起由 Cloudflare 帳號層 Bulk Redirects 在邊緣執行，本 repo 不再有 middleware；HTML 路徑一律純靜態（每條 include 都是一個計費攔截面，帳號級免費硬牆 100k/日，2026-08-28 撞過）。刻意不用 /*。",
   "include": [
-    "/",
-    "/index.html",
     "/settings-api/*",
     "/cosmic-api/*"
   ],

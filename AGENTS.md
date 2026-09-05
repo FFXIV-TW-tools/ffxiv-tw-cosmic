@@ -207,15 +207,8 @@ ET 用 `etClockText()`（輸出「ET 15:42」）。裸值 `clockText()` **只准
 
 
 <!-- B-048-HANDOFF -->
-> 2026-09-02 起 `_middleware.js` 對舊 host 回 **HTTP 301**（GSC 實查：Google 否決 canonical、把 pages.dev 選成標準網址；inline JS 跳轉對爬蟲無效）；可導覽路徑列回 `_routes.json`。
->
-> **交接頁契約（B-048 Task 4）**——改 `functions/_middleware.js`／`_routes.json`／`tests/route-manifest.json` 後必跑：
->
-> ```bash
-> node tests/handoff.test.mjs
-> ```
->
-> ⚠️ 它**刻意不併進本 repo 既有的測試 runner**：該檔與 `functions/_middleware.js` 是 13 站逐站複製的樣板（每站只換 `OLD_HOST`／`NEW_ORIGIN` 兩個常數），檔名與介面必須跨站一致，不能為配合各站慣例改寫——改寫等於每站手動調整，正是 monorepo 交接頁一致性哨兵要防的漏抄。**既有測試基線不變。**
+> **舊網址交接機制已於 2026-09-05 退役**：舊 `*.pages.dev` host 的 301 改由 Cloudflare **帳號層 Bulk Redirects** 在邊緣執行，本 repo 不再有 functions 層的 middleware、HTML 也不再有 inline 交接腳本（`?stay` 救援門一併結束）。
+> `_routes.json` 的 include 只留 API 代理路徑（HTML 路徑不進 Pages Functions、不再計費）；交接測試（handoff.test）與路由清單（route-manifest）已刪。
 
 | 改了什麼 | 跑什麼 | 綠燈 |
 |---|---|---|
@@ -228,7 +221,7 @@ ET 用 `etClockText()`（輸出「ET 15:42」）。裸值 `clockText()` **只准
 | 動 `deploy-*` 三件組／**新增任何頂層項** | `sh deploy-prepare.sh` | 印出「✓ 部署輸出就緒」（未分類的頂層項會讓它 exit 1——那是設計，去 `deploy-allow.txt`／`deploy-deny.txt` 歸類，見下方「🔒 部署面鐵則」） |
 | commit 前 | monorepo 共用 pre-commit（已掛 `core.hooksPath`） | secret／檔案大小／design-lint／DEVLOOP 工件 全過 |
 
-<!-- TEST-BASELINE cmd="node tests/run-all.mjs" match="(\d+)/\d+ 測試檔通過" expect="9" label="前端 run-all" -->
+<!-- TEST-BASELINE cmd="node tests/run-all.mjs" match="(\d+)/\d+ 測試檔通過" expect="8" label="前端 run-all" -->
 <!-- TEST-BASELINE cmd="npx vitest run" cwd="worker" match="Tests\s+(\d+) passed" expect="66" label="worker 整合" -->
 <!-- TEST-BASELINE cmd="node --test test/logic.test.mjs" cwd="worker" match="pass (\d+)" expect="41" label="worker 純函式" -->
 
