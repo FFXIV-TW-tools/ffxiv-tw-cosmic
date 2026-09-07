@@ -1,3 +1,4 @@
+.claude
 .gitignore
 AGENTS.md
 CHANGELOG.md

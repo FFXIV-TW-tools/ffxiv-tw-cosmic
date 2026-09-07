@@ -3,8 +3,12 @@
 FFXIV 繁中服「宇宙探索」（月球 / 渴望灣）規劃站。**主體純靜態**：四份 JSON 由 `tools/cosmic-dump`
 從台服 client 解出後 commit 進 repo，網站是它們的檢視層。
 
-**唯一的例外是「緊急事件」分頁**（2026-08-02 起）：那件事離線算不出來，改由 ICE 插件偵測與玩家通報，
-後端是 `worker/`（Cloudflare Worker ＋ 單一 Durable Object）。**其餘所有分頁在後端掛掉時必須照常運作。**
+**唯一的例外是「緊急事件」分頁**：離線算不出來，改由 ICE 插件偵測與玩家通報，後端是 `worker/`
+（Cloudflare Worker ＋ 單一 Durable Object）。**其餘所有分頁在後端掛掉時必須照常運作。**
+
+> **規則分三層**：本檔＝做什麼／禁什麼／怎麼驗；`docs/rules-rationale.md`＝由來／事故／實測數字／拍板日期
+> （同標題對應，要改某條鐵則時才讀）；`.claude/rules/emergency.md`＝緊急事件通報／推播／fan-out 的路徑專屬規則
+> （Claude 動到 `worker/**` 或 `modules/emergency-*.js` 才載入；**其他 agent 動這兩處前手動讀**）。
 
 ---
 
@@ -13,224 +17,104 @@ FFXIV 繁中服「宇宙探索」（月球 / 渴望灣）規劃站。**主體純
 ### 1. 資料只能來自台服 client，不手打
 
 `data/*.json` **一律由 `tools/cosmic-dump` 產生**，禁止手改。要改內容＝改產生器再重跑。
-手改一次就沒有任何機制會在台服改版後把它糾正回來，而錯誤形式是「數字看起來很合理但是錯的」。
 
 ### 2. 未定性的欄位一律標明，禁止拿 0 或「合理值」冒充
 
-台服 7.2 client 有幾處欄位是空的或語意未經核對，處理方式**只有兩種**：標成 `unknown`，或放進
-`_unverified` 且不進 UI。**禁止**填一個看起來對的值。
+處理方式**只有兩種**：標成 `unknown`，或放進 `_unverified` 且不進 UI。**禁止**填一個看起來對的值——0 在這批 sheet 裡是有意義的哨兵值。
 
 具體現況（改動前先讀）：
 
 | 項目 | 狀態 | 處理 |
 |---|---|---|
-| `WKSMissionLotterySpecialCond` row 15–22 | 台服 client 三欄全 0（上游國際服當它們是 Clouds/Rain，但渴望灣天氣表根本沒這兩種天氣） | `type: "unknown"`／UI 顯示「條件未定」、可接欄顯示「未知」 |
-| ET 時段條件的**單位** | 上游把 c0/c1 命名為 Start/End Time，值是 2 小時階梯；**未經遊戲內核對** | 照 ET 小時呈現，但列入 BACKLOG 待實地驗證 |
-| ~~`WKSMissionToDoEvalutionRefin` 三欄~~ | ✅ 2026-08-01 定性＝**滿品質百分比**（官方欄名 `LowPercent`/`MidPercent`/`HighPercent`），且**不歸本站管** | 已移出本站。權威＝monorepo `game_ref.sqlite` 的 `recipe_quality_stages`，消費端 crafter。⚠ **鍵是配方的 `Recipe.CollectableMetadata`，不是任務 id**——本站原本用任務 id 查，錯得毫無訊號（見 CHANGELOG 2026-08-01） |
-| 需求物（`items`） | **77 個任務抓不到**（2026-08-06 由 117 降下來）。⚠️ 舊註解說「有多個 ToDo 槽而本站只讀 col[11]」——**那個假設已證偽**：逐欄檢定過，除 col[11] 外唯一像 ToDo FK 的是 col[12]（恰 33 筆＝全部緊急任務、值＝col[11]+1），而那些列同樣沒有需求物 | 數字寫死進 `validate.mjs`；修好會讓該條紅、逼人回來改小 |
-| 由配方補的需求物（`viaRecipe`） | 40 筆（24 緊急＋16 雙職業）的 ToDo 沒填需求物，改由**配方產出**（`Recipe.c4`）補。依據＝360 個「兩者都有」的任務裡需求物 **360/360** 落在該任務配方的產出集合內，且這 40 筆每筆只有一個配方 ⇒ 無歧義 | **數量一律不填**（`qty` 缺席、UI 顯示 `×?`）——數量只存在於 ToDo，配方那邊沒有任何數量欄，而已知數量分布是 ×1…×48 沒有常數可套。`validate.mjs` 兩條斷言守著：筆數＝40、且不得帶 `qty` |
+| `WKSMissionLotterySpecialCond` row 15–22 | 台服 client 三欄全 0 | `type: "unknown"`／UI 顯示「條件未定」、可接欄顯示「未知」 |
+| ET 時段條件的**單位** | c0/c1 上游命名 Start/End Time、值是 2 小時階梯 | 照 ET 小時呈現；已於 2026-07-31 遊戲內驗證（B-004） |
+| 需求物（`items`） | **77 個任務抓不到** | 數字寫死進 `validate.mjs`（修好會讓該條紅、逼人改小） |
+| 由配方補的需求物（`viaRecipe`） | 40 筆 ToDo 沒填需求物，改由配方產出（`Recipe.c4`）補 | **數量一律不填**（`qty` 缺席、UI 顯示 `×?`）；`validate.mjs` 兩條斷言：筆數＝40、不得帶 `qty` |
 | 宇宙工具 c23–c27 五階 | client 內名稱為空＝台服未實裝 | 只報階數（`unreleasedStages`），不編造名稱 |
-| ~~「緊急任務的必要條件是靈風」~~ | ❌ **已證偽（2026-08-02）**：掛 cond 13（靈風）的 20 個任務 `class` 全是 `temporary`；33 個 `critical` 的 `conds` **全部是空的** | 站上文案已改為「20 個**天氣限定臨時任務**的必要條件」。**client 裡沒有任何欄位把緊急任務綁到任何天氣** |
-| ~~「緊急事件只在特殊天氣發動」~~ | ❌ **已證偽**（2026-08-02 ICE board-log 15/15 晴朗；2026-08-06 升級為統計結論 n=71，χ²=1.48 與隨機無異，45 筆直接從晴朗轉） | 通報端**不設天氣閘**（見鐵則 §4） |
-
-**由來**：ICE fork（`XIVpluginsDev/ICE-Dev`）那輪連續五次拿 0 當佔位，其中 `MapPosition` 讓採集完全不執行、
-`missionText` 讓技能完全不放——0 在這批 sheet 裡到處都是有意義的哨兵值。同型錯誤在網站上的形式是
-「把 6 個緊急任務標成隨時可接」。
 
 ### 3. 台服欄位索引表不在本 repo 複製
 
 `WKSMissionUnit` / `WKSMissionToDo` / `WKSMissionReward` 的欄位索引**唯一定義在 ICE fork**
 （`XIVpluginsDev/ICE-Dev/ICE/Utilities/TcSheets/`），由 `CosmicDump.csproj` 的 `<Compile Include>` 直接編譯。
-本 repo 只在 `TcCosmicSheets.cs` 放**那邊沒有的**表。抄第二份＝台服改版後兩邊各自漂移。
+本 repo 只在 `TcCosmicSheets.cs` 放**那邊沒有的**表（抄第二份的後果見 rationale）。
 
 ### 4. 算得準的用算的，算不準的用回報的——但兩者不得混為一談
 
-一般天氣（月塵／晴朗／靈風）與 ET 時段是**時間的純函數**，全 7 個繁中服伺服器同步 ⇒ 可推算到任意未來。
-緊急事件天氣（磁暴／流星雨／孢子霧，Weather id 194–197）**不在 client 任何一張 WeatherRate 內**
-⇒ 時間演算法永遠擲不出來、只能由伺服器推播 ⇒ **演算法這一半永遠不變：不預測、不排程、不猜下一次**。
+- 一般天氣（月塵／晴朗／靈風）與 ET 時段是**時間的純函數**，全 7 個繁中服伺服器同步 ⇒ 可推算到任意未來。
+- 緊急事件天氣（磁暴／流星雨／孢子霧，Weather id 194–197）**不在 client 任何一張 WeatherRate 內**
+  ⇒ 只能由伺服器推播 ⇒ **不預測、不排程、不猜下一次**（演算法這一半永遠不變）。
+- 緊急事件改由回報（`worker/` ＋「緊急事件」分頁）。**天花板必須寫在 UI 上**：覆蓋率＝回報者人數，一個插件只
+  看得到它所在的那台伺服器，**沒亮不代表沒事件**。兩種來源畫面上分別標示（`插件偵測`／`玩家通報`），不得混為
+  一談。通報／推播機制細則＝`.claude/rules/emergency.md`。
+- ⚠️ **不得加回「天氣閘」**（「只有特殊天氣才出緊急事件」）：該假設已用 ICE `board-log.jsonl` 證偽並經統計複核
+  （推導與取數陷阱 → **`docs/emergency-weather-analysis.md`**，動這條前先讀）。加回去只會把真實通報靜默退掉。
+- ⚠️ 已排除的**只有天氣**，不是「解出了觸發規則」；per-server 週期是**觀察到的形狀**、無 client 欄位佐證 ⇒ 照舊不預測。
 
-2026-08-02 起補上另一半：**緊急事件改由回報**（`worker/` ＋「緊急事件」分頁）——
-ICE 插件偵測到 `ActiveWeather ∈ 194–197` 自動回報，加上玩家手動通報。**天花板必須寫在 UI 上**：
-覆蓋率＝回報者人數，一個插件只看得到它所在的那一台伺服器，**沒亮不代表沒事件**。
-兩種來源在畫面上要分別標示（`插件偵測`／`玩家通報`），不得混為一談。
-
-**預告（`warn`）一律不推播**（2026-08-03，一晚三筆假預告之後訂）。預告是所有訊號裡最不可靠的
-——它來自畫面通告文字比對，而那個彈窗同時放著分頁標籤（`EMERGENCY`）、秒級倒數與三種不同
-事件的文案；誤判成本卻是「已經吵到所有人，而且收不回來」。事件本身立刻就在網站上看得到，
-延後的只有推播。該觸發通知的是**確定發生**：天氣真的翻轉（`start`）或有人附議。
-
-**手動通報靜置 30 秒才推播**（2026-08-03）：誤按可在此期間撤回，撤回了就一則都不送。
-**插件通報不適用**——它回報的是遊戲天氣本身，不存在誤按。靜置期在「別人附議」或
-「通報者自己按確定」時提前結束：它擋的是沒人確認的孤例，不是已經有第二個人看到的事件。
-實作用 **DO alarm**，不得改成在 `waitUntil` 裡睡——DO 會被回收，通知會靜默消失且無任何訊號。
-
-**提前量上限 5 分鐘**：玩家唯一的資訊來源是遊戲的預兆通告 ⇒ 沒有管道能知道更早的事。
-這是「通報者能知道什麼」的上界，不是對遊戲行為的猜測。
-實測（2026-08-11，插件量的 `warnedAt→startAt`）：**18 筆中 17 筆落在 278–281 秒**
-（4 分 38–41 秒，全距 3 秒），1 筆 543 秒。上限 5 分鐘仍然成立；那個離群值超出選單範圍，
-代表偶爾有人無法如實通報——放寬上限會讓**所有人**都能填一個沒有依據的大數字，故不動。
-
-⚠️ **不得加回「天氣閘」**（「只有特殊天氣才出緊急事件」）。該假設已於 2026-08-02 用 ICE
-`board-log.jsonl` **證偽**：唯一一次記錄到的緊急事件（`weather=196`）發生時，底層演算法天氣
-**15/15 都是晴朗**；同一份記錄的非緊急 171 筆演算法與實測 171/171 吻合 ⇒ 不是演算法或記錄的問題。
-加回去只會把真實通報靜默退掉。
-
-統計上也站得住：**n=173，χ²=3.35（df=2，臨界 5.99）⇒ 與隨機取樣無異**（2026-08-11）。
-推導、兩次方法修正史（基準必須用該期間**實際**天氣分布、不是機率表 70/15/15）、per-server 計時器
-形狀與 `/history` 100 筆全域上限的取數陷阱 → **`docs/emergency-weather-analysis.md`**（動這條前先讀那份）。
-
-⚠️ 已排除的**只有天氣**，不是「解出了觸發規則」；per-server 週期是**觀察到的形狀**、無 client 欄位佐證
-⇒ **仍然不預測、不排程、不猜下一次**（本鐵則第一段照舊）。
-
-### 5. 輪詢是最後手段，且一律綁前景（2026-08-04，額度事故後訂）
+### 5. 輪詢是最後手段，且一律綁前景
 
 **Owner 裁示：通知一律以 Discord 為主，網頁輪詢類功能能少做就少做。**
 
-由來：緊急事件分頁每 60 秒打一次 `/state`，看似便宜——但 `setInterval` 在**隱藏分頁照跑**
-（只被節流到 ≥1s），一個開著不看的分頁一天仍打 **1440 次**。2026-08-04 實測
-`ffxiv-tw-cosmic-api` 24 小時 **56k invocations**（比前期 +79%），佔掉帳號免費額度
-100k/日 的一大半，且**曲線是持續平台不是尖峰**＝純粹是掛著的分頁在燒。
+- 新功能**預設不輪詢**。先問「這資訊是不是只有使用者看著時才有意義」——是的話綁前景，不是的話該走後端推播。
+- 真的要輪詢：**一律 `if (document.hidden) return;`**，並在 `visibilitychange` 回前景時 `poll(true)`
+  立刻補一次（缺後者＝「切回來看到舊資料」被誤讀成「沒有事件」——這一頁的最嚴重失效模式，鐵則 §4）。
+- 需要「人不在也要知道」的，答案是 **Discord 訂閱**，不是把輪詢調密。
+- **但「少打」不等於「晚打」**：唯一那一發**首次**請求要**盡量早**發、不跟頁面其他東西排隊，**拿到資料就重畫**
+  （`/state` 的 `prefetch` 細則見 `.claude/rules/emergency.md`）。
+- ⚠️ **驗輪詢改動先確認 `document.hidden` 的真值**：headless／未聚焦分頁本身就是 hidden，量到「都沒打」
+  多半只是撞到 hidden 閘、沒測到間隔邏輯。
 
-**這個成本沒有換到任何東西**：推播是後端 DO 自己發 webhook（`events-do.js`），
-跟前端輪詢完全無關；輪詢只負責「你正在看的時候畫面是新的」。
+現行輪詢三檔（`emergency-view.js` `pollIntervalFor()`）與「我關心的伺服器」判準＝`.claude/rules/emergency.md`。
 
-**真正的「有事了」通道是 Discord → 人 → 分頁**，不是輪詢：後端 DO 收到通報就自己發 webhook，
-使用者看到通知就會打開／切回分頁，`visibilitychange` 當場 poll 一次並進 ACTIVE。
-⚠️ 但**閒置不能直接歸零**：瀏覽器沒有任何管道能自己發現「別人通報了」——那個訊號在伺服器側，
-歸零等於「除非你自己按按鈕，否則永遠不會被觸發」。心跳的唯一任務是接住
-「沒訂 Discord、又剛好開著頁面」的人。
+### 6. 兩種時鐘一律標記
 
-現行三檔（`emergency-view.js` 的 `pollIntervalFor()`）：
+現實時鐘與艾奧傑亞時鐘（ET）格式完全相同（`18:30`／`15:42`）⇒ **散文裡的現實時鐘一律用
+`localClockText()`**（「本地 18:30」），ET 用 `etClockText()`（「ET 15:42」）。裸值 `clockText()`
+**只准用在欄位標題已標明時鐘種類的表格欄位**，且該檔要登記進 `tests/clock-labelling.test.mjs`
+白名單（**逐檔逐次數**，理由見 rationale）。
 
-| 檔 | 條件 | 間隔 |
-|---|---|---|
-| ACTIVE | **我關心的伺服器**有進行中事件，或我剛通報／附議／否認（30 分鐘內） | 60 秒 |
-| IDLE | 其餘 | 300 秒（心跳）|
-| 停止 | `document.hidden` | 不打 |
-
-「我關心的伺服器」＝跨工具身份的 `character.mainWorld`（同步讀、不花請求）；
-**沒設定就視為全部**——不能因為使用者沒填過設定就讓他漏看自己那台，這一頁最嚴重的
-失效模式是「畫面沒亮被當成沒事」（鐵則 §4）。
-
-規則：
-
-- 新功能**預設不輪詢**。先問「這個資訊是不是只有在使用者看著的時候才有意義」——
-  是的話就綁前景，不是的話那它根本不該用輪詢，該走後端推播。
-- 真的要輪詢：**一律 `if (document.hidden) return;`**，並在 `visibilitychange` 回前景時
-  `poll(true)` 立刻補一次。缺後者的話「切回來看到舊資料」會被誤讀成「沒有事件」——
-  在這一頁那是安全性等級的誤讀（見鐵則 §4）。
-- 需要「人不在也要知道」的，答案是 **Discord 訂閱**，不是把輪詢調更密。
-
-**但「少打」不等於「晚打」**（2026-08-05）：唯一那一發**首次**請求要**盡量早**發，不要跟著頁面其他
-東西排隊。原本 `/state` 寫在四份離線 JSON 的 `await` 之後，被排到四層串行鏈的尾端（實測後端 25 ms、
-卻要等到載入後 400 ms 才發），Owner 直接感受到「現況要等很久才展開」。現在由 `app.js` 在進入
-`await` 前先發、view 接手（`prefetch`，逾 10 秒視為過期重打——舊資料標成「剛更新」在這一頁
-是鐵則 §4 等級的錯）。同理，**拿到資料就重畫，不要等下一個 tick**。
-
-⚠️ **驗這類改動時先確認 `document.hidden` 的真值**：headless／未聚焦的分頁本身就是 hidden，
-量到「都沒打」很可能只是撞到 hidden 閘、根本沒測到間隔邏輯（2026-08-04 我自己踩過一次）。
-
-### 5.5 觀測 > 推導：天氣以 `weatherId` 為準，衝突的變體一律丟掉（2026-08-08）
-
-緊急事件的兩個訊號**可信度不對等**，不得平等對待：
-
-| 欄 | 來源 | 可信度 |
-|---|---|---|
-| `weatherId` | 插件直接讀遊戲的 `ActiveWeather` | **觀測**——start/end 那一刻一定是對的 |
-| `variant` | 插件比對**畫面通告文字** | 推導——**上一場的值會殘留** |
-
-規則：
-
-- **插件 start/end 帶的天氣一律覆寫**先前的值（`weatherObserved`）。COALESCE 的「先到的贏」
-  在這裡是錯的：事件的第一筆常常是**預告**，那時天氣還沒翻轉。
-- **手動通報的天氣沒有覆寫權**——那是使用者自己選的，跟先到的值同一級，照舊 COALESCE。
-  給它覆寫權會讓「第三個人選錯」蓋掉前兩個人的正確值。
-- **`weatherKindOf(variant) !== weather` ⇒ 把 `variant` 與 `groupKey` 一起清空**（`_dropConflictingVariant`）。
-  清空而不是改成推導值：我們知道「這個變體是錯的」，不知道「正確的是哪一個」。
-- **預告階段不由 variant 推天氣**。`validatePluginReport` 已刻意把 warn 的 weather 設 null
-  （weatherId 是殘留值），再從 variant 推導等於把剛擋掉的錯值從後門放進來——variant 是同一個殘留問題。
-
-⚠️ **由來（ICE log 實證，伊弗利特 2026-08-06）**：15:09 的預告帶著同日 11:07 那場孢子霧殘留的
-`spore-b`；15:14 的 start 送 `weatherId=196`（磁暴）配同一個殘留變體；15:34 的 end 才送對 `storm-b`。
-站上 **id=94 被記成孢子霧**，地圖會指向孢子霧那半張圖。**兩層缺陷互相掩護**：預告用 variant 推出錯天氣，
-而 `warn→start` 升級那段**從頭到尾沒有寫 `weather`** ⇒ 20 分鐘內三筆帶著正確天氣的回報，一次都沒機會改正。
-症狀是畫面完全正常、只是天氣寫錯 —— 沒有任何錯誤訊號。
-
-### 6. 通知的 @ 對象存在訂閱裡，不是即時讀設定（2026-08-05，B-062）
-
-fan-out 由 worker 送，那時使用者的瀏覽器可能根本沒開 ⇒ @ 對象**必須存進 `subs`**。
-兩個後果，兩者都不直觀：
-
-- **改了 portal 全域設定要回本頁再按一次「儲存訂閱」**才會生效（畫面上有寫）。不講的話症狀是
-  「我明明改了設定，通知還是 @ 舊的」，而使用者完全看不出要回哪裡按什麼。
-- **payload 必須 per-target 組**。原本 fan-out 是組一份大家共用（那時內容確實與收件人無關），
-  沿用等於所有訂閱者都吃到某一個人的 @ 設定——包含「設定成不提及的人被 `@everyone` 炸」。
-  每個人只看自己的頻道，永遠不會發現是別人的設定跑過來。哨兵＝`http.test.ts` 那條「兩份 body 不同」。
-
-存的是**正規化後**的 `{mentionType, mentionTargetId}`（`discordMentionTarget()` 的輸出）。
-**本 repo 不自己判斷「user 取 userId／role 取 mentionId」**——那份判斷漏掉「mentionType 空但
-userId 有值」的舊值分支，既有使用者重存訂閱就會靜默失去提及。判準＝`worker/test/mention-vectors.json`
-（portal 那份的 vendoring 副本，digest 相符才算數）。
-
-⚠️ **不提及時也一定要送 `allowed_mentions: { parse: [] }`**。Container（Components V2）不能有
-`content`，但**元件內的提及照樣會 ping**，管轄它的是訊息層的 `allowed_mentions`——省掉它等於
-回到 Discord 預設解析，日後任何一次文案調整引入像提及的字串就會炸整個頻道。
-
-### 6.5 兩種時鐘一律標記（2026-08-06）
-
-本站同時顯示**現實時鐘**與**艾奧傑亞時鐘（ET）**，兩者格式完全相同（`18:30`／`15:42`）、
-頁首四格更是並排。**散文裡的現實時鐘一律用 `localClockText()`（輸出「本地 18:30」）**，
-ET 用 `etClockText()`（輸出「ET 15:42」）。裸值 `clockText()` **只准用在欄位標題已標明
-時鐘種類的表格欄位**，且該檔要登記進 `tests/clock-labelling.test.mjs` 的白名單（逐檔逐次數，
-只寫「允許這個檔」的話同檔再漏一處仍會綠）。
-
-漏標的症狀是**畫面完全正常**——無錯誤、無警告、測試全綠，只有使用者看錯時間跑去等。
-
-⚠️ **ET 的繁中名是「艾奧傑亞」，不是「艾歐澤亞」**（2026-08-06 Owner 指正，全站 25 處已改）。
-佐證＝台服 client dump：`tc_Action`／`tc_Fate`／`tc_Item` 都有「艾奧傑亞」，「艾歐澤亞」零筆
-（那是國際服／簡中式音譯）。同一支測試守門，**連註解一起掃**——註解裡留著錯譯，下一個人照抄就又回來了。
+⚠️ **ET 的繁中名是「艾奧傑亞」，不是「艾歐澤亞」**。同一支測試守門，**連註解一起掃**。
 
 ### 7. 設計系統
 
 `../ffxiv-tw-tools-portal/_DESIGN-SYSTEM.md` 是權威。本 repo 私有 class 一律 `cos-` 前綴；
-不定義也不覆寫任何 `.codex-*` 根 selector；accent 統一 cyan；金色高亮**全頁只有一處**
-（靈風視窗倒數 — 限時語意）。
+不定義也不覆寫 `.codex-*` 根 selector；accent 統一 cyan；金色高亮**全頁只有一處**（靈風視窗倒數＝限時語意）。
+
+### 8. 版面位移（CLS）
+
+- **逐斷點釘實測高度，不要用單一 `min-height`**：`.cos-stats` 是 `auto-fit minmax(240px,1fr)`，欄數／列數隨寬度變
+  ⇒ 一個值只對「一排」是對的。量 CLS 一律**逐寬度**（1920…390px）取**最差**的那個寬度。
+- **`.cos-header-tools` 釘 `min-height`／`min-width`**，讓「換不換行」在首次繪製定案（`#job-picker` 由 JS 填）。
+- **條件式警語不要用「不顯示」表達「沒問題」**：兩種狀態都要有文案（`#np-caveat` 晴朗時講「沒有天氣限定任務
+  會被覆蓋」），槽位恆定。HTML 端放中性等待文案、**不放正式文案**（猜錯會先顯示錯的判斷再改口）。
 
 ---
 
-- **CLS：`.cos-stats` 那條 `min-height:104px` 只對「一排」是對的**（2026-08-23）。四格是 `auto-fit minmax(240px,1fr)`，欄數隨寬度變、列數跟著變 ⇒ 實測最終高度 116（4 欄）／221（3 或 2 欄）／407（1 欄），單一 104px 在窄一點的視窗完全不夠。**600px 是全站最差的一個點：CLS 0.527**，而桌機看只有 0.175 —— 只量一個寬度會漏掉最嚴重的情況。同時 `#job-picker` 由 JS 填，讓 `.cos-header-tools` 45×16 進場、432×38 收場，390px 下它會在 ~500ms 換行、把 `#ftw-main` 整塊下推 46px。修法＝逐斷點釘實測高度＋`.cos-header-tools` 釘 `min-height/min-width`（讓「換不換行」在首次繪製定案）。修後 1366/1000/900/600/390＝0.009/0.009/0.016/0.012/0.0002。
-- **條件式警語不要用「不顯示」表達「沒問題」**（同上）：`#np-caveat` 原本只在非晴朗時 `hidden=false`，而天氣要等 `weather.json` 回來才算得出來 ⇒ 晚 500ms 長出 50px 推走整個分頁區。純預留高度不行——實測天氣分布晴朗 358／月塵 102／靈風 90，約**六成五**的時間會留一條空白帶。改成兩種文案都有（晴朗時講「沒有天氣限定任務會被覆蓋」），槽位恆定、位移歸零，而且「現在沒有這個風險」本來就是使用者想知道的事（原本要靠「沒有那句話」去反推）。HTML 端放中性等待文案，不放正式文案——猜錯會先顯示錯的判斷再改口。
-
 ## VERIFY（改動後必跑）
-- **canonicalTest（safe-push 實跑的那一條；`process/fleet.json` 逐字對照本行）**：`node tools/validate.mjs && node tests/run-all.mjs && cd worker && pnpm test`
-  > 2026-08-04 併入 `tests/run-all.mjs`：`tests/` 底下的測試檔先前沒有任何自動入口會跑到（跨 repo 稽核＝claude-skills `process/tools/check-orphan-tests.mjs`）。run-all 自動掃描`tests/*.test.{js,mjs}`，新增測試檔不必再記得掛進來。
 
+- **canonicalTest（safe-push 實跑的那一條；`process/fleet.json` 逐字對照本行）**：`node tools/validate.mjs && node tests/run-all.mjs && cd worker && pnpm test`
+  > `tests/*.test.{js,mjs}` 由 `tests/run-all.mjs` 自動掃描，新增測試檔不必記得掛進來。
 
 <!-- B-048-HANDOFF -->
-> **舊網址交接機制已於 2026-09-05 退役**：舊 `*.pages.dev` host 的 301 改由 Cloudflare **帳號層 Bulk Redirects** 在邊緣執行，本 repo 不再有 functions 層的 middleware、HTML 也不再有 inline 交接腳本（`?stay` 救援門一併結束）。
-> `_routes.json` 的 include 只留 API 代理路徑（HTML 路徑不進 Pages Functions、不再計費）；交接測試（handoff.test）與路由清單（route-manifest）已刪。
+> **舊網址交接機制已退役**：301 改由 Cloudflare 帳號層 Bulk Redirects 在邊緣執行，本 repo 不再有 functions 層 middleware／inline 交接腳本；`_routes.json` 的 include 只留 API 代理路徑（HTML 路徑不進 Pages Functions、不再計費）。細節見 rationale。
 
 | 改了什麼 | 跑什麼 | 綠燈 |
 |---|---|---|
-| **任何改動（canonicalTest；`process/fleet.json` 逐字對照本行）** | `node tools/validate.mjs` | 資料不變量全過（544 任務／63 有條件／88 連續／11 條工具鏈）；不需遊戲 client，任何機器可跑 |
-| `tools/cosmic-dump/**` 或台服改版 | `dotnet run -c Release --project tools/cosmic-dump` | 內建健全性閘全過（544 任務／天氣總和 100%／11 條 9 階工具鏈），任一不過**不寫檔**；地圖底圖匯不出來也**整批不寫**（`img/map/sinus-ardorum.png`，512²） |
+| **任何改動（canonicalTest；`process/fleet.json` 逐字對照本行）** | `node tools/validate.mjs` | 資料不變量全過（544 任務／63 有條件／88 連續／11 條工具鏈）；不需遊戲 client |
+| `tools/cosmic-dump/**` 或台服改版 | `dotnet run -c Release --project tools/cosmic-dump` | 內建健全性閘全過（544 任務／天氣總和 100%／11 條 9 階工具鏈），任一不過**不寫檔**；地圖底圖匯不出來也**整批不寫**（`img/map/sinus-ardorum.png` 512²） |
 | `worker/**`（緊急事件後端） | cwd=`worker/`：`pnpm test`＋`pnpm test:logic`＋`pnpm cf:deploy:dry` | 66 整合（vitest-pool-workers）＋41 純函式（node --test）全綠；dry-run 0 error。**測試絕不打真 Discord**（fetch 被 stub） |
-| `modules/emergency-*.js` | `node tests/run-all.mjs`（**8 個測試檔**，含 `emergency-view.test.mjs`＝4 條時序斷言）＋本機 `wrangler dev` ＋瀏覽器走一次通報→附議→訂閱 | 測試全綠；console 零 error；後端關掉時該分頁降級為唯讀、其他分頁不受影響。⚠️ **前景輪詢時序量不到**——自動化開的分頁本身就 `document.hidden`（見鐵則 §5 末），要驗間隔得用真人分頁 |
+| `modules/emergency-*.js` | `node tests/run-all.mjs`（**8 個測試檔**）＋本機 `wrangler dev` ＋瀏覽器走一次通報→附議→訂閱 | 測試全綠；console 零 error；後端關掉時該分頁降級唯讀、其他分頁不受影響。⚠️ 前景輪詢時序量不到（自動化分頁本身就 `document.hidden`），要驗間隔得用真人分頁 |
 | 任何 CSS／HTML | `node C:/FFXIVProject/tools/check-design-drift.js --files <改動檔> --strict` | exit 0 |
 | 任何前端改動 | 瀏覽器開 `http://127.0.0.1:8774/ffxiv-tw-cosmic/`（`svc start portal`） | console 零 error；四個分頁都出得來；`documentElement.scrollWidth - clientWidth === 0` |
-| 動 `deploy-*` 三件組／**新增任何頂層項** | `sh deploy-prepare.sh` | 印出「✓ 部署輸出就緒」（未分類的頂層項會讓它 exit 1——那是設計，去 `deploy-allow.txt`／`deploy-deny.txt` 歸類，見下方「🔒 部署面鐵則」） |
+| 動 `deploy-*` 三件組／**新增任何頂層項** | `sh deploy-prepare.sh` | 印出「✓ 部署輸出就緒」（未分類的頂層項讓它 exit 1＝設計，去 `deploy-allow.txt`／`deploy-deny.txt` 歸類） |
 | commit 前 | monorepo 共用 pre-commit（已掛 `core.hooksPath`） | secret／檔案大小／design-lint／DEVLOOP 工件 全過 |
 
 <!-- TEST-BASELINE cmd="node tests/run-all.mjs" match="(\d+)/\d+ 測試檔通過" expect="8" label="前端 run-all" -->
 <!-- TEST-BASELINE cmd="npx vitest run" cwd="worker" match="Tests\s+(\d+) passed" expect="66" label="worker 整合" -->
 <!-- TEST-BASELINE cmd="node --test test/logic.test.mjs" cwd="worker" match="pass (\d+)" expect="41" label="worker 純函式" -->
 
-> **測試基線**（2026-08-08 補；健檢抓到本 repo 沒有 `TEST-BASELINE` 標記 ⇒ monorepo 的
-> pre-commit gate 6 與 `check-test-baseline.js --audit` **整個跳過本 repo**，上表宣告的數字
-> 從來沒有任何東西在驗。加了之後：動到測試檔或本檔時實跑並雙向比對，只准升不准降。）
+> **測試基線**：動到測試檔或本檔時實跑並與上列三行標記雙向比對，**只准升不准降**（gate 6 與 `check-test-baseline.js` 靠它們）。
 
-**欄位索引在台服改版後失效時**：先跑 `XIVpluginsDev/ICE-Dev/tools/tc-sheet-verify`（一鍵重驗那三張表），
-不要在這裡重新反解。
+**欄位索引在台服改版後失效時**：先跑 `XIVpluginsDev/ICE-Dev/tools/tc-sheet-verify`（一鍵重驗三張表），不要在這裡重新反解。
 
 ---
 
@@ -243,11 +127,9 @@ ET 用 `etClockText()`（輸出「ET 15:42」）。裸值 `clockText()` **只准
 
 本 repo 的 CF Pages 部署**不是「發佈 repo 根目錄」**，而是由 `deploy-prepare.sh` 依 `deploy-allow.txt` 產出 `_site/`。CF dashboard 必須設 Build command = `sh deploy-prepare.sh`、Build output directory = `_site`。
 
-> 本段為 12 個 external repo 的**共用權威版本**（2026-08-15 統一）：三條原本只寫在單一 repo 的教訓（cache-bust 假紅燈／分類閘的靜默放行／產物路徑並行安全）已回填到所有副本。改本段請同步全部副本，不要只改一份。
+> 本段為 12 個 external repo 的**共用權威版本**：改本段須同步全部副本。事故與實證見 rationale。
 
-- **為什麼**：CF Pages 無 build 步驟時把 repo 根整棵目錄當靜態資產上傳 → `AGENTS.md`／`docs/`／`tools/`／`tests/`／`worker/` 後端源碼全部變成該網域下可直接 GET 的公開檔（2026-08-01 實測 12/13 站中招）。**private repo 只保護「誰能 clone」，不保護「已部署的檔案誰能下載」**；`.gitignore`（檔是 tracked）／`_headers`（只加標頭）／`robots.txt`（只擋收錄不擋直取）都擋不到。
-- **允許清單而非排除清單**：頂層出現任何未列入 `deploy-allow.txt`／`deploy-deny.txt` 的項目 → **build 直接失敗**。新增內部資產的預設值是「不發佈」，不靠任何人記得。排除清單做不到（實測當天漏了 `worker/` 106 支 .ts 與 `_tools/`／`_cache/` 141 檔）。注意（健檢 R3 D6）：分類閘另有兩條靜默放行（CF 容器 npm 產物固定 skip 清單、`git check-ignore`）——它是「逼人歸類」的提醒層；**真正的部署邊界是第 2 段複製迴圈的 allow-list 比對**，改腳本時該比對不可動、skip 清單只放建置環境產物不得用來繞分類。
-- **新增站台資產**（新頁面／新資料夾）→ 加進 `deploy-allow.txt`；**新增內部資產** → 加進 `deploy-deny.txt`。改完跑一次 `sh deploy-prepare.sh` 確認印出「✓ 部署輸出就緒」。
-- **腳本改動禁忌**：① 只能用 POSIX 語法（CF 容器的 `sh` 是 dash，`read -r -d ''` 之類 bashism 會靜默失敗、輸出 0 檔而 build 仍「成功」⇒ **整站 404**，2026-08-01 實際發生）② 根層檔名不可無條件 `mkdir "$OUT/${f%/*}"`（會建出「叫 index.html 的目錄」⇒ `/` 404）③ 不得移除出貨前驗收閘（輸出 <3 檔／缺 index.html／內部檔混入 → 非零 exit，CF 保留前一版）④ **產物路徑不得假設獨佔**：只要主工作樹可能被並行 session 或 cron 同時使用，固定的 `_site` 一定互踩。ranking B-117（2026-08-15）實證：只做「逐次專屬」而不加鎖**仍然兩份都 exit 1**（撞在 `rm -rf _site`），現行解＝建到 `_site.tmp.$$`、清單走 `mktemp`（repo 外）、換名段用 `mkdir "$_site.lock"` 序列化，哨兵＝`test_deploy_prepare_is_concurrency_safe`。兩次實際故障的訊息（「頂層出現未分類項目」「輸出缺 index.html」）**都指向錯的方向**，看起來像漏加允許清單 —— 本 repo 日後若接排程／並行寫入者，照 ranking 的做法改，別重新 debug 一次。
-- **部署後驗**（**務必帶 cache-bust**）：`curl -sI "https://<repo>.pages.dev/AGENTS.md?cb=$(date +%s)"` → 回 `text/html` 正常（檔案不存在、走 SPA fallback）；回 `text/markdown` = 紅燈。
-  - ⚠️ **不帶 cache-bust 會得到假紅燈**：舊部署（發佈 repo 根的那版）留在 CF 邊緣的物件帶 `s-maxage=604800`，命中時回 `text/markdown` 但 header 有 `CF-Cache-Status: HIT` ＋ 大 `Age`。**那是快取殘留不是外洩**，最長 7 天自癒（pages.dev 非自有 zone，dashboard 沒有 Purge Everything，收斂路徑就是等 TTL）。2026-08-01 R3 健檢實測：帶 cache-bust 的 `/AGENTS.md`、`/worker/src/index.js`、`/deploy-allow.txt` 全回 SPA fallback＝現行部署乾淨。
+- **允許清單而非排除清單**：頂層出現未列入 `deploy-allow.txt`／`deploy-deny.txt` 的項目 → **build 直接失敗**（新增內部資產預設「不發佈」）。分類閘另有兩條靜默放行（npm 產物 skip 清單、`git check-ignore`）＝只是提醒層；**真正的部署邊界是第 2 段複製迴圈的 allow-list 比對**——該比對不可動，skip 清單只放建置環境產物、不得用來繞分類。
+- **新增站台資產**（新頁面／新資料夾）→ `deploy-allow.txt`；**新增內部資產** → `deploy-deny.txt`。改完跑 `sh deploy-prepare.sh` 確認印出「✓ 部署輸出就緒」。
+- **腳本改動禁忌**：① 只用 POSIX 語法（CF 容器的 `sh` 是 dash；bashism 靜默失敗＝輸出 0 檔而 build 仍「成功」⇒ 整站 404）② 根層檔名不可無條件 `mkdir "$OUT/${f%/*}"`（會建出「叫 index.html 的目錄」⇒ `/` 404）③ 不得移除出貨前驗收閘（輸出 <3 檔／缺 index.html／內部檔混入 → 非零 exit，CF 保留前一版）④ **產物路徑不得假設獨佔**（並行 session／cron 互踩固定 `_site`）——接排程／並行寫入者時照 ranking 現行解改：`_site.tmp.$$`＋`mktemp` 清單＋`mkdir` 鎖（由來見 rationale）。
+- **部署後驗**（**務必帶 cache-bust**）：`curl -sI "https://<repo>.pages.dev/AGENTS.md?cb=$(date +%s)"` → `text/html`＝正常（走 SPA fallback）、`text/markdown`＝紅燈。不帶 cache-bust 會得到**假紅燈**（邊緣快取殘留，判別法與自癒時間見 rationale）。
