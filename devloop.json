@@ -1,0 +1,6 @@
+{
+  "canonicalTest": "node tools/validate.mjs && node tests/run-all.mjs && cd worker && pnpm test",
+  "scale": "S",
+  "delegable": true,
+  "notes": "S 靜態站；canonicalTest 只驗已產出的 data/*.json 不變量（不需遊戲 client，任何機器可跑）——產生時的閘在 tools/cosmic-dump 內、只有裝台服 client 的機器跑得動"
+}
