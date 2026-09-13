@@ -2,6 +2,16 @@
 
 > 日期段落制（cycle 收官為段）；條目含人話「為什麼」，不從 git log 自動生成。格式見 DEVLOOP §4.3。
 
+## 2026-09-12 — 測試閘移除自指與恆真斷言
+
+依 TAUTOLOGICAL／IMPL-COUPLED 判準，刪除前端 modulepreload 測試中由同一
+`renderBlock(graph)` 生成期望值的逐字比較，並刪除 HTTP 整合測試
+`calls.length >= 0` 的恆真等待。modulepreload 仍保留 import graph↔HTML 的
+雙向缺漏、入口、檔案存在與根絕對路徑哨兵；HTTP 中同一 endpoint 的 status-only
+案例與 webhook mock 斷言逐筆複核後保留，因各自涵蓋不同驗證／授權／錯誤分支或回傳
+payload／狀態語意。基線維持：前端 `8→8`、worker 整合 `66→66`、worker 純函式
+`41→41`。
+
 ## 2026-09-05 — 舊網址交接機制退役（Bulk Redirects 取代 middleware 301）
 
 舊 `*.pages.dev` host 的 301 改由 Cloudflare **帳號層 Bulk Redirects** 在邊緣執行 ⇒ 本 repo 的

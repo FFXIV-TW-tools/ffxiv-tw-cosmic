@@ -108,11 +108,11 @@ FFXIV 繁中服「宇宙探索」（月球 / 渴望灣）規劃站。**主體純
 | 動 `deploy-*` 三件組／**新增任何頂層項** | `sh deploy-prepare.sh` | 印出「✓ 部署輸出就緒」（未分類的頂層項讓它 exit 1＝設計，去 `deploy-allow.txt`／`deploy-deny.txt` 歸類） |
 | commit 前 | monorepo 共用 pre-commit（已掛 `core.hooksPath`） | secret／檔案大小／design-lint／DEVLOOP 工件 全過 |
 
-<!-- TEST-BASELINE cmd="node tests/run-all.mjs" match="(\d+)/\d+ 測試檔通過" expect="8" label="前端 run-all" -->
-<!-- TEST-BASELINE cmd="npx vitest run" cwd="worker" match="Tests\s+(\d+) passed" expect="66" label="worker 整合" -->
-<!-- TEST-BASELINE cmd="node --test test/logic.test.mjs" cwd="worker" match="pass (\d+)" expect="41" label="worker 純函式" -->
+<!-- TEST-BASELINE points="68" paths="tests/*.test.mjs" label="前端語料" -->
+<!-- TEST-BASELINE points="203" paths="worker/test/**/*.ts" label="worker 整合語料" -->
+<!-- TEST-BASELINE points="153" paths="worker/test/logic.test.mjs" label="worker 純函式語料" -->
 
-> **測試基線**：動到測試檔或本檔時實跑並與上列三行標記雙向比對，**只准升不准降**（gate 6 與 `check-test-baseline.js` 靠它們）。
+> **測試宣告值**：上列三行是**靜態**斷言點（gate 6 毫秒級；實跑＝push 的 canonicalTest，worker `pnpm test` 含 vitest ＋ logic.test.mjs）。**不得靜默下降**：刪無效測試＝改數字＋CHANGELOG 一行理由。重算＝`count-test-points.js . "<paths>"`。
 
 **欄位索引在台服改版後失效時**：先跑 `XIVpluginsDev/ICE-Dev/tools/tc-sheet-verify`（一鍵重驗三張表），不要在這裡重新反解。
 

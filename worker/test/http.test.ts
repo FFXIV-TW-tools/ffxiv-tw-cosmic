@@ -882,7 +882,6 @@ describe('預告（warn）→ 進行中', () => {
     const s1 = await (await SELF.fetch('https://x/state')).json() as any;
     expect(s1.events[world].startAt).toBe(0);        // 不假裝知道何時開始
     expect(s1.events[world].warnedAt).toBeGreaterThan(0);
-    await vi.waitFor(() => expect(calls.length).toBeGreaterThanOrEqual(0));
 
     // 天氣真的翻轉 ⇒ 同一筆升級，不開新事件
     const st = await post('/report', { world, weatherId: 196, phase: 'start' }, plug);
