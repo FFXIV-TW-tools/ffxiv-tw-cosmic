@@ -102,13 +102,13 @@ FFXIV 繁中服「宇宙探索」（月球 / 渴望灣）規劃站。**主體純
 | **任何改動（canonicalTest；`process/fleet.json` 逐字對照本行）** | `node tools/validate.mjs` | 資料不變量全過（544 任務／63 有條件／88 連續／11 條工具鏈）；不需遊戲 client |
 | `tools/cosmic-dump/**` 或台服改版 | `dotnet run -c Release --project tools/cosmic-dump` | 內建健全性閘全過（544 任務／天氣總和 100%／11 條 9 階工具鏈），任一不過**不寫檔**；地圖底圖匯不出來也**整批不寫**（`img/map/sinus-ardorum.png` 512²） |
 | `worker/**`（緊急事件後端） | cwd=`worker/`：`pnpm test`＋`pnpm test:logic`＋`pnpm cf:deploy:dry` | 66 整合（vitest-pool-workers）＋41 純函式（node --test）全綠；dry-run 0 error。**測試絕不打真 Discord**（fetch 被 stub） |
-| `modules/emergency-*.js` | `node tests/run-all.mjs`（**8 個測試檔**）＋本機 `wrangler dev` ＋瀏覽器走一次通報→附議→訂閱 | 測試全綠；console 零 error；後端關掉時該分頁降級唯讀、其他分頁不受影響。⚠️ 前景輪詢時序量不到（自動化分頁本身就 `document.hidden`），要驗間隔得用真人分頁 |
+| `modules/emergency-*.js` | `node tests/run-all.mjs`（**9 個測試檔**）＋本機 `wrangler dev` ＋瀏覽器走一次通報→附議→訂閱 | 測試全綠；console 零 error；後端關掉時該分頁降級唯讀、其他分頁不受影響。⚠️ 前景輪詢時序量不到（自動化分頁本身就 `document.hidden`），要驗間隔得用真人分頁 |
 | 任何 CSS／HTML | `node C:/FFXIVProject/tools/check-design-drift.js --files <改動檔> --strict` | exit 0 |
 | 任何前端改動 | 瀏覽器開 `http://127.0.0.1:8774/ffxiv-tw-cosmic/`（`svc start portal`） | console 零 error；四個分頁都出得來；`documentElement.scrollWidth - clientWidth === 0` |
 | 動 `deploy-*` 三件組／**新增任何頂層項** | `sh deploy-prepare.sh` | 印出「✓ 部署輸出就緒」（未分類的頂層項讓它 exit 1＝設計，去 `deploy-allow.txt`／`deploy-deny.txt` 歸類） |
 | commit 前 | monorepo 共用 pre-commit（已掛 `core.hooksPath`） | secret／檔案大小／design-lint／DEVLOOP 工件 全過 |
 
-<!-- TEST-BASELINE points="68" paths="tests/*.test.mjs" label="前端語料" -->
+<!-- TEST-BASELINE points="95" paths="tests/*.test.mjs" label="前端語料" -->
 <!-- TEST-BASELINE points="203" paths="worker/test/**/*.ts" label="worker 整合語料" -->
 <!-- TEST-BASELINE points="153" paths="worker/test/logic.test.mjs" label="worker 純函式語料" -->
 

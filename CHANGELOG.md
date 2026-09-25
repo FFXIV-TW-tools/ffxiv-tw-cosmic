@@ -2,6 +2,31 @@
 
 > 日期段落制（cycle 收官為段）；條目含人話「為什麼」，不從 git log 自動生成。格式見 DEVLOOP §4.3。
 
+## 2026-09-25 — 桌面通知改受 portal 全域開關「啟用瀏覽器通知」管轄
+
+**改動**：鬧鐘（`modules/alarm.js`）與緊急事件網頁通知（`modules/emergency-notify.js`）的
+`new Notification` 收斂到 `alarm.js` 匯出的 `showDesktopNotification()`，採三個工具 repo 一致的接法：
+SDK 有 `FFXIVSettings.notify()` 就交給它；舊版 SDK 只有 `get()` 時，`notification.browserEnabled === false`
+就不跳；SDK 缺席則維持原本的直接通知路徑。
+
+**理由**：portal 全域設定的「啟用瀏覽器通知」原本**零消費端**——使用者關掉了，本站照樣跳桌面通知，
+而且沒有任何錯誤訊號。
+
+**影響**：只 gate 桌面通知這一個管道；音效（`playAlarm`）、頁內 toast、Discord 不受影響。本地開關
+（鬧鐘的 `ffxiv-tw-cosmic:alarm`、緊急事件的 `ffxiv-tw-cosmic:em-webnotify`）保留，與全域開關取 AND；
+權限請求流程不變。
+
+**狀態文字同步**：全域關掉後，鬧鐘狀態列改寫「音效＋畫面提示（桌面通知已在全域設定關閉）」，緊急事件改寫
+「網頁通知：桌面通知已在全域設定關閉 — 會用音效與畫面提示代替」；兩處都以 `onChange('notification.browserEnabled')`
+即時重繪（SDK 缺席或沒有 `onChange` 就略過）。不改的話全域關掉後畫面仍寫「桌面通知＋音效」，跟實際不符。
+緊急事件的 `#em-sub-status` 也放訂閱訊息（「已儲存」「webhook 已被暫停」），切全域開關時只在畫面正顯示
+網頁通知狀態才重繪，不蓋掉訂閱那邊的訊息。
+
+**測試**：新哨兵 `tests/desktop-notify-gate.test.mjs` 以 stub 的 `window.FFXIVSettings` 經兩條真實模組入口驗
+「開關 false 不建 Notification／SDK 缺席照舊／音效與 toast 照常／本地開關關時連 SDK 都不叫／狀態文字全域關
+⇒ 改口、重開 ⇒ 恢復／不蓋掉 webhook 暫停訊息」；前端語料基線 `68→95`（新增 13 案 27 斷言點），`run-all`
+測試檔 8→9。
+
 ## 2026-09-12 — 測試閘移除自指與恆真斷言
 
 依 TAUTOLOGICAL／IMPL-COUPLED 判準，刪除前端 modulepreload 測試中由同一

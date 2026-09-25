@@ -13,6 +13,7 @@
  */
 
 import { emergencyApi } from './emergency-api.js';
+import { showDesktopNotification, desktopNotifyOffGlobally } from './alarm.js';
 
 const WEB_KEY = 'ffxiv-tw-cosmic:em-webnotify';
 
@@ -184,15 +185,24 @@ export function createEmergencyNotify(root, { worlds }) {
     );
   }
 
+  /**
+   * `#em-sub-status` 同時放訂閱結果（「已儲存」「webhook 已被暫停」…）與網頁通知狀態。
+   * 全域開關的 onChange 只在畫面上正顯示網頁通知狀態時重繪，不蓋掉訂閱那邊的訊息。
+   */
+  let lastWebStatus = null;
+
   function renderStatus() {
     const perm = typeof Notification === 'undefined' ? 'unsupported' : Notification.permission;
     if (!webOn) {
       el.status.textContent = '網頁通知：關閉中';
-      return;
+    } else if (desktopNotifyOffGlobally()) {
+      el.status.textContent = '網頁通知：桌面通知已在全域設定關閉 — 會用音效與畫面提示代替';
+    } else {
+      el.status.textContent = perm === 'granted'
+        ? '網頁通知：開啟中 — 只在這個分頁開著時才會響（可切到背景）'
+        : '網頁通知：桌面通知未授權 — 會用音效與畫面提示代替';
     }
-    el.status.textContent = perm === 'granted'
-      ? '網頁通知：開啟中 — 只在這個分頁開著時才會響（可切到背景）'
-      : '網頁通知：桌面通知未授權 — 會用音效與畫面提示代替';
+    lastWebStatus = el.status.textContent;
   }
 
   /** 讀回既有訂閱（換裝置時把勾選狀態帶回來）。 */
@@ -203,6 +213,10 @@ export function createEmergencyNotify(root, { worlds }) {
     // @ 對象改了也要重繪（否則畫面上的「@ 對象：…」會停在舊值，看起來像沒存到）
     s?.onChange?.('discord.mentionType', renderDiscord);
     s?.onChange?.('discord.mentionId', renderDiscord);
+    // 全域「啟用瀏覽器通知」被切換時，網頁通知狀態也要跟著改口（SDK 缺席或沒有 onChange 就略過）
+    s?.onChange?.('notification.browserEnabled', () => {
+      if (el.status.textContent === lastWebStatus) renderStatus();
+    });
 
     const r = await emergencyApi.getSub();
     const subscribed = r.ok && Array.isArray(r.data?.worlds) && r.data.worlds.length > 0;
@@ -259,13 +273,7 @@ export function createEmergencyNotify(root, { worlds }) {
       '依回報顯示，實際以遊戲內為準',
     ].join('\n');
 
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      try {
-        new Notification(title, { body, tag: `cosmic-em-${ev.id}`, icon: 'favicon-192.png' });
-      } catch {
-        // 部分瀏覽器在非 SW 環境限制建構通知：音效與 toast 仍會發
-      }
-    }
+    showDesktopNotification(title, { body, tag: `cosmic-em-${ev.id}`, icon: 'favicon-192.png' });
     window.FFXIVSettings?.playAlarm?.({ force: true });
     window.FFXIVToast?.show?.(`${title} — ${body.split('\n')[0]}`, 'ok', 8000);
   }

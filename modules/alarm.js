@@ -36,6 +36,40 @@ function save(state) {
   }
 }
 
+/**
+ * 使用者是否在 portal 全域設定關掉了「啟用瀏覽器通知」。未設定＝預設開啟 ⇒ 只認明確的 `false`；
+ * SDK 缺席視為沒關。狀態文字也讀這個——否則全域關掉後畫面仍寫「桌面通知＋音效」，跟實際不符。
+ */
+export function desktopNotifyOffGlobally() {
+  const fs = window.FFXIVSettings;
+  return !!fs && typeof fs.get === 'function' && fs.get('notification.browserEnabled') === false;
+}
+
+/**
+ * 桌面通知的唯一出口（鬧鐘與緊急事件共用）——受 portal 全域設定「啟用瀏覽器通知」
+ * （`notification.browserEnabled`）管轄。**只 gate 桌面通知這一個管道**：音效、頁內 toast、
+ * Discord 不經過這裡，呼叫端照常發。各功能自己的本地開關由呼叫端先擋（與全域開關取 AND）。
+ *
+ * 三段式接法（三個工具 repo 一致）：
+ *   1. SDK 有 `notify()` ⇒ 交給它（它自己判斷全域開關／支援度／授權，不 throw）。
+ *   2. 舊版 SDK（長開分頁還在跑、沒有 `notify()`）⇒ 至少尊重全域開關的 `false`。
+ *   3. SDK 缺席 ⇒ 維持原本的直接通知路徑，行為不變。
+ */
+export function showDesktopNotification(title, options) {
+  const fs = window.FFXIVSettings;
+  if (fs && typeof fs.notify === 'function') {
+    fs.notify(title, options);
+    return;
+  }
+  if (desktopNotifyOffGlobally()) return;
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  try {
+    new Notification(title, options);
+  } catch {
+    // 部分瀏覽器在非 SW 環境限制建構通知：音效與 toast 仍會發，不需處理
+  }
+}
+
 export function createAlarm(root, { windows, jobs, getJobFilter }) {
   const el = {
     toggle: root.querySelector('#al-enabled'),
@@ -86,9 +120,14 @@ export function createAlarm(root, { windows, jobs, getJobFilter }) {
       return;
     }
     const perm = typeof Notification === 'undefined' ? 'unsupported' : Notification.permission;
-    const channel = perm === 'granted' ? '桌面通知＋音效' : '音效＋畫面提示（桌面通知未授權）';
+    const channel = desktopNotifyOffGlobally()
+      ? '音效＋畫面提示（桌面通知已在全域設定關閉）'
+      : perm === 'granted' ? '桌面通知＋音效' : '音效＋畫面提示（桌面通知未授權）';
     el.status.textContent = `開啟中 · 提前 ${state.leadMinutes} 分鐘 · ${channel} · 分頁需保持開啟`;
   }
+
+  // 全域開關在設定面板／其他分頁被切換時跟著重繪（SDK 缺席或舊版沒有 onChange 就略過）
+  window.FFXIVSettings?.onChange?.('notification.browserEnabled', renderStatus);
 
   /**
    * 「開啟當下」這一檔容許的回溯窗（秒）。tick 是每秒一次，但分頁被節流／電腦睡醒時
@@ -160,14 +199,8 @@ export function createAlarm(root, { windows, jobs, getJobFilter }) {
     ].filter(Boolean);
     const body = lines.join('\n');
 
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      try {
-        // tag 讓同一個視窗的通知互相取代，不疊一整排
-        new Notification(title, { body, tag: `cosmic-${w.condId}`, icon: 'favicon-192.png' });
-      } catch {
-        // 部分瀏覽器在非 SW 環境限制建構通知：音效與 toast 仍會發，不需處理
-      }
-    }
+    // tag 讓同一個視窗的通知互相取代，不疊一整排
+    showDesktopNotification(title, { body, tag: `cosmic-${w.condId}`, icon: 'favicon-192.png' });
 
     window.FFXIVSettings?.playAlarm?.({ force: true });
     window.FFXIVToast?.show?.(`${title} — ${lines[0]}`, 'ok', 8000);
