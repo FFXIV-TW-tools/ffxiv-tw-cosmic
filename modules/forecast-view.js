@@ -78,6 +78,7 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
     now: document.querySelector('#fc-now'),
     timeline: document.querySelector('#fc-timeline'),
     timeline2: document.querySelector('#fc-timeline-2'),
+    empty: document.querySelector('#fc-timeline-empty'),
     zone: document.querySelector('#fc-zone'),
   };
 
@@ -92,160 +93,77 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
     }
   }
 
-  el.zone.textContent = `${weatherData.zone.name}（${weatherData.table.map((w) => `${w.name} ${w.rate}%`).join('／')}）`;
+  el.zone.textContent = `${weatherData.zone.name}：${weatherData.table.map((w) => `${w.name} ${w.rate}%`).join('／')}`;
 
   function render(nowSeconds) {
     renderNow(nowSeconds);
     renderTimeline(nowSeconds);
   }
 
+  let currentSummary = '';
+  let weatherIconId = null;
+  const values = {
+    weather: document.querySelector('#fc-weather'),
+    et: document.querySelector('#fc-et'),
+    windy: document.querySelector('#fc-windy'),
+    mech: document.querySelector('#fc-mech'),
+  };
+
+  // KPI 的四個外框與欄位首繪就存在；每秒只更新原位的文字節點。
+  for (const value of Object.values(values)) {
+    value.replaceChildren(document.createTextNode('查詢中'));
+    const sub = document.createElement('span');
+    sub.className = 'codex-subline';
+    sub.textContent = '—';
+    value.append(sub);
+  }
+
+  function update(value, text, note) {
+    if (value.firstChild.nodeValue !== text) value.firstChild.nodeValue = text;
+    if (value.lastElementChild.textContent !== note) value.lastElementChild.textContent = note;
+  }
+
   function renderNow(now) {
     const current = forecaster.weatherAt(now);
     const remain = WEATHER_PERIOD - (now % WEATHER_PERIOD);
-    // 晴朗佔 70% 且沒有任何任務綁它 ⇒ 報「還有多久變天」是雜訊（多半只是變成另一段晴朗）。
-    // 晴朗時改報「距離下一個特殊天氣」，那才是有意義的數字。
-    /*
-     * 倒數只講「還剩多久」等於半句話——變完之後是什麼，才是決定要不要現在收工的依據
-     * （Owner 2026-07-31）。下一段天氣是純時間函數，算得出來就直接寫出來。
-     *
-     * 晴朗時再補一句「距離下一個特殊天氣」：晴朗佔 70%，下一段多半還是晴朗，
-     * 只寫「接著是晴朗」對使用者毫無用處。
-     */
     const next = forecaster.weatherAt(now + remain);
-    // 相對時間一律補上**現實時鐘**（Owner 2026-08-03：「不然要一直數」）——
-    // 「還剩 12 分」要心算才知道是幾點，「還剩 12 分（本地 14:35）」不用。
-    // ⚠️ 一律帶「本地」標記：隔壁那一格就是 ET，兩種時鐘格式一模一樣（2026-08-06）。
-    // 註記改成節點陣列，才能把遊戲自己的天氣圖示放進「接著是」（原本是純文字塞不進圖）。
-    //
-    // ⚠️ **每個語意段各自 nowrap**（2026-08-06）：這句是四格裡唯一會折到 3 行的，
-    // 放任它折會切在詞中間——Owner 截圖上是「…接著是 🌤 晴」／「朗 · 月塵…」。
-    // 綁成三段之後，斷點只可能落在「→」與「·」這兩個分隔符上，那正是語意的接縫。
-    const note = [
-      nowrap(document.createTextNode(`還剩 ${formatDuration(remain)}（${localClockText(now + remain)}）`)),
-      document.createTextNode(' → '),
-      nowrap(document.createTextNode('接著是 '), weatherIcon(next, 16), document.createTextNode(` ${next.name}`)),
-    ];
-    if (current.name === PLAIN_WEATHER && next.name === PLAIN_WEATHER) {
-      // 用「·」接，**不要再包一層括號**：裡面那句自己就帶了「（本地 11:53）」，
-      // 包起來會變成巢狀括號「…（月塵 26 分後（本地 11:53））」，折行時還會在行首留一個孤立的「（」。
-      note.push(document.createTextNode(' · '), nowrap(...nextSpecialNote(now)));
+    if (weatherIconId !== current.icon) {
+      weatherIconId = current.icon;
+      values.weather.querySelector('.cos-wicon')?.remove();
+      const icon = weatherIcon(current, 28);
+      if (icon) values.weather.insertBefore(icon, values.weather.lastElementChild);
     }
-    el.now.innerHTML = '';
-    el.now.append(
-      block('目前天氣', [weatherIcon(current, 28), document.createTextNode(` ${current.name}`)], note),
-      // 值帶 `ET` 前綴，與其餘三格的「本地 HH:MM」形成一眼可辨的對照——
-      // 這一格的 label 雖然寫著「艾奧傑亞時間」，但人是掃數字的，四個 `18:30` 並排時
-      // label 幫不上忙（Owner 2026-08-06）。註記講**尺度差**，那才是「差別」的本體：
-      // 1 ET 小時＝175 現實秒 ⇒ ET 跑得比現實快約 20.6 倍。
-      block('艾奧傑亞時間', etClockText(now), '1 小時＝現實 2 分 55 秒 · 全伺服器同步'),
-      windyBlock(now),
-      mechBlock(now),
-    );
-  }
+    const until = `${localClockText(now + remain)}`;
+    let weatherNote = `還剩 ${formatDuration(remain)}（${until}） → 接著是 ${next.name}`;
+    if (current.name === PLAIN_WEATHER && next.name === PLAIN_WEATHER) {
+      weatherNote += ` · ${nextSpecialText(now)}`;
+    }
+    update(values.weather, current.name, weatherNote);
+    update(values.et, etClockText(now), '1 小時＝現實 2 分 55 秒 · 全伺服器同步');
 
-  /**
-   * 全頁唯一的金色高亮（設計系統：一頁最多 1 處，限「限時／唯一推薦／要你現在動作」）。
-   * 靈風視窗正是限時，且是 20 個**天氣限定臨時任務**的必要條件。
-   *
-   * ⚠️ 2026-08-02 更正：這裡原本寫「緊急任務的必要條件」，**是錯的**。
-   * 掛靈風條件（cond 13）的 20 個任務 `class` 全部是 `temporary`；33 個 `critical`（緊急）任務的
-   * `conds` **全部是空的** —— client 裡沒有任何欄位說緊急任務需要靈風。舊文案是 2026-07-31
-   * 分類判準修正（commit 2577acf）之前的認知殘留，判準修好後沒人回來改這幾句。
-   */
-  function windyBlock(now) {
     const windy = weatherData.table.find((w) => w.name === '靈風');
-    if (!windy) return document.createDocumentFragment();
-    const count = (byWeather.get(windy.id) ?? []).length;
-    const isNow = forecaster.weatherAt(now).id === windy.id;
-    const next = forecaster.nextWeather(now, windy.id);
-    const d = block(
-      '靈風視窗',
-      // 同上：相對時間一律附現實時鐘（進行中報「到幾點結束」，還沒到報「幾點開始」）
-      // 「到 本地 18:30」讀起來會卡，所以進行中那句把標記放進去後改寫成「…結束」——
-      // 保留「這個時刻是結束不是開始」的語意，同時不犧牲標記（2026-08-06）。
-      // ⚠️ 結束時刻用 `currentRunEnd` 而不是「目前時段還剩多久」（2026-08-08 健檢）：
-      // 天氣每段獨立擲，實測 12.8% 的靈風後面緊接著又是靈風，用時段邊界會提早 23 分 20 秒收掉。
-      isNow
-        ? (() => {
-          const end = forecaster.currentRunEnd(now, windy.id);
-          return clockSuffix(`還剩 ${formatDuration(end - now)}`, end, ' 結束');
-        })()
-        : (next ? clockSuffix(`${formatDuration(next.start - now)}後`, next.start) : '—'),
-      `${count} 個天氣限定任務的必要條件 · 佔 ${windy.rate}% 時段`,
-    );
-    d.classList.add('codex-tint-panel', 'codex-tint-panel--highlight', 'codex-tint-panel--bar');
-    return d;
+    const count = (byWeather.get(windy?.id) ?? []).length;
+    const windyNow = windy && current.id === windy.id;
+    const upcoming = windy && forecaster.nextWeather(now, windy.id);
+    // 相連靈風以整段的終點計算，不能提前在單一天氣週期末收掉。
+    const windAt = windyNow ? forecaster.currentRunEnd(now, windy.id) : upcoming?.start;
+    const windyText = windAt == null ? '—' : `${formatDuration(windAt - now)}${windyNow ? '剩餘' : '後'}`;
+    const windyTime = windAt == null ? '本地時間未定' : `（${localClockText(windAt)}${windyNow ? ' 結束' : ''}）`;
+    update(values.windy, windyText, `${windyTime} · ${count} 個天氣限定任務的必要條件 · 佔 ${windy?.rate ?? 0}% 時段`);
+
+    const mechAt = nextMechAt(now);
+    const mechText = `${formatDuration(mechAt - now)}後`;
+    const mechTime = `（${localClockText(mechAt)}）`;
+    update(values.mech, mechText, `${mechTime} · 每小時 :16 / :36 / :56`);
+    currentSummary = `渴望灣｜目前天氣：${current.name}｜艾奧傑亞時間：${etClockText(now)}｜靈風視窗：${windyText}${windyTime}｜機甲行動：${mechText}${mechTime}｜緊急事件不能由天氣預測`;
   }
 
-  /**
-   * 機甲行動倒數。**刻意不用金色高亮**——設計系統規定一頁最多一處，那一處已經給了靈風視窗
-   * （它是 20 個天氣限定臨時任務的必要條件）。這張是固定班表，錯過就等 20 分鐘，不是限時機會。
-   */
-  function mechBlock(now) {
-    const next = nextMechAt(now);
-    return block(
-      '機甲行動',
-      clockSuffix(`${formatDuration(next - now)}後`, next),
-      '每小時 :16 / :36 / :56 · 本地時間不是 ET',
-    );
-  }
-
-  /**
-   * 「倒數 ＋（本地 HH:MM）」的值。**時鐘降一級字**（`codex-small`）——
-   * 加上「本地」標記之後整串在 4 欄版面會折行（2026-08-06 實測），而且折行不是唯一的理由：
-   * 這一格的焦點是倒數，時鐘是拿來對錶的輔助，本來就不該跟倒數同一個字級。
-   * 依設計系統「utility 只裁字級」，顏色／字重仍繼承 `.codex-h2`（accent）。
-   */
-  /** 把幾個節點綁成「不可在中間斷行」的一段。斷點只留在段與段之間的分隔符上。 */
-  function nowrap(...nodes) {
-    const span = document.createElement('span');
-    span.className = 'cos-stat__clock';
-    span.append(...nodes.filter(Boolean));
-    return span;
-  }
-
-  function clockSuffix(mainText, unixSeconds, tail = '') {
-    const small = document.createElement('span');
-    // `cos-stat__clock` ＝ nowrap，整個括號是一個單位（見 style.css 該條註解）
-    small.className = 'codex-small cos-stat__clock';
-    small.textContent = `（${localClockText(unixSeconds)}${tail}）`;
-    return [document.createTextNode(mainText), small];
-  }
-
-  function block(label, value, note) {
-    const d = document.createElement('div');
-    // 框與底色走共用 `.codex-tint-panel`（預設 cyan，與全站 accent 一致）；
-    // 本地 `.cos-stat` 只負責版型。靈風那格另外疊 `--highlight --bar` 換成金色左邊條。
-    d.className = 'cos-stat codex-tint-panel';
-    const l = document.createElement('span');
-    l.className = 'codex-label';
-    l.textContent = label;
-    const v = document.createElement('strong');
-    v.className = 'codex-h2 cos-stat__value';
-    // value 可以是字串或節點陣列（天氣那張要在名稱前放遊戲圖示）
-    if (Array.isArray(value)) v.append(...value.filter(Boolean));
-    else v.textContent = value;
-    const n = document.createElement('span');
-    n.className = 'codex-small cos-stat__note';
-    // note 同 value：可以是字串或節點陣列（天氣註記要放遊戲圖示）
-    if (Array.isArray(note)) n.append(...note.filter(Boolean));
-    else n.textContent = note;
-    d.append(l, v, n);
-    return d;
-  }
-
-  /** 距離下一個非「晴朗」時段——回節點陣列（要放天氣圖示），不是字串。 */
-  function nextSpecialNote(now) {
-    const upcoming = forecaster
-      .forecast(now, SCAN_PERIODS)
+  function nextSpecialText(now) {
+    const upcoming = forecaster.forecast(now, SCAN_PERIODS)
       .find((slot) => slot.weather.name !== PLAIN_WEATHER && slot.start > now);
-    if (!upcoming) return [document.createTextNode('掃描範圍內沒有特殊天氣')];
-    return [
-      weatherIcon(upcoming.weather, 16),
-      document.createTextNode(
-        ` ${upcoming.weather.name} ${formatDuration(upcoming.start - now)}後（${localClockText(upcoming.start)}）`,
-      ),
-    ];
+    return upcoming
+      ? `${upcoming.weather.name} ${formatDuration(upcoming.start - now)}後（${localClockText(upcoming.start)}）`
+      : '掃描範圍內沒有特殊天氣';
   }
 
   /**
@@ -276,36 +194,31 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
       .forecast(now, SCAN_PERIODS)
       .filter((slot) => slot.weather.name !== PLAIN_WEATHER)
       .slice(0, SPECIAL_ROWS);
+    el.empty.hidden = rows.length !== 0;
     // 兩欄並排。**左欄放前半、右欄放後半**（不是奇偶交錯）——時間軸是連續的，
     // 交錯排會讓「往下讀」變成「左右跳著讀」，比原本更難用。
     const half = Math.ceil(rows.length / 2);
     const bodies = [el.timeline.querySelector('tbody'), el.timeline2?.querySelector('tbody')];
     for (const b of bodies) if (b) b.innerHTML = '';
-    let lastDate = '';
 
     for (const [i, slot] of rows.entries()) {
-      // 換欄時把日期重印一次：右欄第一列若沿用「與上一列同日就留白」的規則，
-      // 會出現一個沒有日期的開頭（左欄的最後一列在另一個欄位，讀者看不到那個脈絡）
       const tbody = (i >= half && bodies[1]) ? bodies[1] : bodies[0];
-      if (i === half) lastDate = '';
       const tr = document.createElement('tr');
       const isNow = now >= slot.start && now < slot.end;
       if (isNow) tr.classList.add('is-current');
 
       const date = dateText(slot.start);
-      const dateCell = date === lastDate ? '' : date;
-      lastDate = date;
 
       const et = eorzeaClock(slot.start);
 
-      const countdown = td(isNow ? '進行中' : formatDuration(slot.start - now), 'codex-table__num');
+      const countdown = td(isNow ? '進行中' : formatDuration(slot.start - now), 'codex-table__num', '距離現在');
       tr.append(
-        td(dateCell, 'cos-col-date'),
+        td(date, 'cos-col-date', '日期'),
         // 這兩欄用**裸值**（`clockText` 而非 `localClockText`）——欄位標題已經寫著
         // 「本地時間」與「ET」，格內再標一次會把 5 欄擠爆。這是允許裸值的唯一情形，
         // 判準寫在 `eorzea-time.js` 的 `clockText` 註解，由 clock-labelling 測試守門。
-        td(clockText(slot.start), 'codex-table__num'),
-        td(`${String(et.hour).padStart(2, '0')}:00`, 'codex-table__num'),
+        td(clockText(slot.start), 'codex-table__num', '本地時間'),
+        td(`${String(et.hour).padStart(2, '0')}:00`, 'codex-table__num', 'ET'),
         weatherCell(slot.weather),
         countdown,
       );
@@ -314,9 +227,10 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
     }
   }
 
-  function td(text, cls) {
+  function td(text, cls, label) {
     const e = document.createElement('td');
     if (cls) e.className = cls;
+    if (label) e.dataset.label = label;
     e.textContent = text;
     return e;
   }
@@ -325,11 +239,12 @@ export function createForecastView({ forecaster, weatherData, missions, conditio
   function weatherCell(w) {
     const e = document.createElement('td');
     e.className = 'cos-wcell';
+    e.dataset.label = '天氣';
     const ico = weatherIcon(w);
     if (ico) e.append(ico);
     e.append(document.createTextNode(w.name));
     return e;
   }
 
-  return { render };
+  return { render, summaryText: () => currentSummary };
 }

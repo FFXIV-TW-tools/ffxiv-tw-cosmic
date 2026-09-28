@@ -6,6 +6,7 @@
  */
 
 import { jobIcon } from './job-icon.js';
+import { icon } from './cos_visual.js';
 
 const KEY = 'ffxiv-tw-cosmic:jobs';
 
@@ -88,18 +89,18 @@ export function createJobPicker(host, jobs, onChange) {
   body.append(clear);
 
   function label() {
-    if (selected.size === 0) return '⚙ 我練的職業：全部';
+    if (selected.size === 0) return '我練的職業：全部';
     const names = entries.filter(([id]) => selected.has(id)).map(([, j]) => j.label);
-    return `⚙ 我練的職業：${names.length <= 3 ? names.join('、') : `${names.slice(0, 2).join('、')} 等 ${names.length} 職`}`;
+    return `我練的職業：${names.length <= 3 ? names.join('、') : `${names.slice(0, 2).join('、')}等 ${names.length} 職`}`;
   }
 
   function commit() {
-    summary.textContent = label();
+    summary.lastElementChild.textContent = label();
     saveJobs(selected);
     onChange([...selected]);
   }
 
-  summary.textContent = label();
+  summary.append(icon('user-circle'), Object.assign(document.createElement('span'), { textContent: label() }));
   host.append(details);
   return { get: () => [...selected] };
 }

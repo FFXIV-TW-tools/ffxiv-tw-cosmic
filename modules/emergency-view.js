@@ -34,8 +34,6 @@ const SELF_ACTIVE_SECONDS = 1800;
  */
 const PREFETCH_MAX_AGE_MS = 10_000;
 
-/** 上次通報選的伺服器。純檢視狀態，不進跨工具設定。 */
-
 /**
  * 自己送出過的 eventId。用來決定要不要顯示「取消」按鈕——
  * `/state` 刻意不回 `reporter`（那是別人的識別碼，沒有理由發給所有人），
@@ -295,6 +293,7 @@ export function createEmergencyView(root, { worlds, prefetch = null, onState, on
    */
   let dialogWorld = '';
   let releaseTrap = null;
+  let releaseScroll = null;
 
   function openReport(world) {
     dialogWorld = world;
@@ -304,13 +303,14 @@ export function createEmergencyView(root, { worlds, prefetch = null, onState, on
     say('', 'ok');
     el.submit.disabled = false;
     el.overlay.hidden = false;
-    document.body.style.overflow = 'hidden';
+    releaseScroll = window.FFXIVScrollLock?.lock?.() ?? null;
     releaseTrap = window.FFXIVA11y?.trapFocus?.(el.overlay) ?? null;
   }
 
   function closeReport() {
     el.overlay.hidden = true;
-    document.body.style.overflow = '';
+    releaseScroll?.();
+    releaseScroll = null;
     releaseTrap?.();
     releaseTrap = null;
   }
@@ -407,8 +407,12 @@ export function createEmergencyView(root, { worlds, prefetch = null, onState, on
   }
 
   function closeDeepLink() {
+    if (deepLink) {
+      el.list.querySelector(`[data-ev-id="${deepLink.evId}"]`)?.classList.remove('cos-em__row--hl');
+    }
     deepLink = null;
     el.deeplink.replaceChildren();
+    delete el.deeplink.dataset.signature;
     el.deeplink.hidden = true;
   }
 
@@ -445,6 +449,12 @@ export function createEmergencyView(root, { worlds, prefetch = null, onState, on
       ? `${formatDuration(ev.startAt - now)}後開始`
       : `進行中 · 剩 ${formatDuration(ev.endAt - now)}`;
     const isConfirm = deepLink.vote === 'confirm';
+    const signature = `${ev.id}:${deepLink.vote}:${world}`;
+    if (el.deeplink.dataset.signature === signature) {
+      el.deeplink.firstElementChild.textContent = `要對「${world} · ${when}」${isConfirm ? '附議' : '按下否認'}嗎？`;
+      return;
+    }
+    el.deeplink.dataset.signature = signature;
 
     const text = document.createElement('span');
     text.className = 'codex-small';
@@ -606,9 +616,11 @@ function weatherLabel(ev) {
 }
 
 /** 一台伺服器一列。沒有事件的也要列出來——「查過了，沒有」跟「不知道」是兩回事。 */
-  function row(world, ev, now) {
+  function row(world, ev, now, mine) {
     const li = document.createElement('li');
     li.className = 'cos-em__row';
+    li.dataset.world = world;
+    li.tabIndex = -1;
     // Discord 通知的深連結靠這個找到自己那一列（`highlightDeepLink`）
     if (ev) li.dataset.evId = String(ev.id);
 
@@ -637,7 +649,8 @@ function weatherLabel(ev) {
       const quick = document.createElement('button');
       quick.type = 'button';
       quick.className = 'codex-btn codex-btn--ghost codex-small cos-em__quick';
-      quick.textContent = '我看到了，通報';
+      quick.textContent = '通報';
+      quick.setAttribute('aria-label', `通報${world}緊急事件`);
       quick.addEventListener('click', () => openReport(world));
       li.append(none, lastEndedEl(world, now), quick);
       return li;
@@ -656,7 +669,7 @@ function weatherLabel(ev) {
     if (!warnOnly) dot.classList.add('codex-status-dot--scan');
 
     const badge = document.createElement('span');
-    badge.className = `codex-badge ${warnOnly ? 'codex-badge--warn' : 'codex-badge--ok'}`;
+    badge.className = `codex-badge ${warnOnly ? 'codex-badge--warn' : 'codex-badge--success'}`;
     badge.textContent = warnOnly ? '預告' : '已回報';
     li.append(badge);
 
@@ -670,7 +683,7 @@ function weatherLabel(ev) {
     const tag = document.createElement('button');
     tag.type = 'button';
     tag.className = 'codex-badge cos-em__weather cos-em__weather--link';
-    tag.textContent = w ? `${w} · 地點圖` : '🗺 地點圖';
+    tag.textContent = w ? `${w} · 地點圖` : '地點圖';
     tag.title = w ? `展開地點圖，看${w}要去哪幾個點` : '展開地點圖（這筆沒填天氣，六組都可以對照）';
     tag.addEventListener('click', () => onShowMap?.(world, kind, ev.group));
     li.append(tag);
@@ -710,7 +723,7 @@ function weatherLabel(ev) {
 
     const actions = document.createElement('span');
     actions.className = 'cos-em__actions';
-    if (loadMine().includes(ev.id)) {
+    if (mine.includes(ev.id)) {
       // 自己按的：給一顆明確的取消，不必去麻煩三個陌生人來否認
       const cancel = document.createElement('button');
       cancel.type = 'button';
@@ -762,20 +775,57 @@ function weatherLabel(ev) {
     }
     renderStatus();
     if (!state) return;
+    const mine = loadMine();
+    const currentRows = [...el.list.children];
 
-    el.list.replaceChildren(
-      ...worlds.map((w) => {
-        const ev = state.events[w];
-        // 後端算過期是用它自己的時鐘；這邊再用本地時鐘過濾一次，避免時鐘偏差讓已結束的事件多留幾秒
-        return row(w, ev && ev.endAt > now ? ev : null, now);
-      }),
-    );
-    // 列重建之後才套：高亮是狀態的投影，不是一次性 DOM 操作
+    for (const w of worlds) {
+      const event = state.events[w];
+      const ev = event && event.endAt > now ? event : null;
+      const signature = ev
+        ? `${ev.id}:${ev.startAt ? 'active' : 'warn'}:${ev.pendingNotify}:${mine.includes(ev.id)}:${ev.weather}:${ev.variant}:${ev.group}`
+        : 'idle';
+      let li = currentRows.find((item) => item.dataset.world === w);
+      if (!li || li.dataset.signature !== signature) {
+        const next = row(w, ev, now, mine);
+        next.dataset.signature = signature;
+        if (li) li.replaceWith(next);
+        else el.list.append(next);
+        li = next;
+      }
+      li.classList.toggle('cos-em__row--hl', !!deepLink && !!ev && deepLink.evId === ev.id);
+      const last = li.querySelector('.cos-em__last');
+      if (last) {
+        const t = state?.lastEnded?.[w];
+        const text = t ? `上次 ${localClockText(t)} 結束 · ${formatDuration(now - t)}前` : '';
+        if (last.textContent !== text) last.textContent = text;
+      }
+      if (ev) {
+        const when = li.querySelector('.cos-em__when');
+        const whenText = !ev.startAt ? warnEtaText(ev.warnedAt, now)
+          : ev.startAt > now
+            ? `${formatDuration(ev.startAt - now)}後開始（${localClockText(ev.startAt)}）`
+            : `進行中 · 剩 ${formatDuration(ev.endAt - now)}（${localClockText(ev.endAt)} 結束）`;
+        if (when.firstChild.nodeValue !== whenText) when.firstChild.nodeValue = whenText;
+        const votes = li.querySelector('.cos-em__votes');
+        const threshold = state?.disputeThreshold ?? 0;
+        const nearDrop = threshold > 0 && ev.disputes > 0 && ev.confirms === 0;
+        votes.textContent = nearDrop
+          ? `附議 ${ev.confirms}　否認 ${ev.disputes}／${threshold} 就下架`
+          : `附議 ${ev.confirms}　否認 ${ev.disputes}`;
+      }
+    }
     renderDeepLink(now);
     highlightDeepLink();
   }
 
   readDeepLink();   // 進站當下就讀，`render()` 之後每次都依狀態重畫
 
-  return { render };
+  return { render, focusWorld(world) {
+    const li = [...el.list.children].find((item) => item.dataset.world === world);
+    if (!li) return;
+    li.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    li.focus({ preventScroll: true });
+    li.classList.add('cos-em__row--focus');
+    setTimeout(() => li.classList.remove('cos-em__row--focus'), 2500);
+  } };
 }

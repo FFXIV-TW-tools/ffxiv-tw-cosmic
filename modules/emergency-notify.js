@@ -59,16 +59,18 @@ export function createEmergencyNotify(root, { worlds }) {
    * `trapFocus` 回傳的是 **release 函式本身**（不是 `{release}` 物件——設計系統註明踩過）。
    */
   let releaseTrap = null;
+  let releaseScroll = null;
 
   function openModal() {
     el.overlay.hidden = false;
-    document.body.style.overflow = 'hidden';   // 開窗鎖背景捲動
+    releaseScroll = window.FFXIVScrollLock?.lock?.() ?? null;
     releaseTrap = window.FFXIVA11y?.trapFocus?.(el.overlay) ?? null;
   }
 
   function closeModal() {
     el.overlay.hidden = true;
-    document.body.style.overflow = '';
+    releaseScroll?.();
+    releaseScroll = null;
     releaseTrap?.();      // 解除鎖焦點並把焦點還給開窗的那顆按鈕
     releaseTrap = null;
   }

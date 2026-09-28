@@ -222,9 +222,9 @@ export function createNowPanel(root, { windows, missions, conditions, jobs, fore
     const r = m.reward ?? {};
     const byLevel = new Map((r.relic ?? []).map((x) => [x.level, x.exp]));
     return [
-      { text: String(r.cosmo ?? 0), cls: 'cos-np__num' },
-      { text: String(r.lunar ?? 0), cls: 'cos-np__num' },
-      ...RELIC_LEVELS.map((lv) => ({ text: byLevel.has(lv) ? String(byLevel.get(lv)) : '', cls: 'cos-np__num' })),
+      { text: String(r.cosmo ?? 0), cls: 'cos-np__num', label: '宇宙' },
+      { text: String(r.lunar ?? 0), cls: 'cos-np__num', label: '月球' },
+      ...RELIC_LEVELS.map((lv) => ({ text: byLevel.has(lv) ? String(byLevel.get(lv)) : '—', cls: 'cos-np__num', label: `工具 ${ROMAN[lv] ?? lv}` })),
     ];
   }
 
@@ -251,6 +251,7 @@ export function createNowPanel(root, { windows, missions, conditions, jobs, fore
   function line(m) {
     const li = document.createElement('li');
     li.className = 'cos-np__item';
+    li.dataset.missionId = String(m.id);
 
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -279,6 +280,7 @@ export function createNowPanel(root, { windows, missions, conditions, jobs, fore
     for (const cell of rewardCells(m)) {
       const sp = document.createElement('span');
       sp.className = `codex-small ${cell.cls}`;
+      sp.dataset.label = cell.label;
       sp.textContent = cell.text;
       btn.append(sp);
     }
@@ -339,15 +341,18 @@ export function createNowPanel(root, { windows, missions, conditions, jobs, fore
   }
 
   function fill(list, items, emptyText) {
-    list.textContent = '';
-    if (items.length === 0) {
+    const sorted = ordered(items);
+    const signature = sorted.map((m) => m.id).join(',');
+    if (list.dataset.signature === signature) return;
+    list.dataset.signature = signature;
+    if (sorted.length === 0) {
       const li = document.createElement('li');
       li.className = 'cos-np__empty codex-small';
       li.textContent = emptyText;
-      list.append(li);
+      list.replaceChildren(li);
       return;
     }
-    for (const m of ordered(items)) list.append(line(m));
+    list.replaceChildren(...sorted.map(line));
   }
 
   /**
@@ -401,9 +406,8 @@ export function createNowPanel(root, { windows, missions, conditions, jobs, fore
     const pool = collapseByRank(missions.filter(relevant));
 
     const open = pool.filter((m) => isOpen(m, now) === true);
-    fill(nowList, open, '現在沒有條件開啟中的臨時任務');
-    // textContent 會把 #np-scope 一起洗掉 ⇒ 只換第一個文字節點
-    nowHead.firstChild.nodeValue = open.length
+    fill(nowList, open, '現在沒有條件開啟中的臨時任務；看看下一批或調整右上角職業。');
+    root.querySelector('#np-now-label').textContent = open.length
       ? `現在有 ${open.length} 個臨時任務`
       : '現在沒有條件開啟中的臨時任務';
     renderScope();
@@ -420,10 +424,10 @@ export function createNowPanel(root, { windows, missions, conditions, jobs, fore
       if (soonest === null || start < soonest) soonest = start;
     }
     const nextBatch = withEta.filter((x) => x.start === soonest).map((x) => x.m);
-    fill(nextList, nextBatch, '接下來 4 天內沒有會開啟的臨時任務');
+    fill(nextList, nextBatch, '接下來 4 天內沒有會開啟的臨時任務；可到任務清單查其他任務。');
     // 倒數後面補現實時間：「4 分 52 秒後」還要自己心算，「（本地 12:47）」才是能直接對錶的。
     // 「本地」標記不可省：條件欄裡的「ET 14:00–16:00」就在同一張表上（2026-08-06）。
-    nextHead.textContent = soonest === null
+    root.querySelector('#np-next-label').textContent = soonest === null
       ? '接下來沒有'
       : `下一批 — ${formatDuration(soonest - now)}後（${localClockText(soonest)}）`;
   }

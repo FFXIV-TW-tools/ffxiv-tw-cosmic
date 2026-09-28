@@ -6,7 +6,6 @@
  * 後端掛掉時只有那一頁降級為唯讀，其餘分頁必須照常運作。
  */
 
-import { setupTabs } from './tabs.js';
 import { createForecaster } from './weather-forecast.js';
 import { buildWindows } from './window-index.js';
 import { createForecastView } from './forecast-view.js';
@@ -21,6 +20,7 @@ import { createEmergencyView } from './emergency-view.js';
 import { createEmergencyMap } from './emergency-map.js';
 import { createEmergencyNotify } from './emergency-notify.js';
 import { createEmergencyHistory } from './emergency-history.js';
+import { hydrateIcons } from './cos_visual.js';
 
 const TICK_MS = 1000;
 
@@ -38,6 +38,7 @@ async function loadJson(path) {
 const TAB_KEY = 'ffxiv-tw-cosmic:tab';
 
 async function main() {
+  hydrateIcons();
   const status = document.querySelector('#app-status');
   let weatherData;
   let missionData;
@@ -78,15 +79,43 @@ async function main() {
   const { conditions, missions, jobs } = missionData;
   const windows = buildWindows(conditions, missions, forecaster);
 
-  // 分頁切換回呼：歷史紀錄只在真的被看到時才抓一次（它不會自己變，跟著 60 秒輪詢是白花額度）。
-  // 用可變參照是因為 tabs 必須先建（其他 view 要用 tabs.select），而歷史 view 要等 DOM 那段。
+  // 初始分頁在 initTabs 前設好狀態；程式化 click 會聚焦 tab 並把手機首屏捲過 KPI。
+  // 分頁切換回呼：歷史紀錄只在真的被看到時才抓一次。
   let onEmergencyTab = null;
-  const tabIds = [...document.querySelectorAll('#cos-tabs [role="tab"]')].map((t) => t.dataset.tab);
-  const tabs = setupTabs(document.querySelector('#cos-tabs'), (id) => {
+  const tablist = document.querySelector('#cos-tabs');
+  const tabElements = [...tablist.querySelectorAll('[role="tab"]')];
+  const tabIds = tabElements.map((t) => t.dataset.tab);
+  const selectedId = initialTab();
+  const selectedTab = tabElements.find((t) => t.dataset.tab === selectedId);
+  function showTab(tab, scroll = true) {
+    const id = tab.dataset.tab;
+    for (const panel of document.querySelectorAll('main [role="tabpanel"]')) {
+      panel.hidden = panel.id !== tab.getAttribute('aria-controls');
+    }
+    if (scroll) tab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     if (id === 'emergency') onEmergencyTab?.();
     rememberTab(id);
-  });
-
+  }
+  for (const tab of tabElements) {
+    tab.setAttribute('aria-selected', String(tab === selectedTab));
+    tab.tabIndex = tab === selectedTab ? 0 : -1;
+  }
+  showTab(selectedTab, false);
+  if (typeof window.FFXIVA11y?.initTabs === 'function') {
+    window.FFXIVA11y.initTabs(tablist, { onChange: (tab) => showTab(tab) });
+  } else {
+    // CDN 的 a11y-tabs.js 缺席時，仍能用滑鼠／觸控切換，離線分頁不跟著失效。
+    tablist.addEventListener('click', (event) => {
+      const tab = event.target.closest('[role="tab"]');
+      if (!tab || !tablist.contains(tab)) return;
+      for (const item of tabElements) {
+        item.setAttribute('aria-selected', String(item === tab));
+        item.tabIndex = item === tab ? 0 : -1;
+      }
+      showTab(tab);
+    });
+  }
+  const tabs = { select: (id) => tabElements.find((tab) => tab.dataset.tab === id)?.click() };
   const missionView = createMissionView(document.querySelector('#panel-missions'), {
     missions, conditions, jobs, forecaster,
   });
@@ -99,6 +128,16 @@ async function main() {
   }
 
   const forecastView = createForecastView({ forecaster, weatherData, missions, conditions });
+  const copyStatus = document.querySelector('#fc-copy-status');
+  document.querySelector('#fc-copy').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(forecastView.summaryText());
+      copyStatus.textContent = '已複製現在狀況';
+    } catch (error) {
+      copyStatus.textContent = '無法複製，請手動選取文字';
+      console.warn('複製現在狀況失敗', error);
+    }
+  });
 
   const nowPanel = createNowPanel(document.querySelector('#panel-forecast'), {
     windows, missions, conditions, jobs, forecaster, onJump: jumpToMissions,
@@ -111,7 +150,9 @@ async function main() {
   // 反過來會讓 view 得知道通知的存在，多一條不必要的依賴。
   const emPanel = document.querySelector('#panel-emergency');
   const emNotify = createEmergencyNotify(emPanel, { worlds: devData.worlds });
-  const emHistory = createEmergencyHistory(emPanel, { worlds: devData.worlds });
+  const mainWorld = window.FFXIVSettings?.get?.('character.mainWorld');
+  const myWorld = devData.worlds.includes(mainWorld) ? mainWorld : null;
+  const emHistory = createEmergencyHistory(emPanel, { worlds: devData.worlds, initialWorld: myWorld });
   // 地點圖＝**每一筆事件自己一張**的彈窗，由現況那一列打開（伺服器與天氣都由那一列給）。
   // 地點資料本身是純靜態的（座標與底圖都在 client 裡），後端掛掉時照樣看得到。
   const emMap = createEmergencyMap(emPanel, missionData);
@@ -122,6 +163,11 @@ async function main() {
     onChanged: () => emHistory.refresh(),
     onShowMap: (world, kind, group) => emMap.open(world, kind, group),
   });
+  const worldJump = emPanel.querySelector('#em-my-world');
+  if (myWorld) {
+    worldJump.hidden = false;
+    worldJump.addEventListener('click', () => emView.focusWorld(myWorld));
+  }
   onEmergencyTab = () => emHistory.ensureLoaded();
   // 速查：不綁任何一筆事件，六組都列。共用同一個彈窗。
   emPanel.querySelector('#em-map-lookup')?.addEventListener('click', () => emMap.open(null, null, null));
@@ -139,7 +185,22 @@ async function main() {
   document.querySelector('#meta-client').textContent = weatherData.meta.clientVersion;
   document.querySelector('#meta-generated').textContent = weatherData.meta.generatedAt.slice(0, 10);
 
-  tabs.select(initialTab());
+  if (selectedId === 'emergency') onEmergencyTab();
+  document.addEventListener('keydown', (event) => {
+    if (event.isComposing || event.ctrlKey || event.altKey || event.metaKey || event.repeat
+      || document.querySelector('.codex-modal-overlay:not([hidden])')) return;
+    const target = event.target;
+    if (event.key === 'Escape' && target?.id === 'mv-search' && target.value) {
+      event.preventDefault();
+      missionView.clearSearch();
+      return;
+    }
+    if (event.key !== '/' || matchMedia('(pointer:coarse)').matches
+      || target?.closest('input, textarea, select, [contenteditable], [contenteditable="true"]')) return;
+    event.preventDefault();
+    tabs.select('missions');
+    document.querySelector('#mv-search').focus();
+  });
 
   let lastBlock = -1;
   function tick() {

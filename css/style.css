@@ -34,10 +34,7 @@ body {
   padding-bottom: var(--space-8, 48px);
 }
 
-/* portal 的 `.codex-empty` 設了 `display:flex`，會蓋過 UA 的 `[hidden]{display:none}`
- * ——header.css 的集中 [hidden] 守衛只涵蓋 btn / chip / icon-btn / modal-overlay / help-pop，
- * 不含 empty。用工具自有 class 補（特異度 0,2,0 > .codex-empty 的 0,1,0，不必 !important，
- * 也不觸碰 .codex-* 根 selector）。已記 docs/BACKLOG.md B-002 提報 portal 收進集中守衛。 */
+/* 本地深連結與警語仍使用此守衛；共用 empty 的 hidden 由 portal 管理。 */
 .cos-hideable[hidden] { display: none; }
 
 /* 標題旁的 BETA 標——不要撐高 .page-header（控制項高度上限 38px 的同一條鐵則） */
@@ -46,21 +43,11 @@ body {
   vertical-align: middle;
 }
 
-/* BETA 告示。視覺＝共用 `.codex-tint-panel--warn --bar`（2026-08-06 收斂）——
-   本檔原本有三份逐字相同的「警示色左邊條」自刻（betanote／np__caveat／caveat），
-   而設計系統早有這個元件（B-017 Track B 就是為了收編這一派）。這裡只留間距。 */
-.cos-betanote {
-  margin: var(--space-4, 16px) 0 0;
-  /* 共用元件的 padding 是給列／小方塊用的（8/12px），這是一條橫跨整頁的散文告示 ⇒ 補足內距。
-     元件本身明文允許消費端覆寫 padding。 */
-  padding: var(--space-3, 12px) var(--space-4, 16px);
-}
+.cos-betanote { margin: var(--space-3, 12px) 0 0; }
+.cos-reliability { margin-top: var(--space-2, 8px); }
 
-.cos-header-tools {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2, 8px);
-}
+.cos-header-tools { min-height: 38px; width: min(22rem, 100%); min-width: 0; }
+#job-picker { display: block; width: 100%; min-width: 0; min-height: 38px; }
 
 /* 分頁面板：tabs 與內容之間留一段，避免面板邊框貼著分頁列 */
 [role="tabpanel"] { padding-top: var(--space-4, 16px); }
@@ -105,19 +92,14 @@ body {
 .cos-panel p { margin: 0 0 var(--space-2, 8px); }
 .cos-panel p:last-child { margin-bottom: 0; }
 
-/* ── 天氣現況三格 ─────────────────────────────────────────── */
-/* ⚠️ 上下的 margin 不是裝飾：沒有它時 BETA 告示、四格、分頁列三者**間距literally 是 0**
-   （2026-08-06 實測 betaBottom === statsTop === 169），三塊黏成一片＝Owner 說的「擁擠」。
-   min-width 從 200 提到 240：太窄時「6 小時 12 分後（本地 18:30）」會擠成兩行，
-   寧可讓四欄在中等寬度下折成兩排，也不要每一格自己內部亂折。 */
-.cos-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: var(--space-3, 12px);
-  margin: var(--space-4, 16px) 0 var(--space-5, 24px);
-  /* JS 填入前先撐住高度，避免空→滿把下方金色高亮往下推（CLS 鐵則） */
-  min-height: 104px;
-}
+.cos-summary-head { margin: var(--space-3, 12px) 0; }
+.cos-summary-head > button { margin-top: var(--space-2, 8px); }
+/* 四格等 JSON 時每格先佔高且文字從頂端排；只給容器 min-height，或沿用
+   共用 KPI 的 align-content:center，註記晚到時仍會重分配兩列／將文字整組下移。 */
+.cos-kpis { --kpi-cols: repeat(4, minmax(0, 1fr)); min-height: 120px; }
+.cos-kpis .codex-kpi { min-width: 0; min-height: 104px; align-content: start; align-items: start; }
+.cos-kpis .codex-kpi__value { overflow-wrap: anywhere; }
+.cos-kpis .codex-subline { line-height: 1.4; overflow-wrap: anywhere; }
 
 /* 四格的框與底色來自共用 `.codex-tint-panel`（forecast-view 的 block() 掛上去）。
    本地只留版型與內距——原本這裡自刻 border/background/radius，與靈風那格疊上去的
@@ -137,11 +119,7 @@ body {
    斷在「後」與「（」之間是乾淨的，斷在括號裡不是。 */
 .cos-stat__clock { white-space: nowrap; }
 
-.cos-stat__note {
-  color: var(--color-text-muted, #c0c9da);
-  /* 讓瀏覽器避免最後一行只剩一兩個字的孤字（不支援的瀏覽器就是原樣，零風險） */
-  text-wrap: pretty;
-}
+.cos-stat__note { color: var(--color-text, #f5f5f5); text-wrap: pretty; }
 
 /* ── 靈風視窗高亮（全頁唯一金色，見設計系統用量上限）──────── */
 
@@ -161,30 +139,12 @@ body {
 /* ── 任務篩選 ─────────────────────────────────────────────── */
 /* 上排＝四組 chip 篩選。職業佔兩欄（11 個圖示排一列比較好掃），其餘各一欄。
    `align-items: start` 讓高度不一的欄各自靠上，不會被最高的那欄撐開留白。 */
-.cos-filters {
-  display: grid;
-  grid-template-columns: 2fr 1.4fr 1fr 1.2fr;
-  gap: var(--space-4, 16px);
-  align-items: start;
-}
+.cos-filters { display: grid; grid-template-columns: minmax(25rem, 2fr) repeat(3, minmax(0, 1fr)); gap: var(--space-4, 16px); align-items: start; }
 
-/* 下排＝搜尋 ＋ 開關 ＋ 筆數，同一條基線對齊；筆數推到最右 */
-.cos-filterfoot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-4, 16px);
-  margin-top: var(--space-4, 16px);
-  padding-top: var(--space-3, 12px);
-  border-top: 1px solid var(--color-border, #2b3f56);
-}
-
-.cos-filterfoot__search {
-  flex: 1 1 18rem;
-  min-width: 0;
-}
-
-.cos-filterfoot .cos-count { margin: 0 0 0 auto; }
+.cos-mission-toolbar { margin-top: var(--space-3, 12px); padding-top: var(--space-3, 12px); border-top: 1px solid var(--color-border, #2b3f56); }
+.cos-mission-search { flex: 1 1 18rem; min-width: 0; }
+.cos-mission-search .codex-search { flex: 1 1 13rem; }
+.cos-filter-toggle { display: none; }
 
 .cos-filter {
   display: flex;
@@ -204,7 +164,7 @@ body {
 .cos-jobpick__body { flex-direction: column; align-items: flex-start; }
 .cos-chips--row { width: 100%; }
 
-.cos-count { color: var(--color-text-muted, #c0c9da); }
+.cos-count { color: var(--color-text, #f5f5f5); margin: 0 0 0 auto; }
 
 .cos-more {
   text-align: center;
@@ -268,9 +228,16 @@ body {
 
 /* ── 窄螢幕 ───────────────────────────────────────────────── */
 @media (max-width: 700px) {
-  body { padding-top: 64px; }   /* 重置也要補回，否則被 fixed navbar 蓋住 */
-  .cos-filters { grid-template-columns: 1fr; }
-  .cos-filterfoot .cos-count { margin-left: 0; }
+  body { padding-top: 64px; }
+  #panel-missions > .cos-panel { display: flex; flex-direction: column; }
+  .cos-mission-toolbar { order: 0; }
+  .cos-filters { order: 1; grid-template-columns: minmax(0, 1fr); }
+  .cos-filters[hidden] { display: none; }
+  .cos-mission-search { flex-basis: 100%; }
+  .cos-mission-search .codex-search { min-width: 0; width: 100%; }
+  .cos-count { order: 1; margin: 0; }
+  .cos-filter-toggle { display: inline-flex; order: 2; }
+  .cos-mission-toolbar > .codex-switch { order: 3; }
 
   /* ── 任務清單：10 欄表 → 逐任務卡（2026-08-26，行動適配預設化政策）──
      破口＝393px 實測 `#mv-table` 的 wrap scrollWidth 410 / clientWidth 361，而 10 欄按
@@ -306,8 +273,7 @@ body {
   #mv-table td[data-label="宇宙"],
   #mv-table td[data-label="月球"],
   #mv-table td[data-label="開放條件"] {
-    font-size: var(--fs-small, 12px);
-    color: var(--color-text-muted, #c0c9da);
+    color: var(--color-text, #f5f5f5);
     text-align: left;
   }
 }
@@ -317,15 +283,17 @@ body {
  * 等於白搬（設計系統 §.page-header 是工具列）。`.codex-accordion > summary` 預設
  * padding 12/16 會做出 45px，故在**本實例上**壓回 38px（scoped 覆寫，不動共用根 selector）。 */
 .cos-jobpick { border: none; background: none; }
+.cos-jobpick { width: 100%; }
 
 .cos-jobpick > summary.cos-jobpick__summary {
   min-height: 38px;
+  min-width: 0;
+  width: 100%;
   padding-block: 0;
   padding-inline: var(--space-3, 12px);
   align-items: center;
   cursor: pointer;
   white-space: nowrap;
-  max-width: 22em;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -344,6 +312,8 @@ body {
   background: var(--color-bg-deep, #03060c);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
 }
+.cos-jobpick__summary span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.cos-jobpick__body { max-width: min(22rem, calc(100vw - 2rem)); }
 
 /* ── 時間軸的職業 chip 欄 ─────────────────────────────────── */
 .cos-col-jobs {
@@ -356,17 +326,6 @@ body {
 /* ── 限時任務面板（主畫面）─────────────────────────────────
    舊版是 11 張職業卡片各帶三個數字＋倒數，資訊量過大（Owner 2026-07-31「不要那麼複雜了」）。
    現在只有兩段清單：現在開著的、下一批。每列一個任務，不做卡片格線。 */
-.cos-np__head {
-  margin: var(--space-4, 16px) 0 var(--space-2, 8px);
-}
-
-
-/* 範圍說明跟在標題後面，權重要低於標題本身 */
-.cos-np__scope {
-  margin-left: var(--space-2, 8px);
-  color: var(--color-text-muted, #c0c9da);
-  font-weight: normal;
-}
 
 .cos-np {
   list-style: none;
@@ -388,36 +347,8 @@ body {
    視覺同 .cos-betanote ＝共用 tint-panel（見該處註解）。
    ⚠️ 不再降 muted：它是「使用者需要讀懂才能操作」的說明文字（設計系統 muted 準則）。 */
 .cos-np__caveat { margin: var(--space-3, 12px) 0 0; }
-/* ── 開場就固定高度（2026-08-23，CLS）──────────────────────────────────
-   這一格的內容要等 weather.json 回來才決定（見 modules/now-panel.js renderCaveat），
-   等待文案只有一行、正式文案兩行 ⇒ 不釘高度就會在 ~500ms 長高 25px，
-   連同 #fc-now 的 +12px 把分頁列與整個面板往下推 62px（實測那一筆 CLS 0.17）。
-   數值＝各斷點實測的最終高度（正式文案的行數）。 */
-#np-caveat { min-height: 50px; }
-@media (max-width: 700px) { #np-caveat { min-height: 78px; } }
-/* 四格是 auto-fit minmax(240px,1fr)：欄數隨寬度變，列數跟著變 ⇒ 上面 .cos-stats 的
-   min-height:104px 只對「一排」是對的。實測最終高度 116（4 欄）／221（3 或 2 欄＝兩排）／
-   407（1 欄＝四排）；斷點取「幾欄放得下」算出來的臨界，不是隨手挑的數字。 */
-/* ⚠️ 數值要量到**真正收斂**才算（2026-08-23 當天第二次修）：第一版用 116/221/407，
-   那是資料剛填完當下的高度——之後還會再長 18px（倒數字串從「—」變成實際秒數會換行）。
-   結果 1280px 仍有 0.190、900px 0.234。取樣點若停在「看起來填好了」，就會少那最後一跳。 */
-#fc-now { min-height: 134px; }
-@media (max-width: 1100px) { #fc-now { min-height: 239px; } }
-@media (max-width: 520px)  { #fc-now { min-height: 424px; } }
-/* 職業選擇器（#job-picker）由 JS 填 ⇒ 這條工具列 45x16 進場、432x38 收場。
-   min-height 擋住標題列長高；min-width 讓「要不要換到第二列」在首次繪製就定案
-   ——沒有它，390px 下工具列會在 ~500ms 換行，把 #ftw-main 整塊下推 46px（實測 0.4369）。
-   342 ＝ 390px 下的實測最終寬，寬螢幕仍不換行故不受影響。 */
-/* ⚠️ **342 是只在 390px 量出來的數字，其他寬度全錯**（2026-08-25，CLS 密集掃：
-   1120 0.196／800 0.212／680 0.309／640 0.635／560 0.246 全 POOR）。
-   實測穩定寬度會隨視窗變：432（≥1120）／428（900）／425（800）／416–422（480–680）／
-   342（≤390，此時 #fc-zone 的天氣字串換成兩行）——342 只在最窄那一格成立，
-   於是 480–800 之間工具列仍在 ~600ms 換到第二列，`.page-header` 51→97px，
-   `#ftw-main` 整塊下推 46px。**上一輪修的時候只量了一個視窗寬度，就把那個數字當成全域常數。**
-   ⇒ 改成 `min(425px, 100%)`：寬視窗取 425（＝800px 的實測收斂值，不會反而逼出換行），
-   窄視窗自動退成容器寬（＝原本 342 的來源），兩端都在首次繪製就定案。
-   ≥900px 之後實測還會再長 3–7px，但那裡有大量餘裕、不會改變列數 ⇒ 只動到工具列自己，可忽略。 */
-.cos-header-tools { min-height: 38px; min-width: min(425px, 100%); }
+#np-caveat { min-height: 60px; }
+@media (max-width: 700px) { #np-caveat { min-height: 128px; } }
 
 /* 欄位標題：與資料列共用同一組 grid 欄寬，否則標題會對不準（Owner 2026-07-31：「很不直觀」）。
    純視覺輔助 ⇒ aria-hidden，不讓讀螢幕器把它當成一列資料。 */
@@ -675,7 +606,8 @@ body {
 
 /* 從 Discord 通知點進來時，指到的那一列標起來：整頁七列長得都一樣，
    不標的話使用者還是要自己找「剛剛按的是哪一台」 */
-.cos-em__row--hl {
+.cos-em__row--hl,
+.cos-em__row--focus {
   border-color: var(--color-accent, #e6c068);
   box-shadow: 0 0 0 1px var(--color-accent, #e6c068);
 }
@@ -694,24 +626,15 @@ body {
   background: var(--color-surface-hover, #18222f);
 }
 
-/* 沒有事件的那幾台降一階：資訊要留著（「查過了，沒有」≠「不知道」），
-   但不該和真的有事件的列爭同樣的視覺重量 */
-.cos-em__row--idle {
-  padding-block: var(--space-1, 4px);
-  opacity: 0.72;
-}
+.cos-em__row--idle { padding-block: var(--space-1, 4px); }
 
 .cos-em__world {
   min-width: 5.5em;
   font-weight: 600;
 }
 
-.cos-em__none,
-.cos-em__votes,
-.cos-em__status,
-.cos-em__substatus {
-  color: var(--color-text-muted, #c0c9da);
-}
+.cos-em__none { color: var(--color-text, #f5f5f5); }
+.cos-em__votes, .cos-em__status, .cos-em__substatus { color: var(--color-text, #f5f5f5); }
 
 /* 天氣／變體標示。刻意比狀態徽章弱一階：它是補充資訊，不該和「預告／已回報」搶第一眼 */
 .cos-em__weather {
@@ -954,14 +877,54 @@ body {
   color: var(--color-text-muted, #c0c9da);
 }
 
-/* 歷史篩選排成一列：原本垂直堆疊在一張很寬的表上方佔三行、右邊全空（Owner 2026-08-04）。
-   `.codex-field` 自己是直向（label 在上），所以外層橫排、內層維持原樣即可。 */
-.cos-em__histfilter {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: var(--space-4, 16px);
-  margin-bottom: var(--space-3, 12px);
+
+.cos-em__fields { display: grid; gap: var(--space-3, 12px); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cos-zone { margin: 0 0 var(--space-3, 12px); }
+.cos-alarm__status { color: var(--color-text, #f5f5f5); }
+.cos-em__histcards { display: none; list-style: none; padding: 0; margin: var(--space-3, 12px) 0; }
+.cos-em__histcards li { display: grid; gap: var(--space-1, 4px); padding: var(--space-3, 12px); border-bottom: 1px solid var(--color-border, #2b3f56); }
+.cos-em__histcards li span:first-child { font-weight: var(--fw-semibold, 600); }
+.cos-em__histcards[hidden] { display: none; }
+@media (max-width: 1100px) {
+  .cos-kpis { --kpi-cols: repeat(2, minmax(0, 1fr)); min-height: 230px; }
+  .cos-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-.cos-em__histfilter .codex-field { min-width: 11em; }
-.cos-em__histtoggle { padding-bottom: var(--space-1, 4px); }
+@media (max-width: 700px) {
+  .cos-kpis { --kpi-cols: repeat(2, minmax(0, 1fr)); min-height: 230px; }
+  .cos-header-tools, #job-picker { min-height: 44px; }
+  .cos-main .codex-btn, .cos-main .codex-chip, #cos-tabs .codex-tab,
+  .cos-em__weather, .cos-jobpick__body .codex-chip,
+  .cos-main .codex-modal__close, .cos-jobpick > summary.cos-jobpick__summary { min-height: 44px; }
+  .cos-main .codex-modal__close { min-width: 44px; }
+  .cos-kpis .codex-kpi__icon { display: none; }
+  .cos-em__histcards { display: block; }
+  #em-hist { display: none; }
+  .cos-em__last { flex: 1 1 100%; margin-left: 0; text-align: left; white-space: normal; }
+  .cos-em__last:empty { display: none; }
+  .cos-em__row { gap: var(--space-2, 8px); }
+  .cos-em__row--idle .cos-em__none { flex: 1 1 auto; }
+  .cos-em__row--idle .cos-em__quick { margin-left: auto; }
+  .cos-em__actions { flex-wrap: wrap; margin-left: 0; white-space: normal; }
+  .cos-em__when { flex: 1 1 100%; }
+  .cos-em__fields { grid-template-columns: minmax(0, 1fr); }
+  .cos-np__cols { display: none; }
+  .cos-np__btn { grid-template-columns: auto minmax(0, 1fr); min-height: 44px; }
+  .cos-np__icons { grid-column: 1; grid-row: 1; }
+  .cos-np__name { grid-column: 2; grid-row: 1; overflow: visible; text-overflow: initial; white-space: normal; }
+  .cos-np__kind, .cos-np__gate { grid-column: 1 / -1; white-space: normal; text-align: left; }
+  .cos-np__btn .cos-np__num { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: var(--space-2, 8px); text-align: right; color: var(--color-text, #f5f5f5); }
+  .cos-np__btn .cos-np__num::before { content: attr(data-label); color: var(--color-text, #f5f5f5); }
+  #fc-timeline, #fc-timeline tbody, #fc-timeline tr, #fc-timeline td,
+  #fc-timeline-2, #fc-timeline-2 tbody, #fc-timeline-2 tr, #fc-timeline-2 td { display: block; }
+  #fc-timeline thead, #fc-timeline-2 thead { display: none; }
+  #fc-timeline tr, #fc-timeline-2 tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-1, 4px) var(--space-2, 8px); padding: var(--space-2, 8px); border-bottom: 1px solid var(--color-border, #2b3f56); }
+  #fc-timeline td, #fc-timeline-2 td { width: auto; border: 0; padding: 0; text-align: left; white-space: normal; }
+  #fc-timeline td:last-child, #fc-timeline-2 td:last-child { grid-column: 1 / -1; }
+  #fc-timeline td::before, #fc-timeline-2 td::before { content: attr(data-label) " "; color: var(--color-text, #f5f5f5); }
+}
+@media (max-width: 430px) {
+  .cos-kpis { min-height: 280px; }
+}
+@media (max-width: 350px) {
+  .cos-kpis { min-height: 305px; }
+}

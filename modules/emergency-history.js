@@ -65,11 +65,12 @@ function displayStatus(row, now) {
  * @param {HTMLElement} root #panel-emergency
  * @param {{worlds: string[]}} opts
  */
-export function createEmergencyHistory(root, { worlds }) {
+export function createEmergencyHistory(root, { worlds, initialWorld = null }) {
   const el = {
     world: root.querySelector('#em-hist-world'),
     body: root.querySelector('#em-hist tbody'),
     table: root.querySelector('#em-hist'),
+    cards: root.querySelector('#em-hist-cards'),
     empty: root.querySelector('#em-hist-empty'),
     note: root.querySelector('#em-hist-note'),
     limit: root.querySelector('#em-hist-limit'),
@@ -78,6 +79,7 @@ export function createEmergencyHistory(root, { worlds }) {
 
   el.world.append(new Option('全部伺服器', ''));
   for (const w of worlds) el.world.append(new Option(w, w));
+  if (initialWorld && worlds.includes(initialWorld)) el.world.value = initialWorld;
   el.world.addEventListener('change', () => load());
   // 只改顯示筆數不必重抓——資料已經在手上（而且間隔要靠完整那份才算得出來）
   el.limit?.addEventListener('change', () => { if (last) render(last); });
@@ -104,6 +106,8 @@ export function createEmergencyHistory(root, { worlds }) {
 
     el.empty.hidden = rows.length > 0;
     el.table.hidden = rows.length === 0;
+    el.cards.hidden = rows.length === 0;
+    if (!rows.length) el.empty.lastElementChild.textContent = '還沒有回報紀錄；有人通報後會在這裡累積';
 
     el.body.replaceChildren(...rows.map((r) => {
       const tr = document.createElement('tr');
@@ -137,6 +141,23 @@ export function createEmergencyHistory(root, { worlds }) {
       tr.lastChild.append(badge);
       return tr;
     }));
+    el.cards.replaceChildren(...rows.map((r) => {
+      const item = document.createElement('li');
+      const [status] = STATUS_LABEL[displayStatus(r, data.now)] ?? ['進行中'];
+      const t = r.startAt || r.warnedAt;
+      const lines = [
+        `${r.world} · ${status}`,
+        `${dateText(t)} · 本地 ${clockText(t)}`,
+        `距上次（同服）${r.gapSeconds ? formatDuration(r.gapSeconds) : '—'} · 預告提前 ${r.leadSeconds ? `${Math.round(r.leadSeconds / 60)} 分` : '—'}`,
+        `附議 ${r.confirms} · 否認 ${r.disputes}`,
+      ];
+      for (const text of lines) {
+        const part = document.createElement('span');
+        part.textContent = text;
+        item.append(part);
+      }
+      return item;
+    }));
 
     const hidden = visible.length - rows.length;
     el.note.textContent = rows.length
@@ -152,7 +173,8 @@ export function createEmergencyHistory(root, { worlds }) {
     if (!r.ok) {
       el.empty.hidden = false;
       el.table.hidden = true;
-      el.empty.lastElementChild.textContent = '讀不到歷史紀錄 — 本站其他分頁不受影響';
+      el.cards.hidden = true;
+      el.empty.lastElementChild.textContent = '讀不到歷史紀錄；其他分頁仍可使用';
       return;
     }
     loaded = true;

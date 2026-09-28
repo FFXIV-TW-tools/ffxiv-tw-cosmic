@@ -100,6 +100,7 @@ export function createEmergencyMap(root, data) {
   /** 目前選的組（一定是單一組——一次事件只會出一組）。 */
   let selected = 'storm-α';
   let releaseTrap = null;
+  let releaseScroll = null;
   /** 這次事件已由任務板確認的組（`storm-α`…）。沒確認就是 null——不猜。 */
   let confirmedGroup = null;
 
@@ -302,13 +303,14 @@ export function createEmergencyMap(root, data) {
 
   function openModal() {
     el.overlay.hidden = false;
-    document.body.style.overflow = 'hidden';
+    releaseScroll = window.FFXIVScrollLock?.lock?.() ?? null;
     releaseTrap = window.FFXIVA11y?.trapFocus?.(el.overlay) ?? null;
   }
 
   function closeModal() {
     el.overlay.hidden = true;
-    document.body.style.overflow = '';
+    releaseScroll?.();
+    releaseScroll = null;
     releaseTrap?.();
     releaseTrap = null;
   }

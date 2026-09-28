@@ -41,6 +41,7 @@
     '<link rel="stylesheet" href="' + base + 'tokens.css">' +
     '<link rel="stylesheet" href="' + base + 'header.css">' +
     '<script defer src="' + base + 'header.js"><\/script>' +
+    '<script defer src="' + base + 'a11y-tabs.js"><\/script>' +
     '<script defer src="' + base + 'settings-client.js"><\/script>' +
     // 鬧鐘類工具會長時間開著分頁 → 掛新版偵測 toast（設計系統 head snippet 鐵則）
     '<script defer src="' + base + 'version-check.js"><\/script>'
@@ -52,6 +53,8 @@
   <!-- modules/app.js 的靜態 import 圖 — 讓瀏覽器解析 HTML 時就平行抓，不必等父模組解析完才逐層發現 -->
   <!-- MODULEPRELOAD:BEGIN — 由 tools/gen-modulepreload.mjs 生成，勿手改 -->
   <link rel="modulepreload" href="/modules/alarm.js">
+  <link rel="modulepreload" href="/modules/cos_icons.js">
+  <link rel="modulepreload" href="/modules/cos_visual.js">
   <link rel="modulepreload" href="/modules/crafter-link.js">
   <link rel="modulepreload" href="/modules/dev-stage-view.js">
   <link rel="modulepreload" href="/modules/emergency-api.js">
@@ -65,7 +68,6 @@
   <link rel="modulepreload" href="/modules/job-prefs.js">
   <link rel="modulepreload" href="/modules/mission-view.js">
   <link rel="modulepreload" href="/modules/now-panel.js">
-  <link rel="modulepreload" href="/modules/tabs.js">
   <link rel="modulepreload" href="/modules/tools-view.js">
   <link rel="modulepreload" href="/modules/variant-groups.js">
   <link rel="modulepreload" href="/modules/weather-forecast.js">
@@ -98,18 +100,18 @@
     <div class="cos-header-tools">
       <!-- 「我的階級」已移除（Owner 2026-07-31）：它只在還沒解到【高難】時有作用，
            解開之後永遠不過濾任何東西，等於常駐一個沒有用的控制項。 -->
-      <span class="codex-label" id="fc-zone">渴望灣</span>
-      <span id="job-picker"></span>
+      <span id="job-picker" aria-label="我練的職業"></span>
     </div>
   </header>
 
   <main class="codex-container cos-main">
     <!-- BETA 告示。刻意不寫資料來源（Owner 2026-08-01）——使用者要知道的是
          「哪些可以信、哪些還不能」，來源與他無關。 -->
-    <p class="codex-body codex-tint-panel codex-tint-panel--warn codex-tint-panel--bar cos-betanote">
-      <strong>⚠️ BETA</strong> — 天氣、ET 時段、任務分類與獎勵已對照遊戲確認；
-      「條件成立後任務會不會真的出現」還有規則未釐清（階級門、前置鏈）。看到不符請回報。
-    </p>
+    <p class="codex-body codex-tint-panel codex-tint-panel--warn codex-tint-panel--bar cos-betanote">天氣與時段已對照遊戲；任務是否出現仍受階級與前置影響。看到不符請回報。</p>
+    <details class="codex-accordion cos-reliability">
+      <summary>資料可靠度與未確認規則</summary>
+      <div class="codex-accordion__body">天氣、ET 時段、任務分類與獎勵已對照遊戲確認；「條件成立後任務會不會真的出現」仍受階級門及前置鏈影響，看到不符請回報。</div>
+    </details>
 
     <div class="codex-empty cos-hideable" id="app-status" hidden>
       <div class="codex-empty__icon" aria-hidden="true">🛰</div>
@@ -120,7 +122,12 @@
          原本在「臨時任務」分頁裡，但它是**每一個分頁的前提**（任務條件、天氣預報、
          緊急事件的背景天氣都要看它），切到別頁就消失等於每次都要切回去看一眼。
          挪到分頁列之上＝任何分頁都看得到，且只有一份 DOM（Owner 2026-08-03）。 -->
-    <div class="cos-stats" id="fc-now"></div>
+    <div class="cos-summary-head"><div class="codex-kpis cos-kpis" id="fc-now">
+      <div class="codex-kpi" style="--kpi-tone:var(--accent)"><span class="codex-kpi__icon" aria-hidden="true"><svg class="codex-ico" data-cos-icon="moon-stars" viewBox="0 0 256 256" fill="currentColor"></svg></span><span class="codex-kpi__label">目前天氣</span><span class="codex-kpi__value" id="fc-weather">查詢中<span class="codex-subline">—</span></span></div>
+      <div class="codex-kpi" style="--kpi-tone:var(--accent)"><span class="codex-kpi__icon" aria-hidden="true"><svg class="codex-ico" data-cos-icon="clock" viewBox="0 0 256 256" fill="currentColor"></svg></span><span class="codex-kpi__label">艾奧傑亞時間</span><span class="codex-kpi__value" id="fc-et">查詢中<span class="codex-subline">—</span></span></div>
+      <div class="codex-kpi" style="--kpi-tone:var(--color-highlight)"><span class="codex-kpi__icon" aria-hidden="true"><svg class="codex-ico" data-cos-icon="hourglass-medium" viewBox="0 0 256 256" fill="currentColor"></svg></span><span class="codex-kpi__label">靈風視窗</span><span class="codex-kpi__value" id="fc-windy">查詢中<span class="codex-subline">—</span></span></div>
+      <div class="codex-kpi" style="--kpi-tone:var(--accent)"><span class="codex-kpi__icon" aria-hidden="true"><svg class="codex-ico" data-cos-icon="rocket-launch" viewBox="0 0 256 256" fill="currentColor"></svg></span><span class="codex-kpi__label">機甲行動</span><span class="codex-kpi__value" id="fc-mech">查詢中<span class="codex-subline">—</span></span></div>
+    </div><button type="button" class="codex-btn codex-btn--ghost" id="fc-copy"><svg class="codex-ico" data-cos-icon="copy" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"></svg>複製現在狀況</button><span class="codex-small" id="fc-copy-status" role="status"></span></div>
 
     <!-- 這句講的就是「上面那個天氣可能被緊急事件蓋掉」，必須緊貼四格，不能留在原分頁 -->
     <!-- 開場就佔位、不用 hidden（CLS，見 modules/now-panel.js renderCaveat 的由來註解）：
@@ -129,15 +136,11 @@
          「晴朗」與「非晴朗」猜錯會先顯示錯的判斷再改口。 -->
     <p class="codex-small codex-tint-panel codex-tint-panel--bar cos-np__caveat cos-hideable" id="np-caveat">目前天氣查詢中…</p>
 
-    <div class="codex-tabs" id="cos-tabs" role="tablist" aria-label="宇宙探索分頁">
-      <button class="codex-tab" role="tab" data-tab="emergency" id="tab-emergency"
-              aria-controls="panel-emergency" aria-selected="true">緊急事件</button>
-      <button class="codex-tab" role="tab" data-tab="forecast" id="tab-forecast"
-              aria-controls="panel-forecast" aria-selected="false" tabindex="-1">臨時任務</button>
-      <button class="codex-tab" role="tab" data-tab="weather" id="tab-weather"
-              aria-controls="panel-weather" aria-selected="false" tabindex="-1">天氣預報</button>
-      <button class="codex-tab" role="tab" data-tab="missions" id="tab-missions"
-              aria-controls="panel-missions" aria-selected="false" tabindex="-1">任務清單</button>
+    <div class="codex-tabs codex-tabs--boxed" id="cos-tabs" role="tablist" aria-label="宇宙探索分頁">
+      <button class="codex-tab codex-tab--boxed" role="tab" data-tab="emergency" id="tab-emergency" aria-controls="panel-emergency" aria-selected="true"><svg class="codex-ico" data-cos-icon="lightning" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"></svg>緊急事件</button>
+      <button class="codex-tab codex-tab--boxed" role="tab" data-tab="forecast" id="tab-forecast" aria-controls="panel-forecast" aria-selected="false" tabindex="-1"><svg class="codex-ico" data-cos-icon="hourglass-medium" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"></svg>臨時任務</button>
+      <button class="codex-tab codex-tab--boxed" role="tab" data-tab="weather" id="tab-weather" aria-controls="panel-weather" aria-selected="false" tabindex="-1"><svg class="codex-ico" data-cos-icon="calendar-dots" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"></svg>天氣預報</button>
+      <button class="codex-tab codex-tab--boxed" role="tab" data-tab="missions" id="tab-missions" aria-controls="panel-missions" aria-selected="false" tabindex="-1"><svg class="codex-ico" data-cos-icon="list-magnifying-glass" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"></svg>任務清單</button>
       <!-- 宇宙工具／基地進度暫時隱藏（Owner 2026-07-31：「目前好像也沒什麼用」）。
            面板與資料都留著，拿掉 hidden 即可復原 —— 不刪，因為工具升級鏈是原始需求之一。 -->
     </div>
@@ -146,14 +149,13 @@
     <section id="panel-forecast" role="tabpanel" aria-labelledby="tab-forecast" tabindex="0" hidden>
       <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel" id="jb-panel">
         <span class="codex-hud" aria-hidden="true"></span>
-        <h2 class="codex-h2 cos-panel__title">
-          臨時任務
+        <h2 class="codex-view-title cos-title"><span class="codex-view-title__ico" aria-hidden="true"><svg class="codex-ico" data-cos-icon="hourglass-medium" viewBox="0 0 256 256" fill="currentColor"></svg></span>臨時任務
           <span class="codex-help-trigger" data-help="遊戲的三個分類是基礎任務／臨時任務／緊急任務；臨時任務底下再分連續任務／時間限定任務／天氣限定任務。本面板只放臨時任務裡有時段或天候條件的那些（63 個）。**帶條件或前置的任務一律屬臨時分頁，與階級無關**——例如「採集精密空氣淨化裝置所需的材料」是 A 階、無前綴，但因為帶 ET 02:00–04:00 條件，遊戲把它放在臨時任務分頁。｜**每個職業、每個條件只會出一個任務**——同職同條件若有【高難】與【高難+】兩個，實測到目前都只出高階那個，所以本站列高階；標「階級擇一」的列，滑鼠停上去可看到另一個是哪個。為什麼只出高階（是否與該職的階級解鎖有關）尚未定論。｜時段到了、天氣對了，任務就會出現；還擋著的只有前置任務與該職的階級。｜天氣與 ET 時段都能精準推算，全 7 個繁中服伺服器同步。｜獎勵欄的 Ⅰ–Ⅳ 是宇宙工具各階可得的經驗值。｜緊急任務要等伺服器推事件，這裡算不出來。">
             這裡列什麼 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
           </span>
         </h2>
 
-        <div class="cos-alarm">
+        <div class="codex-toolbar cos-alarm" role="group" aria-label="臨時任務提醒">
           <label class="codex-switch">
             <input type="checkbox" class="codex-switch__input" id="al-enabled">
             <span class="codex-switch__track" aria-hidden="true"></span>
@@ -169,16 +171,16 @@
               <option value="10">10 分鐘</option>
             </select>
           </div>
-          <p class="codex-small cos-alarm__status" id="al-status">關閉中</p>
+          <p class="codex-small cos-alarm__status" id="al-status">關閉中</p><p class="codex-small">此頁開著時提醒；關閉分頁後不會通知。</p>
         </div>
 
-        <h3 class="codex-h3 cos-np__head" id="np-now-head">現在<span class="codex-small cos-np__scope" id="np-scope"></span></h3>
+        <h3 class="codex-h3 codex-h3--section" id="np-now-head"><span id="np-now-label">現在</span><span class="codex-h3__sub" id="np-scope"></span></h3>
         <p class="codex-small cos-np__cols" aria-hidden="true">
           <span>職業</span><span>限定條件</span><span>任務名稱</span><span>獎勵</span><span>還缺什麼</span>
         </p>
         <ul class="cos-np" id="np-now"></ul>
 
-        <h3 class="codex-h3 cos-np__head" id="np-next-head">下一批</h3>
+        <h3 class="codex-h3 codex-h3--section" id="np-next-head"><span id="np-next-label">下一批</span></h3>
         <p class="codex-small cos-np__cols" aria-hidden="true">
           <span>職業</span><span>限定條件</span><span>任務名稱</span><span>獎勵</span><span>還缺什麼</span>
         </p>
@@ -196,12 +198,12 @@
     <section id="panel-weather" role="tabpanel" aria-labelledby="tab-weather" tabindex="0" hidden>
       <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
         <span class="codex-hud" aria-hidden="true"></span>
-        <h2 class="codex-h2 cos-panel__title">
-          特殊天氣預報
+        <h2 class="codex-view-title cos-title"><span class="codex-view-title__ico" aria-hidden="true"><svg class="codex-ico" data-cos-icon="calendar-dots" viewBox="0 0 256 256" fill="currentColor"></svg></span>特殊天氣預報
           <span class="codex-help-trigger" data-help="只列月塵與靈風。晴朗佔 70%、而且沒有任何任務綁它，整片列出來只會稀釋重點。｜這裡是純天氣預報，任務在「臨時任務」分頁。｜天氣＝由時間直接推算的純函數，全繁中服 7 個伺服器同一秒看到的天氣完全相同，可推算到任意未來。｜每段固定 23 分 20 秒（＝8 艾奧傑亞小時）。｜這一欄是**必然**的：時間到了天氣就是那樣。任務會不會出現是另一回事。">
             怎麼算的 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
           </span>
         </h2>
+        <p class="codex-subline cos-zone" id="fc-zone">渴望灣：天氣查詢中…</p>
         <!-- 兩欄並排：20 段各佔整個容器寬時，右邊六成完全是空白，而表格卻拉了 20 列高
              （Owner 2026-08-03：「有夠浪費空間」）。窄螢幕由 grid 自動落回單欄。 -->
         <div class="cos-timeline-cols">
@@ -234,16 +236,17 @@
             </table>
           </div>
         </div>
+        <p class="codex-empty codex-empty--bare" id="fc-timeline-empty" hidden>目前掃描範圍內沒有特殊天氣；一般天氣仍依時間變化。</p>
       </section>
 
       <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
         <span class="codex-hud" aria-hidden="true"></span>
-        <h2 class="codex-h2 cos-panel__title">哪些全服一樣、哪些每台不一樣</h2>
+        <h2 class="codex-h3 codex-h3--section"><svg class="codex-ico" data-cos-icon="globe-hemisphere-east" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"></svg>哪些全服一樣、哪些每台不一樣</h2>
         <p class="codex-body">
-          <strong>全服一樣</strong>：天氣。演算法只吃 unix 時間、沒有伺服器參數，所以本站的天氣與倒數不必選伺服器。
+          <strong>全服一樣：一般天氣、ET 時段</strong>。演算法只吃現實時間、沒有伺服器參數，所以本站的天氣與倒數不必選伺服器。
         </p>
         <p class="codex-body">
-          <strong>每台伺服器各自不同</strong>：
+          <strong>每台伺服器不同：基地進度、緊急事件、任務板輪替</strong>：
         </p>
         <ul class="codex-body cos-serverdiff">
           <li><strong>月門基地開發階段</strong> —— 共 134 個建設階段
@@ -266,10 +269,11 @@
     <section id="panel-missions" role="tabpanel" aria-labelledby="tab-missions" tabindex="0" hidden>
       <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
         <span class="codex-hud" aria-hidden="true"></span>
+        <h2 class="codex-view-title"><span class="codex-view-title__ico" aria-hidden="true"><svg class="codex-ico" data-cos-icon="list-magnifying-glass" viewBox="0 0 256 256" fill="currentColor"></svg></span>任務清單</h2>
         <!-- 兩段式：上排四組 chip 篩選（順序＝表格欄序），下排搜尋＋開關＋筆數。
              原本全部塞進同一個 auto-fit grid，四欄高度差很多 ⇒ 一堆空洞、搜尋被擠到
              職業底下、開關浮在中間（Owner 2026-08-01）。 -->
-        <div class="cos-filters">
+        <div class="cos-filters" id="mv-filter-groups">
           <div class="cos-filter cos-filter--jobs">
             <span class="codex-field__label">職業</span>
             <div class="cos-chips" id="mv-jobs"></div>
@@ -290,10 +294,10 @@
           </div>
         </div>
 
-        <div class="cos-filterfoot">
-          <div class="codex-field cos-filterfoot__search">
-            <label class="codex-field__label" for="mv-search">搜尋任務或素材</label>
-            <input class="codex-input" id="mv-search" type="search" autocomplete="off">
+        <div class="codex-toolbar cos-mission-toolbar" role="group" aria-label="任務搜尋與條件">
+          <div class="codex-toolbar__group cos-mission-search">
+            <label class="codex-toolbar__label" for="mv-search">搜尋任務或素材</label>
+            <span class="codex-search"><svg class="codex-search__icon" data-cos-icon="magnifying-glass" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"></svg><input class="codex-input" id="mv-search" type="search" autocomplete="off" placeholder="搜尋任務或素材…"><kbd class="codex-kbd codex-search__kbd" aria-hidden="true">/</kbd></span>
           </div>
           <label class="codex-switch">
             <input type="checkbox" class="codex-switch__input" id="mv-available">
@@ -306,12 +310,13 @@
             <span>隱藏不限時的基礎任務（302）</span>
           </label>
           <p class="codex-small cos-count">符合筆數：<span id="mv-count">—</span></p>
+          <button type="button" class="codex-btn codex-btn--ghost cos-filter-toggle" id="mv-filter-toggle" aria-controls="mv-filter-groups" aria-expanded="false">篩選條件（已選 0）</button>
         </div>
       </section>
 
-      <div class="codex-empty cos-hideable" id="mv-empty" hidden>
-        <div class="codex-empty__icon" aria-hidden="true">🔍</div>
-        <div>沒有符合的任務 — 取消幾個篩選條件再試</div>
+      <div class="codex-empty" id="mv-empty" hidden>
+        <div>找不到符合的任務；請調整篩選或搜尋文字。</div>
+        <button type="button" class="codex-btn codex-btn--primary" id="mv-reset">清除篩選</button>
       </div>
 
       <div class="codex-table-wrap cos-tablewrap">
@@ -346,23 +351,22 @@
         <!-- 標題與動作同一列。通知設定原本是整頁最後一張卡，要捲過三張才看得到
              ＝ 沒有人會發現可以訂閱（Owner 2026-08-03）。 -->
         <div class="cos-panel__head">
-        <h2 class="codex-h2 cos-panel__title">
-          各伺服器現況
+        <h2 class="codex-view-title cos-title"><span class="codex-view-title__ico" aria-hidden="true"><svg class="codex-ico" data-cos-icon="lightning" viewBox="0 0 256 256" fill="currentColor"></svg></span>各伺服器現況
           <span class="codex-help-trigger" data-help="緊急事件的天氣（磁暴／流星雨／孢子霧）不在渴望灣的天氣機率表裡，時間演算法永遠擲不出來 ⇒ 只能靠回報，不能預測。｜每台伺服器同時只留一個事件，重複回報會自動變成附議。｜三個人否認且沒有人附議，該筆就會下架。｜事件固定 20 分鐘（遊戲資料寫死的任務時限）。｜標「**預告**」的是遊戲內已經出現預兆通告、但天氣還沒真的翻轉——**刻意不顯示倒數**：標預告的那一列會顯示「約 4–5 分鐘後開始」並隨時間收斂。**刻意給區間不給精確倒數**：提前量實測 18 筆，其中 17 筆落在 4 分 38–41 秒（全距只有 3 秒），但**還有 1 筆 9 分鐘** ⇒ 它不是常數。精確倒數在那 1/18 的場合會歸零卻沒開始，而這一頁禁不起那種信任損失。走過區間就退回「即將開始」，不會改口說「應該已經開始了」——那是我們不知道的事。｜**緊急事件與現在的天氣無關**：173 筆通報回推當下的演算法天氣是晴朗 102／月塵 35／靈風 36，而**同一段期間實際的天氣時段分布**是 358／102／90 —— 比例一致（χ²=3.35，未達顯著）。晴朗時同樣會直接轉緊急，不是「先靈風才會出事」。｜**這裡沒亮不代表沒有事件** —— 只代表那台伺服器現在沒有人回報。">
             這些數字哪來的 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
           </span>
         </h2>
-          <button class="codex-btn codex-btn--ghost" type="button" id="em-notify-open">🔔 通知設定</button>
+          <button class="codex-btn codex-btn--ghost" type="button" id="em-notify-open"><svg class="codex-ico" data-cos-icon="bell-ringing" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"></svg>通知設定</button>
         </div>
         <p class="codex-body">
-          緊急事件算不出來，這一頁完全靠回報。
-          <strong>沒亮不代表沒事件</strong> —— 只代表那台現在沒有人回報。
+          緊急事件靠玩家回報；<strong>沒亮不代表沒事件。</strong>
         </p>
         <!-- Discord 通知按鈕點進來時的確認列（`?ev=<id>&vote=…`）。
              刻意**不自動投票**：Discord 會替連結預抓、手機上按鈕很近，
              而否認達標是單向下架不回頭 ⇒ 一定要人在畫面上再按一次。
              ⚠️ 顯隱走 `.cos-hideable[hidden]`：本站設了 display 的元素會蓋掉 UA 的 [hidden]。 -->
         <div class="cos-em__deeplink cos-hideable" id="em-deeplink" hidden></div>
+        <button class="codex-btn codex-btn--ghost" type="button" id="em-my-world" hidden>跳到我的伺服器</button>
         <ul class="cos-em" id="em-list"></ul>
         <p class="codex-small cos-em__status" id="em-status">載入中…</p>
       </section>
@@ -380,6 +384,7 @@
               <p class="codex-body">
                 伺服器：<strong id="em-report-world">—</strong>　·　事件固定 <strong>20 分鐘</strong>
               </p>
+              <div class="cos-em__fields">
               <div class="codex-field">
                 <label class="codex-field__label" for="em-lead">什麼時候開始</label>
                 <select class="codex-select" id="em-lead"></select>
@@ -387,6 +392,7 @@
               <div class="codex-field">
                 <label class="codex-field__label" for="em-weather">哪一種天氣</label>
                 <select class="codex-select" id="em-weather"></select>
+              </div>
               </div>
               <!-- 遊戲原文對照：選單裡是預告那一句，事件開始後才通報的人看到的是另外兩則之一。
                    六則全部出自台服 client 的 MassivePcContentTextData，不是轉述。 -->
@@ -438,8 +444,8 @@
       <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
         <span class="codex-hud" aria-hidden="true"></span>
         <div class="cos-panel__head">
-          <h2 class="codex-h2 cos-panel__title">任務地點速查</h2>
-          <button class="codex-btn codex-btn--ghost" type="button" id="em-map-lookup">🗺 開啟地點圖</button>
+          <h2 class="codex-h3 codex-h3--section">任務地點速查</h2>
+          <button class="codex-btn codex-btn--ghost" type="button" id="em-map-lookup"><svg class="codex-ico" data-cos-icon="map-trifold" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"></svg>開啟地點圖</button>
         </div>
         <p class="codex-body">
           六組固定地點（三種天氣 × 兩組任務），<strong>不隨伺服器或時間變</strong> — 隨時可以先看。
@@ -448,36 +454,32 @@
 
       <section class="codex-tablet codex-tablet--cyan codex-tablet--padded cos-panel">
         <span class="codex-hud" aria-hidden="true"></span>
-        <h2 class="codex-h2 cos-panel__title">
-          歷史紀錄
+        <h2 class="codex-h3 codex-h3--section">歷史紀錄
           <span class="codex-help-trigger" data-help="已經結束或被撤銷的回報，新到舊。｜**被撤銷的也會列出來並標明**——把它們藏起來，這份表就會變成「看起來很乾淨但被修過」的資料。｜保留 90 天；滿 7 天的紀錄會把回報者身份清掉，只留下時間與附議／否認的**數量**。｜這是本站唯一能累積的緊急事件資料，時間久了才看得出有沒有規律。**目前完全沒有規律可言，不要拿它當預測用。**">
             這裡列什麼 <span class="codex-help-q" role="button" tabindex="0" aria-label="說明">?</span>
           </span>
         </h2>
         <!-- 三個篩選排成一列。原本是垂直堆疊（label 一行、select 一行 ×2），
              在一張本來就很寬的表上方佔掉三行高度而右邊全空（Owner 2026-08-04 截圖）。 -->
-        <div class="cos-em__histfilter">
-          <div class="codex-field">
-            <label class="codex-field__label" for="em-hist-world">伺服器</label>
+        <div class="codex-toolbar" role="group" aria-label="歷史篩選">
+          <div class="codex-toolbar__group">
+            <label class="codex-toolbar__label" for="em-hist-world">伺服器</label>
             <select class="codex-select" id="em-hist-world"></select>
-          </div>
-          <div class="codex-field">
-            <label class="codex-field__label" for="em-hist-limit">顯示</label>
+            <label class="codex-toolbar__label" for="em-hist-limit">顯示</label>
             <select class="codex-select" id="em-hist-limit">
               <option value="20" selected>最近 20 筆</option>
               <option value="50">最近 50 筆</option>
               <option value="100">最近 100 筆</option>
             </select>
           </div>
-          <label class="codex-switch cos-em__histtoggle">
+          <label class="codex-switch">
             <input type="checkbox" class="codex-switch__input" id="em-hist-hide-cancelled" checked>
             <span class="codex-switch__track" aria-hidden="true"></span>
             <span>隱藏已取消</span>
           </label>
         </div>
-        <div class="codex-empty cos-hideable" id="em-hist-empty" hidden>
-          <div class="codex-empty__icon" aria-hidden="true">🗒</div>
-          <div>還沒有任何紀錄 — 第一筆回報之後這裡就會開始累積</div>
+        <div class="codex-empty codex-empty--bare" id="em-hist-empty" hidden>
+          <div>還沒有回報紀錄；有人通報後會在這裡累積</div>
         </div>
         <div class="codex-table-wrap cos-tablewrap">
           <table class="codex-table codex-table--fixed codex-table--zebra" id="em-hist">
@@ -496,6 +498,7 @@
             <tbody></tbody>
           </table>
         </div>
+        <ol class="cos-em__histcards" id="em-hist-cards"></ol>
         <p class="codex-small cos-em__note" id="em-hist-note"></p>
       </section>
 
@@ -571,12 +574,12 @@
     </section>
 
     <footer class="cos-footer">
-      <a class="codex-xs" href="https://xivtc.com/" data-hub-link>← FF14 工具箱（全部工具）</a>
       <p class="codex-small">
         對應遊戲版本 <span id="meta-client">—</span>（資料更新於 <span id="meta-generated">—</span>）。
         天氣為時間函數、全伺服器同步、可推算到任意未來；緊急事件是伺服器端狀態<strong>算不出來</strong>，
         改由玩家回報（見「緊急事件」分頁），覆蓋率取決於回報者，<strong>沒亮不代表沒事件</strong>。
       </p>
+      <a class="codex-xs" href="https://xivtc.com/" data-hub-link>← FF14 工具箱（全部工具）</a>
     </footer>
   </main>
 </body>

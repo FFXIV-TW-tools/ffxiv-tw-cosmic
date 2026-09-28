@@ -1,0 +1,9 @@
+{
+  "out": "modules/cos_icons.js",
+  "format": "esm",
+  "used": [
+    "bell-ringing", "calendar-dots", "clock", "copy", "globe-hemisphere-east",
+    "hourglass-medium", "lightning", "list-magnifying-glass", "magnifying-glass",
+    "map-trifold", "moon-stars", "rocket-launch", "user-circle"
+  ]
+}

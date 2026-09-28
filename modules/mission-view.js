@@ -40,6 +40,8 @@ export function createMissionView(root, { missions, conditions, jobs, forecaster
     tagFilter: root.querySelector('#mv-tags'),
     onlyAvailable: root.querySelector('#mv-available'),
     hideBulk: root.querySelector('#mv-hidebulk'),
+    toggle: root.querySelector('#mv-filter-toggle'),
+    groups: root.querySelector('#mv-filter-groups'),
   };
 
   const state = {
@@ -56,6 +58,16 @@ export function createMissionView(root, { missions, conditions, jobs, forecaster
   buildRankChips();
   buildCondChips();
   bindInputs();
+  el.toggle.addEventListener('click', () => {
+    el.toggle.setAttribute('aria-expanded', String(el.toggle.getAttribute('aria-expanded') !== 'true'));
+  });
+  root.querySelector('#mv-reset').addEventListener('click', () => setFilter({ available: false, hideBulk: true, text: '' }));
+  const mobile = matchMedia('(max-width: 700px)');
+  mobile.addEventListener('change', syncDisclosure);
+  function syncDisclosure() {
+    el.groups.hidden = mobile.matches && el.toggle.getAttribute('aria-expanded') !== 'true';
+  }
+  syncDisclosure();
 
   /**
    * 職業 chip **分兩列：製作職（DoH 8）在上、採集職（DoL 3）在下**（Owner 2026-08-01）。
@@ -241,7 +253,11 @@ export function createMissionView(root, { missions, conditions, jobs, forecaster
       return (b.reward?.cosmo ?? 0) - (a.reward?.cosmo ?? 0);
     });
     el.count.textContent = `${rows.length} / ${missions.length}`;
+    const selected = state.jobs.size + state.ranks.size + state.conds.size
+      + state.classes.size + state.tags.size + Number(state.available) + Number(!state.hideBulk) + Number(Boolean(state.text));
+    el.toggle.textContent = `篩選條件（已選 ${selected}）`;
     el.tbody.innerHTML = '';
+    syncDisclosure();
     el.empty.hidden = rows.length > 0;
     el.tbody.closest('.codex-table-wrap').hidden = rows.length === 0;
 
@@ -394,9 +410,13 @@ export function createMissionView(root, { missions, conditions, jobs, forecaster
     for (const [id, b] of chipIndex.jobs) b.setAttribute('aria-pressed', String(state.jobs.has(id)));
     for (const [kind, b] of chipIndex.conds) b.setAttribute('aria-pressed', String(state.conds.has(kind)));
     el.rankFilter.querySelectorAll('[aria-pressed]').forEach((b) => b.setAttribute('aria-pressed', 'false'));
+    if (mobile.matches && (state.jobs.size || state.conds.size || state.classes.size
+      || state.tags.size || state.available || !state.hideBulk || state.text)) {
+      el.toggle.setAttribute('aria-expanded', 'true');
+    }
     render();
   }
 
   render();
-  return { tick, setFilter };
+  return { tick, setFilter, clearSearch: () => { el.search.value = ''; state.text = ''; render(); } };
 }

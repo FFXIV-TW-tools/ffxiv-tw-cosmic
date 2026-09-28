@@ -20,18 +20,38 @@ function makeEl(tag = 'div') {
     children: [],
     dataset: {},
     style: { setProperty() {} },
-    classList: { add() {}, remove() {} },
+    classList: {
+      contains(name) { return el.className.split(' ').includes(name); },
+      add(...names) { el.className = [...new Set([...el.className.split(' ').filter(Boolean), ...names])].join(' '); },
+      remove(name) { el.className = el.className.split(' ').filter((c) => c !== name).join(' '); },
+      toggle(name, force) { if (force) this.add(name); else this.remove(name); },
+    },
     className: '',
-    textContent: '',
+    get textContent() { return el.children.map((kid) => kid.nodeValue ?? kid.textContent ?? '').join(''); },
+    set textContent(value) { el.children = value ? [{ nodeValue: String(value), textContent: String(value) }] : []; },
     value: '',
     hidden: false,
+    get firstChild() { return el.children[0] ?? null; },
     append(...kids) { el.children.push(...kids); },
     replaceChildren(...kids) { el.children = kids; },
+    get firstElementChild() { return el.children.find((kid) => kid.tagName) ?? null; },
     // 記住 handler：測按鈕要按得下去，否則只能開後門 API 給測試用（那就不是在測真實接線）
     listeners: {},
     addEventListener(type, fn) { el.listeners[type] = fn; },
     setAttribute() {},
-    querySelector: () => null,
+    querySelector(selector) {
+      const eventId = selector.match(/^\[data-ev-id="(\d+)"\]$/)?.[1];
+      const className = selector.slice(1);
+      const find = (node) => {
+        for (const child of node.children ?? []) {
+          if (eventId ? child.dataset?.evId === eventId : child.className?.split(' ').includes(className)) return child;
+          const nested = find(child);
+          if (nested) return nested;
+        }
+        return null;
+      };
+      return find(el);
+    },
     scrollIntoView() {},
   };
   return el;
@@ -181,6 +201,36 @@ const settle = () => new Promise((r) => setTimeout(r, 0));
     '投票回應已帶新票數 ⇒ 不得等第二趟 /state 才更新（那趟在本案例永不回應）',
   );
   console.log('✓ 投票：用回應值當場更新，不等第二趟 /state');
+}
+
+// ── 5. 深連結只高亮目標事件，取消／投票後立刻撤掉 ──────────────────────────
+{
+  const now = Math.floor(Date.now() / 1000);
+  const live = {
+    events: { [WORLDS[0]]: { id: 42, world: WORLDS[0], startAt: now - 60, endAt: now + 600,
+      status: 'active', confirms: 1, disputes: 0, weather: null, variant: null, source: 'manual',
+      pendingNotify: false, missionIds: [] } },
+    lastEnded: {}, disputeThreshold: 3,
+  };
+  for (const action of ['取消', '確認附議']) {
+    location.search = '?ev=42&vote=confirm';
+    const { root, map } = makeRoot();
+    const view = createEmergencyView(root, {
+      worlds: WORLDS,
+      prefetch: { at: Date.now(), promise: Promise.resolve({ ok: true, data: live }) },
+    });
+    view.render(now);
+    await settle();
+    const rows = map['#em-list'].children;
+    assert.equal(rows.filter((li) => li.classList.contains('cos-em__row--hl')).length, 1, '只有目標事件亮起');
+    assert.equal(map['#em-deeplink'].children.at(action === '取消' ? -1 : -2).textContent, action);
+    map['#em-deeplink'].children.at(action === '取消' ? -1 : -2).listeners.click();
+    await settle();
+    view.render(now + 1);
+    assert.equal(rows.filter((li) => li.classList.contains('cos-em__row--hl')).length, 0, `${action}後高亮須消失`);
+  }
+  location.search = '';
+  console.log('✓ 深連結取消／確認附議後目標列不殘留高亮');
 }
 
 console.log('emergency-view 時序測試全過');
