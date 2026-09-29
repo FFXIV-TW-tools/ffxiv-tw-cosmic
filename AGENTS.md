@@ -132,4 +132,4 @@ FFXIV 繁中服「宇宙探索」（月球 / 渴望灣）規劃站。**主體純
 - **允許清單而非排除清單**：頂層出現未列入 `deploy-allow.txt`／`deploy-deny.txt` 的項目 → **build 直接失敗**（新增內部資產預設「不發佈」）。分類閘另有兩條靜默放行（npm 產物 skip 清單、`git check-ignore`）＝只是提醒層；**真正的部署邊界是第 2 段複製迴圈的 allow-list 比對**——該比對不可動，skip 清單只放建置環境產物、不得用來繞分類。
 - **新增站台資產**（新頁面／新資料夾）→ `deploy-allow.txt`；**新增內部資產** → `deploy-deny.txt`。改完跑 `sh deploy-prepare.sh` 確認印出「✓ 部署輸出就緒」。
 - **腳本改動禁忌**：① 只用 POSIX 語法（CF 容器的 `sh` 是 dash；bashism 靜默失敗＝輸出 0 檔而 build 仍「成功」⇒ 整站 404）② 根層檔名不可無條件 `mkdir "$OUT/${f%/*}"`（會建出「叫 index.html 的目錄」⇒ `/` 404）③ 不得移除出貨前驗收閘（輸出 <3 檔／缺 index.html／內部檔混入 → 非零 exit，CF 保留前一版）④ **產物路徑不得假設獨佔**（並行 session／cron 互踩固定 `_site`）——接排程／並行寫入者時照 ranking 現行解改：`_site.tmp.$$`＋`mktemp` 清單＋`mkdir` 鎖（由來見 rationale）。
-- **部署後驗**（**務必帶 cache-bust**）：`curl -sI "https://<repo>.pages.dev/AGENTS.md?cb=$(date +%s)"` → `text/html`＝正常（走 SPA fallback）、`text/markdown`＝紅燈。不帶 cache-bust 會得到**假紅燈**（邊緣快取殘留，判別法與自癒時間見 rationale）。
+- **部署後驗**（**務必帶 cache-bust、一定要 `-L`**）：`curl -sL -o /dev/null -w '%{http_code} %{content_type} %{url_effective}\n' "https://<repo>.pages.dev/AGENTS.md?cb=$(date +%s)"` → `text/html`＝正常（走 SPA fallback）、`text/markdown`＝紅燈。少一項就會誤判（見 rationale）。

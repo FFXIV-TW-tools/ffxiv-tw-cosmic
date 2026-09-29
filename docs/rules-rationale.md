@@ -134,6 +134,9 @@
   `text/markdown` 但 header 有 `CF-Cache-Status: HIT` ＋ 大 `Age`。**那是快取殘留不是外洩**，最長 7 天自癒
   （pages.dev 非自有 zone，dashboard 沒有 Purge Everything，收斂路徑就是等 TTL）。2026-08-01 R3 健檢實測：
   帶 cache-bust 的 `/AGENTS.md`、`/worker/src/index.js`、`/deploy-allow.txt` 全回 SPA fallback＝現行部署乾淨。
+- **部署後驗要跟轉址（2026-09-29）**：B-048 退役後 pages.dev 由帳號層 Bulk Redirects 301 到正式網域，
+  `curl -sI` 只拿到轉址頁本身的 `301`＋`text/html`，不論站上有沒有外洩都判綠（12 站實測全是 301）。
+  改 `-sL` 看最後一跳：同日 12 站全部落在 `*.xivtc.com` 回 `404 text/html`。
 
 ## 規則檔三層分工（2026-09-07，B-077）
 
