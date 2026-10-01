@@ -34,6 +34,8 @@
 <meta name="twitter:card" content="summary_large_image">
 
 <link rel="preconnect" href="https://xivtc.com">
+<!-- Portal 共享資源 — document.write 保證 parser-inserted defer 執行順序。
+     usage.js＝使用統計（portal docs/specs/2026-10-01-usage-analytics-design.md）；_headers connect-src 要放行它的 Worker。 -->
 <script>(function(){
   var dev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
   var base = dev ? 'http://localhost:8774/ffxiv-tw-tools-portal/' : 'https://xivtc.com/';
@@ -41,6 +43,7 @@
     '<link rel="stylesheet" href="' + base + 'tokens.css">' +
     '<link rel="stylesheet" href="' + base + 'header.css">' +
     '<script defer src="' + base + 'header.js"><\/script>' +
+    '<script defer src="' + base + 'usage.js"><\/script>' +
     '<script defer src="' + base + 'a11y-tabs.js"><\/script>' +
     '<script defer src="' + base + 'settings-client.js"><\/script>' +
     // 鬧鐘類工具會長時間開著分頁 → 掛新版偵測 toast（設計系統 head snippet 鐵則）
